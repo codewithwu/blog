@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 圆角方形背景，Anthropic 品牌橙 -->
+  <rect width="64" height="64" rx="14" fill="#d97757"/>
+  <!-- 大写字母 C（站点首字母） -->
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="Georgia, 'Lora', serif" font-size="40" font-weight="600" fill="#faf9f5">C</text>
+</svg>
