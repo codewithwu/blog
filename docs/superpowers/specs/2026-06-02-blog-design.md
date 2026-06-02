@@ -160,7 +160,7 @@ theme: {
 ### 5.2 数据形状
 
 ```js
-// articles.js
+// articles.js（详细加载方式见 5.3）
 {
   slug: 'hello-world',
   title: '你好，世界',
@@ -168,7 +168,7 @@ theme: {
   date: '2026-05-12',
   tags: ['随笔', 'Meta'],
   cover: null,
-  contentFile: '/src/content/articles/hello-world.md'
+  content: '<markdown 字符串>'
 }
 
 // projects.js
