@@ -72,6 +72,8 @@ blog/
 | `lib/markdown.js` | 统一 `react-markdown` 配置（remark-gfm、rehype-highlight） | react-markdown 等 |
 | `hooks/usePageTitle` | 接收标题字符串，调用 react-helmet-async | react-helmet-async |
 
+**注意**：`react-helmet-async@2.0.5` 不导出 `useHelmet`（仅导出 `Helmet`、`HelmetData`、`HelmetProvider`）。`usePageTitle` 实际用 `useEffect` + `document.title` 实现（功能性等价），`HelmetProvider` 仍挂在 `main.jsx` 上供未来 meta/OG 标签使用。
+
 ## 3. 技术栈
 
 | 类别 | 选型 | 版本 | 理由 |
@@ -201,7 +203,7 @@ theme: {
 
 ### 5.3 Markdown 加载
 
-使用 Vite 的 `?raw` 后缀导入：
+使用 Vite 的 `?raw` 后缀导入。**注意**：包含 JSX 的文件必须用 `.jsx` 后缀（Vite/esbuild 在 .js 文件中拒绝 JSX），所以渲染组件文件名为 `src/lib/markdown.jsx`。
 
 ```js
 import helloWorld from '../content/articles/hello-world.md?raw';
@@ -214,6 +216,12 @@ import helloWorld from '../content/articles/hello-world.md?raw';
 export default [
   { slug: 'hello-world', content: helloWorld, ... }
 ];
+```
+
+在 `src/lib/markdown.jsx`（即 `Markdown` 组件）中，import 路径也要相应使用 `.jsx` 后缀：
+
+```js
+import Markdown from '../lib/markdown.jsx';
 ```
 
 ## 6. 部署
