@@ -1,4 +1,6 @@
-// 首页占位 - Task 4 将替换为重定向到 /articles
+// Home 已通过 <Navigate> 在 App.jsx 中重定向到 /articles，本组件仅作 fallback
+import { Navigate } from 'react-router-dom';
+
 export default function Home() {
-  return <div>Home（重定向占位）</div>;
+  return <Navigate to="/articles" replace />;
 }

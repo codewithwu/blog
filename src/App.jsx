@@ -1,6 +1,5 @@
 // 全局布局：Navbar + PageTransition(Outlet) + Footer
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Home from './pages/Home.jsx';
 import Articles from './pages/Articles.jsx';
 import ArticleDetail from './pages/ArticleDetail.jsx';
 import Projects from './pages/Projects.jsx';
