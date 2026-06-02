@@ -4,7 +4,7 @@
 
 ## 在线访问
 
-https://<你的 GitHub 用户名>.github.io/
+https://codewithwu.github.io/blog/
 
 ## 技术栈
 
@@ -56,9 +56,9 @@ src/
 
 1. 仓库 Settings → Pages → Source 选 **GitHub Actions**
 2. 推 `main` 分支即触发自动部署
-3. 等待 workflow 跑完，访问 `https://<用户名>.github.io/`
+3. 等待 workflow 跑完，访问 `https://codewithwu.github.io/blog/`
 
-> 注意：本项目使用 HashRouter，URL 形如 `/#/articles`。如需美化 URL，可改用 BrowserRouter + 404.html 重定向方案。
+> 注意：本项目使用 HashRouter，URL 形如 `/blog/#/articles`。这是因为 GitHub Pages 项目页（`/blog/`）无法做服务端路由重定向。如需美化 URL，可改用 BrowserRouter + 404.html 重定向方案。
 
 ## 许可
 
