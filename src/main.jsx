@@ -1,11 +1,14 @@
-// React 入口：引入全局样式并挂载 <App/>
+// React 入口：引入全局样式，挂载 <App/>，外层包 HelmetProvider（页面标题）
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
 import './index.css';
 import App from './App.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </React.StrictMode>
 );

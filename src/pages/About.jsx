@@ -1,6 +1,7 @@
 // 关于页：头像 + 简介 + 联系方式 + 时间轴 + 座右铭
 import { Github, Mail } from 'lucide-react';
 import TimelineItem from '../components/TimelineItem.jsx';
+import usePageTitle from '../hooks/usePageTitle.js';
 
 const timeline = [
   { year: '2024 – 今',  title: '高级前端工程师', subtitle: '某科技公司',  desc: '负责内部 SaaS 平台架构与性能优化。' },
@@ -9,6 +10,7 @@ const timeline = [
 ];
 
 export default function About() {
+  usePageTitle('关于');
   return (
     <section className="max-w-3xl mx-auto">
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">

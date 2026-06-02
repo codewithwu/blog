@@ -1,7 +1,9 @@
 // 友好的 404 页面
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function NotFound() {
+  usePageTitle('404');
   return (
     <div className="py-24 text-center">
       <h1 className="text-6xl font-bold text-brand-orange">404</h1>

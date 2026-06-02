@@ -1,8 +1,10 @@
 // 项目页：卡片网格（移动 1 列 / 平板 2 列 / 桌面 3 列）
 import projects from '../data/projects.js';
 import ProjectCard from '../components/ProjectCard.jsx';
+import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function Projects() {
+  usePageTitle('项目');
   return (
     <section>
       <h1 className="text-3xl font-bold text-brand-light mb-8">项目</h1>

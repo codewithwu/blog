@@ -2,8 +2,10 @@
 // 移动 1 列 / 平板 2 列 / 桌面 3 列（grid 响应式断点控制）
 import tools from '../data/tools.js';
 import ToolCard from '../components/ToolCard.jsx';
+import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function Tools() {
+  usePageTitle('工具');
   return (
     <section>
       <h1 className="text-3xl font-bold text-brand-light mb-8">工具</h1>

@@ -1,8 +1,10 @@
 // 技能页：按 category 分组的进度条
 import skills from '../data/skills.js';
 import SkillBar from '../components/SkillBar.jsx';
+import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function Skills() {
+  usePageTitle('技能');
   return (
     <section>
       <h1 className="text-3xl font-bold text-brand-light mb-8">技能</h1>

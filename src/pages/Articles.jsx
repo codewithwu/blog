@@ -1,8 +1,10 @@
 // 文章列表：取 listArticles()，按日期降序展示
 import { listArticles } from '../lib/articles.js';
 import ArticleCard from '../components/ArticleCard.jsx';
+import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function Articles() {
+  usePageTitle('文章');
   const articles = listArticles();
   return (
     <section>
