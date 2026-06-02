@@ -5,11 +5,11 @@ export default function ArticleCard({ article }) {
   return (
     <Link
       to={`/articles/${article.slug}`}
-      className="block p-6 rounded-xl bg-brand-surface border border-brand-mid/20
+      className="group block p-6 rounded-xl bg-brand-surface border border-brand-mid/20
                  hover:-translate-y-1 hover:shadow-lg hover:border-brand-orange/40
                  transition-all duration-300"
     >
-      <h3 className="text-xl font-semibold text-brand-light group-hover:text-brand-orange">
+      <h3 className="text-xl font-semibold text-brand-light group-hover:text-brand-orange hover:text-brand-orange">
         {article.title}
       </h3>
       <p className="mt-2 text-sm text-brand-mid">{article.excerpt}</p>
