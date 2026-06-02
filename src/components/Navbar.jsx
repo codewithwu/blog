@@ -14,7 +14,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-brand-dark/90 backdrop-blur border-b border-brand-mid/20">
       <nav className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link to="/articles" className="text-xl font-semibold text-brand-orange tracking-wide">
-          cooper.dev
+          极客熊猫
         </Link>
         <ul className="flex gap-1 sm:gap-2">
           {links.map((l) => (

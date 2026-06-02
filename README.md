@@ -1,4 +1,4 @@
-# cooper.dev
+# 极客熊猫
 
 个人技术博客与作品集。React 18 + Vite 5 + Tailwind CSS，使用 Anthropic 品牌风格。
 

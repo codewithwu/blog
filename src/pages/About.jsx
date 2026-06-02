@@ -15,21 +15,21 @@ export default function About() {
     <section className="max-w-3xl mx-auto">
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
         <div className="w-28 h-28 rounded-full bg-gradient-to-br from-brand-orange to-brand-blue
-                        flex items-center justify-center text-3xl font-bold text-brand-light">
-          C
+                        flex items-center justify-center text-2xl font-bold text-brand-light">
+          极客
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-brand-light">Cooper</h1>
-          <p className="mt-1 text-brand-orange">前端工程师 / 终身学习者</p>
+          <h1 className="text-3xl font-bold text-brand-light">极客熊猫</h1>
+          <p className="mt-1 text-brand-orange">后端工程师 / Agent开发 / Vibe Coding / 终身学习者</p>
           <p className="mt-4 text-brand-light/80 leading-relaxed">
             喜欢写干净的代码，热爱开源。业余时间折腾个人项目、写博客、跑马拉松。
           </p>
           <div className="mt-4 flex gap-3">
-            <a href="https://github.com/cooper" target="_blank" rel="noreferrer"
+            <a href="https://github.com/codewithwu" target="_blank" rel="noreferrer"
                className="inline-flex items-center gap-1 text-sm text-brand-blue hover:text-brand-orange">
               <Github size={16} /> GitHub
             </a>
-            <a href="mailto:hi@cooper.dev"
+            <a href="mailto:codewithwu@gmail.com"
                className="inline-flex items-center gap-1 text-sm text-brand-blue hover:text-brand-orange">
               <Mail size={16} /> 邮箱
             </a>
