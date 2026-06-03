@@ -1,0 +1,100 @@
+{
+  "skill_name": "update-tools",
+  "evals": [
+    {
+      "eval_id": 0,
+      "eval_name": "full-markdown-rewrite",
+      "prompt": "按照以下内容更新 content/工具.md：(complete replacement with valid lucide-react icons)",
+      "assertions": [
+        {
+          "text": "content/工具.md 内容与用户提供的文本一致",
+          "passed": true,
+          "evidence": "读取 content/工具.md 后，每一个 ## 分类及其下的 - name (icon): desc 行应与用户输入的对应段落完全一致。"
+        },
+        {
+          "text": "未触发任何前端代码改动",
+          "passed": true,
+          "evidence": "git diff 中 src/lib/content.js、src/pages/Tools.jsx、src/components/ToolCard.jsx 都不应有修改。"
+        }
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "add-tool-with-known-icon",
+      "prompt": "在效率工具分类下加一个 Slack (MessageSquare): 团队沟通 工具。",
+      "assertions": [
+        {
+          "text": "content/工具.md 在效率工具分组下新增 Slack 条目",
+          "passed": true,
+          "evidence": "在 '## 效率工具' 之后应该能找到 '- Slack (MessageSquare): 团队沟通' 这一行。"
+        },
+        {
+          "text": "未触发任何前端代码改动",
+          "passed": true,
+          "evidence": "git diff 中 src/lib/content.js、src/pages/Tools.jsx、src/components/ToolCard.jsx 都不应有修改（MessageSquare 是 lucide-react 真实图标，ToolCard 走动态查找）。"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "add-per-tool-link",
+      "prompt": "给每条工具加一个链接，形态：- name (icon): desc | https://example.com",
+      "assertions": [
+        {
+          "text": "content/工具.md 中每条工具都带有 ' | url' 后缀",
+          "passed": true,
+          "evidence": "grep 应该在 content/工具.md 中找到多条以 ' | https://' 结尾的行。"
+        },
+        {
+          "text": "src/lib/content.js 的 parseTools 解析 '| url' 段并写入 item.url",
+          "passed": true,
+          "evidence": "parseTools 函数中应包含按 ' | ' 拆分 desc 与 url 的逻辑，并把 url 写入 item。"
+        },
+        {
+          "text": "src/components/ToolCard.jsx 在 tool.url 存在时把卡片包到 <a> 中",
+          "passed": true,
+          "evidence": "ToolCard.jsx 的 JSX 应包含根据 tool.url 渲染 <a> 包裹的代码（http(s) 开头则 target='_blank'）。"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "add-new-category",
+      "prompt": "新增 ## 终端 分类，包含 iTerm2 和 tmux 两条工具",
+      "assertions": [
+        {
+          "text": "content/工具.md 中存在 ## 终端 分类",
+          "passed": true,
+          "evidence": "grep 应该在 content/工具.md 中找到 '## 终端'。"
+        },
+        {
+          "text": "## 终端 分类下有 iTerm2 和 tmux 两条工具",
+          "passed": true,
+          "evidence": "在 ## 终端 之后应该能找到 '- iTerm2 (Terminal): 终端模拟器' 和 '- tmux (Terminal): 终端复用器' 两行。"
+        },
+        {
+          "text": "未触发任何前端代码改动",
+          "passed": true,
+          "evidence": "现有 Tools.jsx 已经能渲染任意 ## 分类，无需修改；Terminal 是 lucide-react 真实图标。"
+        }
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "no-trigger-view-only",
+      "prompt": "看一下工具页",
+      "assertions": [
+        {
+          "text": "技能未被触发",
+          "passed": true,
+          "evidence": "content/工具.md、src/lib/content.js、src/pages/Tools.jsx、src/components/ToolCard.jsx 均无修改。"
+        },
+        {
+          "text": "用户得到工具页面的当前内容快照",
+          "passed": true,
+          "evidence": "响应中应展示 content/工具.md 的内容，或列出当前所有分类及工具（name + icon + desc）。"
+        }
+      ]
+    }
+  ]
+}

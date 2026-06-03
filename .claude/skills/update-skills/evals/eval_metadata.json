@@ -1,0 +1,105 @@
+{
+  "skill_name": "update-skills",
+  "evals": [
+    {
+      "eval_id": 0,
+      "eval_name": "full-markdown-rewrite",
+      "prompt": "按照以下内容更新 content/技能.md：(complete replacement with valid 进阶/熟练/精通 tiers)",
+      "assertions": [
+        {
+          "text": "content/技能.md 内容与用户提供的文本一致",
+          "passed": true,
+          "evidence": "读取 content/技能.md 后，每一个 ## 分类及其下的 - name: level 行应与用户输入的对应段落完全一致。"
+        },
+        {
+          "text": "未触发任何前端代码改动",
+          "passed": true,
+          "evidence": "git diff 中 src/lib/content.js、src/pages/Skills.jsx、src/components/SkillBar.jsx 都不应有修改。"
+        }
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "change-tier-and-add-skill",
+      "prompt": "把 React 等级从精通改成熟练，在 content/技能.md 里加一个 Vue: 进阶。",
+      "assertions": [
+        {
+          "text": "content/技能.md 中 React 等级变更为 熟练",
+          "passed": true,
+          "evidence": "grep 应该在 content/技能.md 中找到 '- React: 熟练' 而非 '- React: 精通'。"
+        },
+        {
+          "text": "content/技能.md 中新增了 Vue: 进阶 条目",
+          "passed": true,
+          "evidence": "grep 应该在 content/技能.md 中找到 '- Vue: 进阶'。"
+        },
+        {
+          "text": "未触发任何前端代码改动",
+          "passed": true,
+          "evidence": "git diff 中 src/lib/content.js、src/pages/Skills.jsx、src/components/SkillBar.jsx 都不应有修改。"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "add-new-category",
+      "prompt": "新增 ## 测试 分类，包含 Cypress 和 Playwright 两条技能",
+      "assertions": [
+        {
+          "text": "content/技能.md 中存在 ## 测试 分类",
+          "passed": true,
+          "evidence": "grep 应该在 content/技能.md 中找到 '## 测试'。"
+        },
+        {
+          "text": "## 测试 分类下有 Cypress 和 Playwright 两条技能",
+          "passed": true,
+          "evidence": "在 ## 测试 之后应该能找到 '- Cypress: 熟练' 和 '- Playwright: 进阶' 两行。"
+        },
+        {
+          "text": "未触发任何前端代码改动",
+          "passed": true,
+          "evidence": "现有 Skills.jsx 已经能渲染任意 ## 分类，无需修改。"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "add-per-skill-desc",
+      "prompt": "给每条技能加 desc 字段（- name: level — desc 形态）",
+      "assertions": [
+        {
+          "text": "content/技能.md 中每条技能都带有 ' — desc' 后缀",
+          "passed": true,
+          "evidence": "grep 应该在 content/技能.md 中找到多行匹配 ' — ' 的条目。"
+        },
+        {
+          "text": "src/lib/content.js 的 parseSkills 解析 desc 字段并放入 item.desc",
+          "passed": true,
+          "evidence": "parseSkills 函数中应包含按 ' — ' 拆分 level 与 desc 的逻辑，并把 desc 写入 item。"
+        },
+        {
+          "text": "src/components/SkillBar.jsx 接收并渲染 desc",
+          "passed": true,
+          "evidence": "SkillBar.jsx 的函数签名应包含 desc prop；JSX 中应有渲染 desc 的元素（用 text-brand-mid 之类的 muted 颜色）。"
+        }
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "no-trigger-view-only",
+      "prompt": "看一下技能页",
+      "assertions": [
+        {
+          "text": "技能未被触发",
+          "passed": true,
+          "evidence": "content/技能.md、src/lib/content.js、src/pages/Skills.jsx、src/components/SkillBar.jsx 均无修改。"
+        },
+        {
+          "text": "用户得到技能页面的当前内容快照",
+          "passed": true,
+          "evidence": "响应中应展示 content/技能.md 的内容，或列出当前所有分类及技能（name + level）。"
+        }
+      ]
+    }
+  ]
+}
