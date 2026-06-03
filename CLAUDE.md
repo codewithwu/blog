@@ -10,3 +10,4 @@
 9. 图标统一用 lucide-react，不要混用其他图标库
 10. 文章源文件存放在项目根目录的 `articles/` 文件夹下;每新增一篇文章,必须同时:(a) 把 .md 文件放入 `articles/`;(b) 在 `src/data/articles.js` 中加一行 `import ... from '../../articles/xxx.md?raw'`;(c) 在 `articles` 数组中加一条 metadata 记录(字段:slug / title / excerpt / date / tags / cover)
 11. 项目源文件存放在项目根目录的 `projects/` 文件夹下;每新增一个项目,必须同时:(a) 把 .md 文件放入 `projects/`;(b) 在 `src/data/projects.js` 中加一行 `import ... from '../../projects/xxx.md?raw'`;(c) 在 `projects` 数组中加一条 metadata 记录(字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content)
+12. 技能 / 工具 / 关于页签的源文件存放在项目根目录的 `content/` 文件夹下（`content/技能.md`、`content/工具.md`、`content/关于.md`），由 `src/lib/content.js` 解析后供页面消费。修改这三页签的内容必须直接编辑对应的 .md 文件，不要在 `src/data/skills.js`、`src/data/tools.js`、`src/pages/About.jsx` 里硬编码内容。技能等级只能是 `进阶` / `熟练` / `精通` 三档之一。
