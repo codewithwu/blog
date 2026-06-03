@@ -1,4 +1,4 @@
-// 技能页：按 category 分组的进度条
+// 技能页：按 category 分组的等级徽章
 import skills from '../data/skills.js';
 import SkillBar from '../components/SkillBar.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
