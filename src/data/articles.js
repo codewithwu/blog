@@ -6,6 +6,7 @@ import agentXingNengLiangHua from '../../articles/Agent 性能量化.md?raw';
 import aiJiShuDiCeng from '../../articles/AI技术底层.md?raw';
 import claudeCodeShangXiaWenGuanLi from '../../articles/Claude-Code-上下文管理.md?raw';
 import deepSeekJiangBenZengXiao from '../../articles/DeepSeek 的“降本增效”之道.md?raw';
+import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/长对话中模型忘记系统指令.md?raw';
 
 const articles = [
   {
@@ -70,6 +71,15 @@ const articles = [
     tags: ['DeepSeek', 'MOE', '大模型'],
     cover: null,
     content: deepSeekJiangBenZengXiao
+  },
+  {
+    slug: '长对话中模型忘记系统指令',
+    title: '长对话中模型忘记系统指令',
+    excerpt: '在长对话中，模型可能忘记最早设定的系统指令（如“只能用中文回答”）。',
+    date: '2026-06-03',
+    tags: ['LLM', '系统指令', '上下文'],
+    cover: null,
+    content: changDuiHuaZhongMoXingWangJiXiTongZhiLing
   }
 ];
 
