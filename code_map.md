@@ -83,8 +83,8 @@ blog/
 │   ├── data/                       # 静态数据（纯 JS 数组/对象，**改这里就能改网站**）
 │   │   ├── articles.js             # 文章元数据 + ?raw 引入 markdown
 │   │   ├── projects.js             # 项目列表
-│   │   ├── skills.js               # 技能（按 category 分组 + level 0-100）
-│   │   └── tools.js                # 工具（icon 字段为 lucide 组件名字符串）
+│   │   ├── skills.js               # 技能（按 category 分组 + level 进阶/熟练/精通；数据源 content/技能.md）
+│   │   └── tools.js                # 工具（icon 字段为 lucide 组件名字符串；数据源 content/工具.md）
 │   │
 │   ├── lib/
 │   │   ├── articles.js             # 文章查询工具：listArticles / findArticleBySlug
@@ -232,7 +232,8 @@ ArticleDetail.jsx
 - **`src/data/articles.js` 用 `?raw` 后缀**：把 markdown 源文件直接以字符串形式打包进 JS bundle，避免 fetch + 异步加载。
 - **`src/hooks/usePageTitle.js` 用 `useEffect` 而非 `Helmet`**：`react-helmet-async@2.0.5` 不导出 `useHelmet` 钩子，直接操作 `document.title` 行为等价；`HelmetProvider` 仍保留在 `main.jsx` 供后续 meta/OG 标签使用。
 - **`src/components/ToolCard.jsx` 用 `import * as Icons` + 按名字取组件**：`data/tools.js` 里只存字符串名（解耦数据与组件引用），找不到时回退到 `Wrench` 防崩。
-- **`src/components/SkillBar.jsx` 颜色按 `level` 区间分档**：`>=80` 橙、`>=60` 蓝、其他绿，与品牌规范的主/副/第三点缀循环一致。
+- **`src/components/SkillBar.jsx` 用等级徽章而非进度条**：level 是 `进阶/熟练/精通` 三档字符串，对应 brand-guidelines 的主/副/第三点缀（橙/蓝/绿），未知等级回退 进阶。
+- **`src/lib/content.js` 解析 `content/*.md`**：纯字符串处理，不引入 gray-matter。三个解析函数（parseSkills / parseTools / parseAbout）各自有 vitest 单测，集成测试还 import 真实的 .md 文件验证条目数契约。
 
 ---
 
