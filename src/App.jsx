@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Articles from './pages/Articles.jsx';
 import ArticleDetail from './pages/ArticleDetail.jsx';
 import Projects from './pages/Projects.jsx';
+import ProjectDetail from './pages/ProjectDetail.jsx';
 import Skills from './pages/Skills.jsx';
 import Tools from './pages/Tools.jsx';
 import About from './pages/About.jsx';
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/articles" element={<Articles />} />
             <Route path="/articles/:slug" element={<ArticleDetail />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/skills" element={<Skills />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/about" element={<About />} />
