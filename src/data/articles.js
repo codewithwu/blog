@@ -1,7 +1,7 @@
 // 文章数据：metadata 写在数组里，content 通过 Vite ?raw 导入 markdown 源文件
-import helloWorld from '../content/articles/hello-world.md?raw';
-import reactTips from '../content/articles/react-tips.md?raw';
-import deployNotes from '../content/articles/deploy-notes.md?raw';
+import helloWorld from '../../articles/hello-world.md?raw';
+import reactTips from '../../articles/react-tips.md?raw';
+import deployNotes from '../../articles/deploy-notes.md?raw';
 
 const articles = [
   {
