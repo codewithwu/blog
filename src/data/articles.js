@@ -1,6 +1,6 @@
 // 文章数据：metadata 写在数组里，content 通过 Vite ?raw 导入 markdown 源文件
 import helloWorld from '../../articles/hello-world.md?raw';
-import deployNotes from '../../articles/deploy-notes.md?raw';
+import ragFenCengJianSuo from '../../articles/RAG分层检索.md?raw';
 
 const articles = [
   {
@@ -13,13 +13,13 @@ const articles = [
     content: helloWorld
   },
   {
-    slug: 'deploy-notes',
-    title: 'GitHub Pages 部署笔记',
-    excerpt: '使用 HashRouter + GitHub Actions 自动部署。',
-    date: '2026-06-01',
-    tags: ['部署', 'GitHub'],
+    slug: 'RAG分层检索',
+    title: 'RAG分层检索',
+    excerpt: '在RAG（Retrieval-Augmented Generation）系统中，检索策略的设计直接影响最终生成效果。核心目标只有两个',
+    date: '2026-06-03',
+    tags: ['RAG', '检索'],
     cover: null,
-    content: deployNotes
+    content: ragFenCengJianSuo
   }
 ];
 
