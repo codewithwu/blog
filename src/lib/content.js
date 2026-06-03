@@ -41,8 +41,50 @@ export function parseSkills(md) {
   return groups;
 }
 
-export function parseTools(_md) {
-  throw new Error('parseTools not implemented');
+export function parseTools(md) {
+  if (!md) return [];
+  const groups = [];
+  let current = null;
+
+  for (const rawLine of md.split('\n')) {
+    const line = rawLine.trimEnd();
+    if (!line.trim()) continue;
+
+    if (line.startsWith('## ')) {
+      const category = line.slice(3).trim();
+      current = { category, items: [] };
+      groups.push(current);
+      continue;
+    }
+
+    if (line.startsWith('- ') && current) {
+      const body = line.slice(2).trim();
+      // 拆分 name/icon 与 desc：以第一个 ':' 切
+      const colonIdx = body.indexOf(':');
+      let namePart, desc;
+      if (colonIdx === -1) {
+        namePart = body;
+        desc = '';
+      } else {
+        namePart = body.slice(0, colonIdx).trim();
+        desc = body.slice(colonIdx + 1).trim();
+      }
+
+      // 提取 name 末尾括号里的 icon
+      const m = namePart.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+      const item = {};
+      if (m) {
+        item.name = m[1].trim();
+        item.icon = m[2].trim();
+      } else {
+        item.name = namePart;
+      }
+      if (desc) item.desc = desc;
+      if (item.name) current.items.push(item);
+    }
+  }
+
+  return groups;
 }
 
 export function parseAbout(_md) {
