@@ -1,13 +1,15 @@
-// 关于页：头像 + 简介 + 联系方式 + 时间轴 + 座右铭
+// 关于页：内容源 content/关于.md，运行时通过 parseAbout 解析
+// 修改内容请改 content/关于.md
 import { Github, Mail } from 'lucide-react';
 import TimelineItem from '../components/TimelineItem.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
+import aboutMd from '../../content/关于.md?raw';
+import { parseAbout } from '../lib/content.js';
 
-const timeline = [
-  { year: '2024 – 今',  title: '高级前端工程师', subtitle: '某科技公司',  desc: '负责内部 SaaS 平台架构与性能优化。' },
-  { year: '2021 – 2024', title: '前端工程师',     subtitle: '某创业公司',  desc: '从 0 到 1 搭建 B 端产品。' },
-  { year: '2017 – 2021', title: '计算机科学学士', subtitle: '某大学',      desc: '主修软件工程。' }
-];
+const { tagline, intro, contacts, timeline, motto } = parseAbout(aboutMd);
+
+// 联系方式图标映射：解析出的 icon 字符串（'Github' / 'Mail' / null）→ 实际组件
+const ICON_MAP = { Github, Mail };
 
 export default function About() {
   usePageTitle('关于');
@@ -20,34 +22,43 @@ export default function About() {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-brand-light">极客熊猫</h1>
-          <p className="mt-1 text-brand-orange">后端工程师 / Agent开发 / Vibe Coding / 终身学习者</p>
-          <p className="mt-4 text-brand-light/80 leading-relaxed">
-            喜欢写干净的代码，热爱开源。业余时间折腾个人项目、写博客、跑马拉松。
-          </p>
-          <div className="mt-4 flex gap-3">
-            <a href="https://github.com/codewithwu" target="_blank" rel="noreferrer"
-               className="inline-flex items-center gap-1 text-sm text-brand-blue hover:text-brand-orange">
-              <Github size={16} /> GitHub
-            </a>
-            <a href="mailto:codewithwu@gmail.com"
-               className="inline-flex items-center gap-1 text-sm text-brand-blue hover:text-brand-orange">
-              <Mail size={16} /> 邮箱
-            </a>
-          </div>
+          {tagline && <p className="mt-1 text-brand-orange">{tagline}</p>}
+          {intro   && <p className="mt-4 text-brand-light/80 leading-relaxed">{intro}</p>}
+          {contacts.length > 0 && (
+            <div className="mt-4 flex gap-3 flex-wrap">
+              {contacts.map((c) => {
+                const Icon = ICON_MAP[c.icon];
+                return (
+                  <a key={c.label} href={c.href}
+                     target={c.href.startsWith('http') ? '_blank' : undefined}
+                     rel={c.href.startsWith('http') ? 'noreferrer' : undefined}
+                     className="inline-flex items-center gap-1 text-sm text-brand-blue hover:text-brand-orange">
+                    {Icon && <Icon size={16} />} {c.label}
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      <h2 className="mt-12 text-2xl font-semibold text-brand-light">经历</h2>
-      <ul className="mt-6">
-        {timeline.map((t) => (
-          <TimelineItem key={t.year} {...t} />
-        ))}
-      </ul>
+      {timeline.length > 0 && (
+        <>
+          <h2 className="mt-12 text-2xl font-semibold text-brand-light">经历</h2>
+          <ul className="mt-6">
+            {timeline.map((t) => (
+              <TimelineItem key={t.year} {...t} />
+            ))}
+          </ul>
+        </>
+      )}
 
-      <blockquote className="mt-12 p-6 rounded-xl border-l-4 border-brand-orange bg-brand-surface
-                             text-brand-light/80 italic">
-        "Stay hungry, stay foolish."
-      </blockquote>
+      {motto && (
+        <blockquote className="mt-12 p-6 rounded-xl border-l-4 border-brand-orange bg-brand-surface
+                               text-brand-light/80 italic">
+          {motto}
+        </blockquote>
+      )}
     </section>
   );
 }
