@@ -9,3 +9,4 @@
 8. 新增路由必须三处同步：App.jsx 的 <Route>、Navbar.jsx 的 links、对应 pages/*.jsx
 9. 图标统一用 lucide-react，不要混用其他图标库
 10. 文章源文件存放在项目根目录的 `articles/` 文件夹下;每新增一篇文章,必须同时:(a) 把 .md 文件放入 `articles/`;(b) 在 `src/data/articles.js` 中加一行 `import ... from '../../articles/xxx.md?raw'`;(c) 在 `articles` 数组中加一条 metadata 记录(字段:slug / title / excerpt / date / tags / cover)
+11. 项目源文件存放在项目根目录的 `projects/` 文件夹下;每新增一个项目,必须同时:(a) 把 .md 文件放入 `projects/`;(b) 在 `src/data/projects.js` 中加一行 `import ... from '../../projects/xxx.md?raw'`;(c) 在 `projects` 数组中加一条 metadata 记录(字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content)
