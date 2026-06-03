@@ -162,7 +162,7 @@ ArticleDetail.jsx
 | 文件 | 形状 | 怎么加新条目 |
 |------|------|--------------|
 | `src/data/articles.js` | `[{ slug, title, excerpt, date, tags, cover, content }]` | 1) 在项目根目录的 `articles/` 新建 `.md`；2) 在数组头部 push 一项并 `import xxx from '../../articles/xxx.md?raw'`；3) 把 `content: xxx` 填进去 |
-| `src/data/projects.js` | `[{ id, name, description, techStack, githubUrl, demoUrl, cover }]` | 直接在数组里加一项 |
+| `src/data/projects.js` | `[{ slug, name, description, techStack, githubUrl, demoUrl, cover, content }]` | 1) 把 `.md` 放进项目根目录的 `projects/`；2) 在数组顶部 `import xxx from '../../projects/xxx.md?raw'` 并 push 一项；3) 把 `content: xxx` 填进去 |
 | `src/data/skills.js` | `[{ category, items: [{ name, level }] }]` | level 是 0-100 数字 |
 | `src/data/tools.js` | `[{ category, items: [{ name, icon, desc }] }]` | `icon` 是 `lucide-react` 的组件名（见 [lucide.dev](https://lucide.dev)），找不到时回退到 Wrench |
 
@@ -176,6 +176,7 @@ ArticleDetail.jsx
 | `/articles` | `Articles` | `src/pages/Articles.jsx` |
 | `/articles/:slug` | `ArticleDetail` | `src/pages/ArticleDetail.jsx` |
 | `/projects` | `Projects` | `src/pages/Projects.jsx` |
+| `/projects/:slug` | `ProjectDetail` | `src/pages/ProjectDetail.jsx` |
 | `/skills` | `Skills` | `src/pages/Skills.jsx` |
 | `/tools` | `Tools` | `src/pages/Tools.jsx` |
 | `/about` | `About` | `src/pages/About.jsx` |
@@ -192,7 +193,7 @@ ArticleDetail.jsx
 | **加一篇文章（推荐）** | 1) 把 `.md` 放进 `articles-draft/<slug>.md`；2) 对 Claude 说「发布 xxx」触发 create-article 技能 |
 | **加一篇文章（手动）** | 1) 新建 `articles/<slug>.md`（项目根目录）<br>2) 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<slug>.md?raw'` 并 push 一项 |
 | **删除文章** | 对 Claude 说「删除 xxx.md」触发 delete-article 技能（同时清理 .md 与 data 注册） |
-| **加一个项目** | 在 `src/data/projects.js` 数组里加一项（`id` 不要重复） |
+| **加一个项目** | 1) 把 `.md` 放进 `projects/<slug>.md`（项目根目录）<br>2) 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.md?raw'` 并 push 一项<br>3) 删除自带的 `projects/_sample.md` 示例（可选） |
 | **改技能 / 工具** | 编辑 `src/data/skills.js` 或 `src/data/tools.js` |
 | **改关于页经历/座右铭** | `src/pages/About.jsx` 顶部的 `timeline` 数组 + 末尾的 `<blockquote>` |
 | **改导航顺序/标签** | `src/components/Navbar.jsx` 顶部的 `links` 数组 |
