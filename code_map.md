@@ -51,6 +51,10 @@ blog/
 ├── projects/                       # 已发布项目的 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
 │   └── _sample.md
 ├── projects-draft/                 # 项目草稿（未发布，不出现在网站上；通过 create-project 技能发到 projects/）
+├── content/                       # Skills/Tools/About 三个页签的 Markdown 源文件
+│   ├── 技能.md
+│   ├── 工具.md
+│   └── 关于.md
 ├── src/
 │   ├── main.jsx                    # React 入口，挂载 <App/>（外层 HelmetProvider）
 │   ├── App.jsx                     # 顶层布局：HashRouter + Navbar + Routes + Footer
@@ -62,7 +66,7 @@ blog/
 │   │   ├── PageTransition.jsx      # 页面切换淡入淡出包裹器
 │   │   ├── ArticleCard.jsx         # 文章列表卡片
 │   │   ├── ProjectCard.jsx         # 项目卡片（含 GitHub/Demo 链接）
-│   │   ├── SkillBar.jsx            # 技能进度条（颜色按 level 分档）
+│   │   ├── SkillBar.jsx            # 技能条目（技能名 + 等级徽章，level ∈ 进阶/熟练/精通）
 │   │   ├── ToolCard.jsx            # 工具卡片（动态 lucide 图标）
 │   │   └── TimelineItem.jsx        # 关于页时间轴节点
 │   │
@@ -84,6 +88,7 @@ blog/
 │   │
 │   ├── lib/
 │   │   ├── articles.js             # 文章查询工具：listArticles / findArticleBySlug
+│   │   ├── content.js              # 解析 content/*.md：parseSkills / parseTools / parseAbout
 │   │   └── markdown.jsx            # 统一 Markdown 渲染组件（GFM + 代码高亮 + prose 样式）
 │   │
 │   └── hooks/
@@ -170,8 +175,8 @@ ArticleDetail.jsx
 |------|------|--------------|
 | `src/data/articles.js` | `[{ slug, title, excerpt, date, tags, cover, content }]` | 1) 在项目根目录的 `articles/` 新建 `.md`；2) 在数组头部 push 一项并 `import xxx from '../../articles/xxx.md?raw'`；3) 把 `content: xxx` 填进去 |
 | `src/data/projects.js` | `[{ slug, name, description, techStack, githubUrl, demoUrl, cover, content }]` | 1) 把 `.md` 放进项目根目录的 `projects/`；2) 在数组顶部 `import xxx from '../../projects/xxx.md?raw'` 并 push 一项；3) 把 `content: xxx` 填进去 |
-| `src/data/skills.js` | `[{ category, items: [{ name, level }] }]` | level 是 0-100 数字 |
-| `src/data/tools.js` | `[{ category, items: [{ name, icon, desc }] }]` | `icon` 是 `lucide-react` 的组件名（见 [lucide.dev](https://lucide.dev)），找不到时回退到 Wrench |
+| `src/data/skills.js` | `[{ category, items: [{ name, level }] }]`（level ∈ 进阶/熟练/精通） | 1) 编辑 `content/技能.md`（源文件）；2) `src/data/skills.js` 自动通过 `parseSkills` 解析；3) 不要在 `skills.js` 内直接写数据数组 |
+| `src/data/tools.js`  | `[{ category, items: [{ name, icon, desc }] }]` | 1) 编辑 `content/工具.md`；2) `src/data/tools.js` 自动通过 `parseTools` 解析 |
 
 ---
 
@@ -203,8 +208,7 @@ ArticleDetail.jsx
 | **加一个项目（推荐）** | 1) 把 `.md` 放进 `projects-draft/<slug>.md`；2) 对 Claude 说「创建项目 xxx」或「把 xxx 项目发出去」触发 create-project 技能 |
 | **加一个项目（手动）** | 1) 新建 `projects/<slug>.md`（项目根目录）<br>2) 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.md?raw'` 并 push 一项 |
 | **删除项目** | 对 Claude 说「删除项目 xxx.md」触发 delete-project 技能（同时清理 .md 与 data 注册） |
-| **改技能 / 工具** | 编辑 `src/data/skills.js` 或 `src/data/tools.js` |
-| **改关于页经历/座右铭** | `src/pages/About.jsx` 顶部的 `timeline` 数组 + 末尾的 `<blockquote>` |
+| **改技能 / 工具 / 关于内容** | 编辑 `content/技能.md`、`content/工具.md`、`content/关于.md`（不要改 src/data/*.js 或 About.jsx） |
 | **改导航顺序/标签** | `src/components/Navbar.jsx` 顶部的 `links` 数组 |
 | **改网站标题后缀** | `src/hooks/usePageTitle.js` 中的 `SITE_NAME` 常量 |
 | **改品牌色** | `tailwind.config.js` 的 `theme.extend.colors.brand`，同时检查 `src/index.css` 里的 `.hljs-*` 硬编码颜色 |
