@@ -35,11 +35,11 @@ npm run preview      # 本地预览构建产物
 ## 目录结构
 
 ```
+articles/          # 文章 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
 src/
 ├── components/      # 复用组件（Navbar, Footer, Card, ...）
 ├── pages/           # 路由页面
 ├── data/            # 静态数据（articles, projects, skills, tools）
-├── content/         # Markdown 源文件
 ├── hooks/           # 自定义 Hook
 └── lib/             # 工具函数
 ```
