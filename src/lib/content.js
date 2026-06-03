@@ -2,9 +2,10 @@
 // 不引入 gray-matter 等依赖，纯字符串处理
 //
 // 文件约定：
-//   ## category    → 一个分组
-//   - name: level  → 一条技能（level ∈ {进阶, 熟练, 精通}，未知回退 进阶）
-//   # / 空行 / 其他 → 忽略
+//   ## category              → 一个分组
+//   - name: level            → 技能（level ∈ {进阶, 熟练, 精通}，未知回退 进阶）
+//   - name (icon): desc      → 工具（icon 与 desc 各自可选）
+//   # / 空行 / 其他          → 忽略
 
 const SKILL_LEVELS = ['进阶', '熟练', '精通'];
 
