@@ -24,11 +24,13 @@ export default function ProjectCard({ project }) {
       </ul>
       <div className="mt-4 flex gap-3 text-sm">
         <a href={project.githubUrl} target="_blank" rel="noreferrer"
+           onClick={(e) => e.stopPropagation()}
            className="inline-flex items-center gap-1 text-brand-blue hover:text-brand-orange">
           <Github size={16} /> GitHub
         </a>
         {project.demoUrl && (
           <a href={project.demoUrl} target="_blank" rel="noreferrer"
+             onClick={(e) => e.stopPropagation()}
              className="inline-flex items-center gap-1 text-brand-blue hover:text-brand-orange">
             <ExternalLink size={16} /> Demo
           </a>
