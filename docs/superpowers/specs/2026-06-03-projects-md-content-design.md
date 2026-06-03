@@ -1,8 +1,8 @@
 # Design: Projects Page — Markdown Content per Project
 
 **Date:** 2026-06-03
-**Status:** Approved (pending user review of written spec)
-**Scope:** Extend the existing `/projects` page so each project can carry long-form markdown content (mirroring the article pattern), with a new detail route `/projects/:slug` and a `ProjectDetail` page.
+**Status:** Approved with sample-fixture decision (pending final user sign-off)
+**Scope:** Extend the existing `/projects` page so each project can carry long-form markdown content (mirroring the article pattern), with a new detail route `/projects/:slug` and a `ProjectDetail` page. A minimal `projects/_sample.md` fixture ships with this change to make the detail page testable in CI and visible in the dev server.
 
 ## Background
 
@@ -31,7 +31,8 @@ The user wants to put per-project markdown files in a new `projects/` folder at 
 
 ### New
 
-- `projects/` (folder at project root, empty at first — user will drop `.md` files in)
+- `projects/` (folder at project root)
+- `projects/_sample.md` — minimal sample project (one heading, one short paragraph, one code block). The underscore prefix makes it visually obvious as a fixture rather than a real project; the user can delete it (and its `data/projects.js` entry) the moment they add their first real project. See "Sample Fixture" below.
 - `src/lib/projects.js` — exports `listProjects()` and `findProjectBySlug(slug)`, mirroring `src/lib/articles.js`
 - `src/pages/ProjectDetail.jsx` — new detail page; renders project header + markdown body; redirects to `/projects` if slug not found (same fallback shape as `ArticleDetail`)
 - `src/components/ProjectHeader.jsx` — small presentational component used by `ProjectDetail` to render the name, description, tech-stack badges, and GitHub/Demo links above the markdown
@@ -91,31 +92,25 @@ export function findProjectBySlug(slug) { return projects.find(p => p.slug === s
 
 ```js
 // 项目数据：metadata + ?raw 导入的 markdown 内容
-// （初始为空，由后续新增项目时按 CLAUDE.md 第 11 条的流程填入）
-const projects = [];
-export default projects;
-```
-
-When the first project is added (not part of this design's implementation — only shown here for reference):
-
-```js
-import todoApp from '../../projects/todo-app.md?raw';
+import sample from '../../projects/_sample.md?raw';
 
 const projects = [
   {
-    slug: 'todo-app',
-    name: 'Todo App',
-    description: '一个支持拖拽排序的待办事项应用。',
-    techStack: ['React', 'Vite', 'Tailwind CSS'],
-    githubUrl: 'https://github.com/cooper/todo-app',
+    slug: '_sample',
+    name: '示例项目',
+    description: '这是一个示例项目，用来演示项目页 + 详情页的工作流。',
+    techStack: ['Markdown'],
+    githubUrl: null,
     demoUrl: null,
     cover: null,
-    content: todoApp
+    content: sample
   }
 ];
 
 export default projects;
 ```
+
+When the user adds a real project, they edit this file per CLAUDE.md item 11 (see "New Constraint" below) — drop a `.md` in `projects/`, add the `?raw` import, push a new metadata entry. The sample entry can be removed (and `_sample.md` deleted) at any point.
 
 ## Code Sketch — `src/pages/ProjectDetail.jsx`
 
@@ -195,26 +190,34 @@ Append as item 11 to the existing numbered list:
 Mirror `tests/articles.test.js` in scope:
 
 - `listProjects` returns an array (no ordering assertion — projects lack a date field)
-- `findProjectBySlug('existing-slug')` returns the project
+- `findProjectBySlug('existing-slug')` returns the project (asserts against the sample fixture — see "Sample Fixture" below)
 - `findProjectBySlug('not-a-real-slug')` returns `undefined`
 
-The tests will be authored against the empty initial array. To make the "find existing" assertion meaningful, the implementation plan will add one minimal sample project (`projects/_sample.md` + matching entry) as a fixture, then the test asserts against that sample. If the user prefers to keep the array empty and skip the "find existing" assertion in CI, the implementation plan will surface that choice — see "Open Question" below.
+The tests are authored against a sample project (`projects/_sample.md` + matching entry in `data/projects.js`) that ships with this change. See "Sample Fixture" below.
 
 ## Verification
 
 After implementation:
 
-1. `projects/` folder exists at project root, empty (or with the sample fixture from "Tests" above).
-2. `src/data/projects.js` is an empty array (or contains only the sample fixture).
+1. `projects/_sample.md` exists with minimal content (one heading, one short paragraph, one code block).
+2. `src/data/projects.js` contains exactly one entry, with `slug: '_sample'` and `content` pointing at the `?raw` import.
 3. `npm run build` succeeds with no errors.
-4. `npm run dev` starts cleanly; visiting `/#/projects` shows the empty-state page (no cards) or, with the sample fixture, shows one card.
-5. With the sample fixture: clicking the card navigates to `/#/projects/sample` and renders the markdown body inside the `Markdown` component (code highlighting, GFM tables work).
+4. `npm run dev` starts cleanly; visiting `/#/projects` shows exactly one project card.
+5. Clicking the card navigates to `/#/projects/_sample` and renders the markdown body inside the `Markdown` component (code highlighting, GFM tables work).
 6. Visiting `/#/projects/does-not-exist` redirects to `/#/projects` (the `<Navigate replace />` fallback).
-7. `npm run test` passes.
+7. `npm run test` passes — including the `findProjectBySlug('_sample')` hit-case assertion.
 
 ## Open Question (for the implementation plan to surface)
 
-Should the initial commit include a `projects/_sample.md` sample project (so the detail page is testable in CI and visible in the dev server), or should the array stay empty and the detail page's first manual smoke test happen when the user adds their first real project? Both are reasonable; the implementation plan will ask the user at plan-execution time.
+_Settled by the user at spec-review time: keep one sample fixture._
+
+The initial commit ships a `projects/_sample.md` (a minimal demo project) plus a matching entry in `src/data/projects.js`. This serves three purposes:
+
+1. The `findProjectBySlug('existing-slug')` test in `tests/projects.test.js` has real content to assert against (matches how `tests/articles.test.js` asserts on `hello-world`).
+2. The dev server (`npm run dev`) immediately demonstrates the full chain: list card → click → detail page with rendered markdown.
+3. Anyone reading the repo can see the project authoring workflow end-to-end without inventing their own content first.
+
+The user can delete the sample (and its `data/projects.js` entry) the moment they add their first real project — the leading underscore in `_sample.md` is purely a visual hint, not enforced.
 
 ## Risks
 
