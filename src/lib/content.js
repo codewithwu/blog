@@ -88,6 +88,79 @@ export function parseTools(md) {
   return groups;
 }
 
-export function parseAbout(_md) {
-  throw new Error('parseAbout not implemented');
+export function parseAbout(md) {
+  const empty = { tagline: '', intro: '', contacts: [], timeline: [], motto: '' };
+  if (!md) return empty;
+
+  // 按 ## 切分章节，未带 ## 的内容归到 __preamble
+  const sections = { __preamble: [] };
+  let current = '__preamble';
+  for (const line of md.split('\n')) {
+    if (line.startsWith('## ')) {
+      current = line.slice(3).trim();
+      sections[current] = sections[current] || [];
+    } else {
+      sections[current].push(line);
+    }
+  }
+
+  // Preamble：第一非空行 = tagline，其余 = intro
+  const preambleText = sections.__preamble.join('\n').trim();
+  const preambleLines = preambleText.split('\n').map(l => l.trim()).filter(Boolean);
+  const tagline = preambleLines[0] || '';
+  const intro = preambleLines.slice(1).join('\n').trim();
+
+  // 联系方式
+  const contacts = [];
+  for (const raw of sections['联系方式'] || []) {
+    const line = raw.trim();
+    if (!line.startsWith('- ')) continue;
+    const body = line.slice(2);
+    const colonIdx = body.indexOf(':');
+    if (colonIdx === -1) continue;
+    const label = body.slice(0, colonIdx).trim();
+    const href = body.slice(colonIdx + 1).trim();
+    let icon = null;
+    if (label === 'GitHub') icon = 'Github';
+    else if (label === '邮箱') icon = 'Mail';
+    contacts.push({ label, href, icon });
+  }
+
+  // 经历（时间轴）
+  const timeline = [];
+  const expLines = sections['经历'] || [];
+  let i = 0;
+  while (i < expLines.length) {
+    const line = expLines[i];
+    const m = line.match(/^-\s+\*\*(.+?)\*\*\s+(.+?)\s+@\s+(.+?)\s*$/);
+    if (m) {
+      const [, year, title, subtitle] = m;
+      // 紧跟其后的缩进非 '-' 行视为 desc
+      const descLines = [];
+      let j = i + 1;
+      while (j < expLines.length) {
+        const next = expLines[j];
+        if (next.match(/^\s+\S/) && !next.match(/^-\s/)) {
+          descLines.push(next.trim());
+          j++;
+        } else {
+          break;
+        }
+      }
+      timeline.push({ year, title, subtitle, desc: descLines.join('\n').trim() });
+      i = j;
+    } else {
+      i++;
+    }
+  }
+
+  // 座右铭
+  const motto = (sections['座右铭'] || [])
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => l.replace(/^>\s*/, ''))
+    .join(' ')
+    .trim();
+
+  return { tagline, intro, contacts, timeline, motto };
 }

@@ -106,3 +106,62 @@ describe('parseTools', () => {
     expect(total).toBe(7);
   });
 });
+
+describe('parseAbout', () => {
+  it('空输入返回空对象', () => {
+    const r = parseAbout('');
+    expect(r).toEqual({
+      tagline: '', intro: '', contacts: [], timeline: [], motto: '',
+    });
+  });
+
+  it('解析首段为 tagline + intro', () => {
+    const md = `后端工程师 / 终身学习者
+
+喜欢写代码。`;
+    const r = parseAbout(md);
+    expect(r.tagline).toBe('后端工程师 / 终身学习者');
+    expect(r.intro).toBe('喜欢写代码。');
+  });
+
+  it('解析联系方式：识别 GitHub / 邮箱关键字映射图标', () => {
+    const md = `## 联系方式
+- GitHub: https://github.com/foo
+- 邮箱: foo@bar.com
+- 个人网站: https://foo.com`;
+    const r = parseAbout(md);
+    expect(r.contacts).toEqual([
+      { label: 'GitHub', href: 'https://github.com/foo', icon: 'Github' },
+      { label: '邮箱',   href: 'foo@bar.com',            icon: 'Mail'   },
+      { label: '个人网站', href: 'https://foo.com',     icon: null     },
+    ]);
+  });
+
+  it('解析时间轴：title / subtitle / desc', () => {
+    const md = `## 经历
+- **2024 – 今** 高级工程师 @ ACME
+  负责核心系统。
+- **2020 – 2024** 工程师 @ Foo
+  从 0 到 1。`;
+    const r = parseAbout(md);
+    expect(r.timeline).toEqual([
+      { year: '2024 – 今', title: '高级工程师', subtitle: 'ACME', desc: '负责核心系统。' },
+      { year: '2020 – 2024', title: '工程师', subtitle: 'Foo', desc: '从 0 到 1。' },
+    ]);
+  });
+
+  it('解析座右铭：去掉 blockquote 前缀', () => {
+    const md = `## 座右铭
+> "Stay hungry, stay foolish."`;
+    const r = parseAbout(md);
+    expect(r.motto).toBe('"Stay hungry, stay foolish."');
+  });
+
+  it('实际 content/关于.md 能解析出 3 条时间轴、2 个联系方式、1 句座右铭', async () => {
+    const mod = await import('../content/关于.md?raw');
+    const r = parseAbout(mod.default);
+    expect(r.timeline.length).toBe(3);
+    expect(r.contacts.length).toBe(2);
+    expect(r.motto.length).toBeGreaterThan(0);
+  });
+});
