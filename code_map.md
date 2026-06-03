@@ -44,6 +44,10 @@ blog/
 │       └── deploy.yml              # push main → build → 部署到 GitHub Pages
 ├── public/
 │   └── favicon.svg                 # 站点图标
+├── articles/                       # 文章 Markdown 源文件（项目根目录，方便编辑；Vite ?raw 打包进 JS）
+│   ├── hello-world.md
+│   ├── react-tips.md
+│   └── deploy-notes.md
 ├── src/
 │   ├── main.jsx                    # React 入口，挂载 <App/>（外层 HelmetProvider）
 │   ├── App.jsx                     # 顶层布局：HashRouter + Navbar + Routes + Footer
@@ -74,12 +78,6 @@ blog/
 │   │   ├── projects.js             # 项目列表
 │   │   ├── skills.js               # 技能（按 category 分组 + level 0-100）
 │   │   └── tools.js                # 工具（icon 字段为 lucide 组件名字符串）
-│   │
-│   ├── content/
-│   │   └── articles/               # Markdown 源文件（Vite ?raw 方式打包进 JS）
-│   │       ├── hello-world.md
-│   │       ├── react-tips.md
-│   │       └── deploy-notes.md
 │   │
 │   ├── lib/
 │   │   ├── articles.js             # 文章查询工具：listArticles / findArticleBySlug
@@ -159,7 +157,7 @@ ArticleDetail.jsx
 
 | 文件 | 形状 | 怎么加新条目 |
 |------|------|--------------|
-| `src/data/articles.js` | `[{ slug, title, excerpt, date, tags, cover, content }]` | 1) 在 `src/content/articles/` 新建 `.md`；2) 在数组头部 push 一项并 `import xxx from '...md?raw'`；3) 把 `content: xxx` 填进去 |
+| `src/data/articles.js` | `[{ slug, title, excerpt, date, tags, cover, content }]` | 1) 在项目根目录的 `articles/` 新建 `.md`；2) 在数组头部 push 一项并 `import xxx from '../../articles/xxx.md?raw'`；3) 把 `content: xxx` 填进去 |
 | `src/data/projects.js` | `[{ id, name, description, techStack, githubUrl, demoUrl, cover }]` | 直接在数组里加一项 |
 | `src/data/skills.js` | `[{ category, items: [{ name, level }] }]` | level 是 0-100 数字 |
 | `src/data/tools.js` | `[{ category, items: [{ name, icon, desc }] }]` | `icon` 是 `lucide-react` 的组件名（见 [lucide.dev](https://lucide.dev)），找不到时回退到 Wrench |
@@ -187,7 +185,7 @@ ArticleDetail.jsx
 
 | 我想…… | 看 / 改哪里 |
 |--------|--------------|
-| **加一篇文章** | 1) 新建 `src/content/articles/<slug>.md`<br>2) 在 `src/data/articles.js` 顶部 `import` 该 md 并 push 一项 |
+| **加一篇文章** | 1) 新建 `articles/<slug>.md`（项目根目录）<br>2) 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<slug>.md?raw'` 并 push 一项 |
 | **加一个项目** | 在 `src/data/projects.js` 数组里加一项（`id` 不要重复） |
 | **改技能 / 工具** | 编辑 `src/data/skills.js` 或 `src/data/tools.js` |
 | **改关于页经历/座右铭** | `src/pages/About.jsx` 顶部的 `timeline` 数组 + 末尾的 `<blockquote>` |

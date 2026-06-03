@@ -46,9 +46,9 @@ src/
 
 ## 修改内容
 
-更新网站内容只需要修改 `src/data/*.js` 和 `src/content/articles/*.md`：
+更新网站内容只需要修改 `src/data/*.js` 和项目根目录的 `articles/*.md`：
 
-- **加一篇文章**：在 `src/content/articles/` 新建 `.md` 文件，然后在 `src/data/articles.js` 注册
+- **加一篇文章**：在项目根目录的 `articles/` 新建 `.md` 文件（参考现有格式）→ 在 `src/data/articles.js` 顶部 `import` 一下（用 `?raw` 后缀）→ 在 `articles` 数组里加一条 metadata 记录
 - **加一个项目**：在 `src/data/projects.js` 数组里加一项
 - **改技能 / 工具**：编辑 `src/data/skills.js` 或 `src/data/tools.js`
 
