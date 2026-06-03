@@ -353,11 +353,11 @@ describe('parseTools', () => {
     ]);
   });
 
-  it('实际 content/工具.md 能正确解析出 8 条工具', async () => {
+  it('实际 content/工具.md 能正确解析出 7 条工具', async () => {
     const mod = await import('../content/工具.md?raw');
     const groups = parseTools(mod.default);
     const total = groups.reduce((s, g) => s + g.items.length, 0);
-    expect(total).toBe(8);
+    expect(total).toBe(7);
   });
 });
 ```
