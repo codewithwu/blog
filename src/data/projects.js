@@ -1,30 +1,18 @@
-// 项目数据。修改此文件即可更新 /projects 页面
-export default [
+// 项目数据：metadata + ?raw 导入的 markdown 内容
+// 字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content
+import sample from '../../projects/_sample.md?raw';
+
+const projects = [
   {
-    id: 'p1',
-    name: 'Todo App',
-    description: '一个支持拖拽排序的待办事项应用。',
-    techStack: ['React', 'Vite', 'Tailwind CSS'],
-    githubUrl: 'https://github.com/cooper/todo-app',
+    slug: '_sample',
+    name: '示例项目',
+    description: '这是一个示例项目，用来演示项目页 + 详情页的工作流。',
+    techStack: ['Markdown'],
+    githubUrl: 'https://github.com/cooper/sample-project',
     demoUrl: null,
-    cover: null
-  },
-  {
-    id: 'p2',
-    name: 'Markdown Editor',
-    description: '实时预览的 Markdown 编辑器，支持 GFM 与代码高亮。',
-    techStack: ['React', 'react-markdown', 'CodeMirror'],
-    githubUrl: 'https://github.com/cooper/md-editor',
-    demoUrl: null,
-    cover: null
-  },
-  {
-    id: 'p3',
-    name: 'Weather Widget',
-    description: '基于地理位置的天气小组件。',
-    techStack: ['JavaScript', 'OpenWeatherMap API'],
-    githubUrl: 'https://github.com/cooper/weather-widget',
-    demoUrl: null,
-    cover: null
+    cover: null,
+    content: sample
   }
 ];
+
+export default projects;
