@@ -150,20 +150,22 @@ Redis                                                  [进阶]
 - `tests/content.test.js`（解析函数单测）
 
 **修改**：
-- `src/data/skills.js` → 改为 `import skillMd from '../../content/技能.md?raw'` 后调用 `parseSkills` 导出
+- `src/data/skills.js` → 改为薄包装：内部 `import skillMd from '../../content/技能.md?raw'`，调用 `parseSkills(skillMd)` 后 `export default`
 - `src/data/tools.js` → 同上
-- `src/pages/About.jsx` → 改为 `import aboutMd from '../../content/关于.md?raw'` 后调用 `parseAbout`，渲染逻辑保持
-- `src/pages/Skills.jsx` → 数据源不变（仍是 `src/data/skills.js`），但因 `SkillBar` 改动需重新渲染
-- `src/components/SkillBar.jsx` → 改为徽章样式
-- `CLAUDE.md` → 补充 `content/` 目录规则（仿 `articles/` 条目）
-- `code_map.md` → 补充 `content/` 目录索引 + 解析器说明
+- `src/pages/About.jsx` → 改为 `import aboutMd from '../../content/关于.md?raw'` 后调用 `parseAbout(aboutMd)`，渲染逻辑保持；删掉组件内硬编码的 `timeline` 数组、副标题、简介、联系方式、座右铭
+- `src/components/SkillBar.jsx` → 从水平进度条改为「技能名 + 等级徽章」一行布局
+- `CLAUDE.md` → 新增第 12 条 `content/` 目录规则（仿 `articles/`、`projects/` 条目）
+- `code_map.md` → 补充 `content/` 目录索引、`src/lib/content.js` 解析器、改造后的 `SkillBar` 样式说明
 
-**删除**（迁移完成后）：
-- 旧的 `src/data/skills.js` 数组定义
-- 旧的 `src/data/tools.js` 数组定义
-- 旧的 `src/pages/About.jsx` 中硬编码的 `timeline` 数组、座右铭、简介、联系方式 JSX（保留外层结构与 usePageTitle）
+**最终保留的文件结构**（与 `articles/` / `projects/` 模式对齐）：
 
-> 注：删除/迁移的具体边界在实施计划中明确（哪些行变 import、哪些行变函数调用、哪些行变渲染数据）。
+- `content/技能.md`、`content/工具.md`、`content/关于.md` ← 真实内容源（直接编辑这里改网站）
+- `src/data/skills.js`、`src/data/tools.js` ← 仅作为「import + parse + export」薄包装，**不再含数据数组**
+- `src/lib/content.js` ← 解析函数实现
+- `src/pages/About.jsx` ← 改为消费 `parseAbout` 结果
+- `src/pages/Skills.jsx`、`src/pages/Tools.jsx` ← 消费 `data/*.js` 薄包装导出，结构基本不变
+
+> 注：哪些行变 import、哪些行变函数调用、哪些行变渲染数据，落到实施计划中按文件逐行列出。
 
 ## CLAUDE.md 补充条款
 
@@ -188,7 +190,8 @@ Redis                                                  [进阶]
 - [ ] `/about` 页面行为与改造前一致
 - [ ] `npm run test` 全绿（新增 `content.test.js` 覆盖三个解析函数）
 - [ ] `npm run build` 无报错
-- [ ] `src/data/skills.js`、`src/data/tools.js` 旧数组内容已删除（文件可能保留为只导出的入口）
+- [ ] `src/data/skills.js`、`src/data/tools.js` 内部不再含数据数组（仅保留 import + parse + export 三行）
+- [ ] `src/pages/About.jsx` 不再含硬编码 `timeline` 数组、副标题、简介、联系方式、座右铭（数据全部来自 `parseAbout`）
 - [ ] `CLAUDE.md` 第 12 条已加入
 - [ ] `code_map.md` 已更新
 
