@@ -1,9 +1,11 @@
 // 项目卡片：名称、描述、技术栈、GitHub/Demo 链接
-// 移动端 1 列、桌面 3 列（父容器 grid 控制）
+// 整张卡可点击：包一层 <Link> 跳到 /projects/<slug>
+// 没有 content 字段的项目退化为静态卡（不会跳转 404）
+import { Link } from 'react-router-dom';
 import { Github, ExternalLink } from 'lucide-react';
 
 export default function ProjectCard({ project }) {
-  return (
+  const inner = (
     <div className="p-6 rounded-xl bg-brand-surface border border-brand-mid/20
                     hover:-translate-y-1 hover:shadow-lg hover:border-brand-orange/40
                     transition-all duration-300 flex flex-col">
@@ -34,4 +36,10 @@ export default function ProjectCard({ project }) {
       </div>
     </div>
   );
+
+  if (!project.content) {
+    return inner;
+  }
+
+  return <Link to={`/projects/${project.slug}`} className="block">{inner}</Link>;
 }
