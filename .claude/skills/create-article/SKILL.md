@@ -1,6 +1,6 @@
 ---
 name: create-article
-description: Use when the user wants to publish a draft article from articles-draft/ to the live blog. Triggers on Chinese phrases like "创建 xxx.md"、"发布 xxx"、"把 xxx 文章上线"、"把 xxx 草稿发出去"，also matches English variants like "create xxx.md" or "publish xxx article". Accepts space-separated filenames for batch publishes. Performs a pre-publish format check against the front-end rendering rules before any file moves, and pauses for user confirmation when issues are found. Do NOT trigger for editing already-published articles, deleting articles (use delete-article), or writing a brand-new draft from scratch.
+description: Use when the user wants to publish a draft article from articles-draft/ to the live blog. The user message **must contain explicit article-creation phrasing** such as "创建文章 xxx.md"、"创建文章 xxx"、"发布文章 xxx"、"把 xxx 文章上线"、"把 xxx 文章发出去"，or English equivalents like "create article xxx" or "publish article xxx". Mentioning "文章" alone (e.g. "文章里有错别字" or "我想看看文章") is NOT enough — the skill must not fire. A bare "创建 xxx.md" or "发布 xxx" with no article word is ambiguous between this skill and `create-project`; ask the user to clarify. Accepts space-separated filenames for batch publishes. Performs a pre-publish format check against the front-end rendering rules before any file moves, and pauses for user confirmation when issues are found. Do NOT trigger for editing already-published articles, deleting articles (use delete-article), or writing a brand-new draft from scratch.
 ---
 
 # create-article
@@ -19,12 +19,17 @@ Per article, three places are touched (the same rule as `CLAUDE.md` rule 10):
 
 ## When to use
 
-Trigger this skill when the user's intent is to take a finished draft and make it live on the blog. Match phrases such as:
+Trigger this skill **only** when the user message contains explicit article-creation phrasing. The phrase must combine a publish/create verb with the word "文章" (or "article" in English) — for example "创建文章" / "发布文章" / "把 xxx 文章上线" / "publish article xxx". Match phrases such as:
 
-- "创建 RAG分层检索.md" / "创建 RAG分层检索"
-- "把 hello-world 草稿发出去"
-- "发布 articles-draft 里的笔记"
-- "publish deploy-notes"
+- "创建文章 RAG分层检索.md" / "创建文章 RAG分层检索"
+- "把 hello-world 文章发出去"
+- "发布 articles-draft 里的文章"
+- "publish article deploy-notes"
+
+The phrase must NOT trigger if:
+
+- It mentions "文章" without a publish/create verb (e.g. "文章里有错别字"、"我想看看文章"、"删除文章 xxx" — the last is `delete-article`).
+- It has a publish/create verb but no "文章" / "article" (e.g. "把 hello-world 草稿发出去"、"创建 xxx.md") — this is too generic and could be a project. Treat as ambiguous and ask the user to disambiguate before invoking either `create-article` or `create-project`.
 
 Strip a trailing `.md` if the user included it; the slug is what matters. Space-separated filenames mean a batch — process each one in order, stopping at the first unfixable issue.
 

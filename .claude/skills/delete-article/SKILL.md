@@ -1,6 +1,6 @@
 ---
 name: delete-article
-description: Use when the user wants to delete or remove an article from this blog. Triggers on Chinese phrases like "删除 xxx.md"、"把 xxx 删掉"、"移除文章 xxx"、"xxx 文章下掉"、"不要 xxx.md 了"，also matches English variants like "delete xxx.md" or "remove the xxx article". The skill cleans up the markdown source under /articles/ and the registry entry in src/data/articles.js. Do NOT trigger for editing article content, creating new articles, or renaming files.
+description: Use when the user wants to delete or remove an article from this blog. Triggers on Chinese phrases that contain "文章" (article) such as "删除文章 xxx.md"、"把 xxx 这篇文章删掉"、"移除文章 xxx"、"xxx 文章下掉"、"不要 xxx.md 这篇文章了"，also matches English variants that contain "article" like "delete article xxx.md" or "remove the xxx article". The skill cleans up the markdown source under /articles/ and the registry entry in src/data/articles.js. Do NOT trigger for editing article content, creating new articles, deleting projects (use delete-project), or renaming files. If the user says "删除 xxx.md" without the word "文章" or "article", the request is ambiguous — ask before proceeding.
 ---
 
 # delete-article
@@ -18,12 +18,13 @@ The article list page (`src/pages/Articles.jsx`) renders from `listArticles()` w
 
 ## When to use
 
-Trigger this skill when the user's intent is to permanently remove an article. Match phrases such as:
+Trigger this skill when the user's intent is to permanently remove an article. The phrase **must contain "文章"** (or "article" in English) so it never collides with `delete-project`. Match phrases such as:
 
-- "删除 hello-world.md" / "delete hello-world.md"
+- "删除文章 hello-world.md" / "删除文章 hello-world"
 - "把 react-tips 这篇文章删掉"
-- "移除 deploy-notes 文章"
-- "xxx 文章下掉"、"不要 xxx.md 了"
+- "移除文章 deploy-notes"
+- "xxx 文章下掉"、"不要 xxx.md 这篇文章了"
+- "delete article xxx.md" / "remove the xxx article"
 
 Strip a trailing `.md` if the user included it; the slug is what matters.
 
@@ -31,6 +32,7 @@ Strip a trailing `.md` if the user included it; the slug is what matters.
 
 - **Editing content** of an article → use the `Edit` tool on the `.md` file directly.
 - **Creating a new article** → follow the three-step rule in `CLAUDE.md` (file + import + metadata record).
+- **Deleting a project** → use the `delete-project` skill. If the user says "删除 xxx.md" *without* the word "文章" / "article", that is a project and the wrong skill will fire.
 - **Renaming an article** → use `git mv` plus update the `slug` field and the import path in `src/data/articles.js`.
 - **Bulk deletion** of several articles at once → out of scope; invoke this skill once per article.
 
@@ -47,7 +49,7 @@ Follow these steps in order. Do not skip the confirmation step.
 
 ### 1. Resolve the target
 
-From the user message, extract the slug. If the user wrote `foo.md`, the slug is `foo`. The expected import variable is the camelCase form (e.g. `react-tips` → `reactTips`).
+From the user message, extract the slug. If the user wrote `foo.md`, the slug is `foo`. The expected import variable is the camelCase form (e.g. `react-tips` → `reactTips`). Always confirm the user actually said "文章" / "article" somewhere in the message — if they didn't, this is the wrong skill and the user almost certainly meant a project.
 
 ### 2. Locate the three touch points
 
@@ -101,4 +103,5 @@ Print a one-line confirmation: "已删除文章 `<slug>`：文件、import、met
 - **File missing but registry has it** → abort. Ask the user whether they want to clean the registry only or stop.
 - **Registry missing but file exists** → abort. The import will break the build; the user needs to decide.
 - **Slug contains characters that don't fit camelCase** (e.g. numbers, hyphens only) → import variable is whatever the file shows; just match that string literally, do not auto-derive.
+- **User said "删除 xxx.md" with no "文章" in the message** → this is ambiguous. Ask once whether they meant an article or a project before proceeding; do not silently route to this skill.
 - **User passes a path like `src/data/articles.js`** instead of a slug → ask for clarification; this skill operates on slugs, not file paths.

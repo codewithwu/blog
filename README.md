@@ -35,7 +35,11 @@ npm run preview      # 本地预览构建产物
 ## 目录结构
 
 ```
-articles/          # 文章 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
+articles/          # 已发布文章的 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
+articles-draft/    # 文章草稿（未发布，通过 create-article 技能发到 articles/）
+projects/          # 已发布项目的 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
+projects-draft/    # 项目草稿（未发布，通过 create-project 技能发到 projects/）
+.claude/skills/    # 自定义技能（create-article / create-project / delete-article / delete-project / brand-guidelines）
 src/
 ├── components/      # 复用组件（Navbar, Footer, Card, ...）
 ├── pages/           # 路由页面
@@ -48,8 +52,11 @@ src/
 
 更新网站内容只需要修改 `src/data/*.js` 和项目根目录的 `articles/*.md`：
 
-- **加一篇文章**：在项目根目录的 `articles/` 新建 `.md` 文件（参考现有格式）→ 在 `src/data/articles.js` 顶部 `import` 一下（用 `?raw` 后缀）→ 在 `articles` 数组里加一条 metadata 记录
-- **加一个项目**：在 `src/data/projects.js` 数组里加一项
+- **加一篇文章（推荐）**：把 `.md` 放进 `articles-draft/<slug>.md` → 对 Claude 说「创建文章 xxx」或「把 xxx 文章发出去」触发 create-article 技能
+- **加一篇文章（手动）**：在项目根目录的 `articles/` 新建 `.md` 文件（参考现有格式）→ 在 `src/data/articles.js` 顶部 `import` 一下（用 `?raw` 后缀）→ 在 `articles` 数组里加一条 metadata 记录
+- **加一个项目（推荐）**：把 `.md` 放进 `projects-draft/<slug>.md` → 对 Claude 说「创建项目 xxx」或「把 xxx 项目发出去」触发 create-project 技能
+- **加一个项目（手动）**：在 `src/data/projects.js` 数组里加一项
+- **删除文章 / 项目**：分别对 Claude 说「删除文章 xxx.md」或「删除项目 xxx.md」触发 delete-article / delete-project 技能
 - **改技能 / 工具**：编辑 `src/data/skills.js` 或 `src/data/tools.js`
 
 ## 部署到 GitHub Pages

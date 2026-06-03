@@ -48,6 +48,9 @@ blog/
 │   ├── hello-world.md
 │   └── RAG分层检索.md
 ├── articles-draft/                 # 文章草稿（未发布，不出现在网站上；通过 create-article 技能发到 articles/）
+├── projects/                       # 已发布项目的 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
+│   └── _sample.md
+├── projects-draft/                 # 项目草稿（未发布，不出现在网站上；通过 create-project 技能发到 projects/）
 ├── src/
 │   ├── main.jsx                    # React 入口，挂载 <App/>（外层 HelmetProvider）
 │   ├── App.jsx                     # 顶层布局：HashRouter + Navbar + Routes + Footer
@@ -104,7 +107,11 @@ blog/
 │       │   └── LICENSE.txt
 │       ├── create-article/         # 发布草稿：articles-draft/ → articles/ + 注册到 data/articles.js
 │       │   └── SKILL.md
-│       └── delete-article/         # 删除文章：清理 articles/*.md + data/articles.js 注册项
+│       ├── create-project/         # 发布草稿：projects-draft/ → projects/ + 注册到 data/projects.js
+│       │   └── SKILL.md
+│       ├── delete-article/         # 删除文章：清理 articles/*.md + data/articles.js 注册项
+│       │   └── SKILL.md
+│       └── delete-project/         # 删除项目：清理 projects/*.md + data/projects.js 注册项
 │           └── SKILL.md
 │
 ├── SPEC.md                         # 原始需求规格
@@ -190,10 +197,12 @@ ArticleDetail.jsx
 
 | 我想…… | 看 / 改哪里 |
 |--------|--------------|
-| **加一篇文章（推荐）** | 1) 把 `.md` 放进 `articles-draft/<slug>.md`；2) 对 Claude 说「发布 xxx」触发 create-article 技能 |
+| **加一篇文章（推荐）** | 1) 把 `.md` 放进 `articles-draft/<slug>.md`；2) 对 Claude 说「创建文章 xxx」或「把 xxx 文章发出去」触发 create-article 技能 |
 | **加一篇文章（手动）** | 1) 新建 `articles/<slug>.md`（项目根目录）<br>2) 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<slug>.md?raw'` 并 push 一项 |
-| **删除文章** | 对 Claude 说「删除 xxx.md」触发 delete-article 技能（同时清理 .md 与 data 注册） |
-| **加一个项目** | 1) 把 `.md` 放进 `projects/<slug>.md`（项目根目录）<br>2) 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.md?raw'` 并 push 一项<br>3) 删除自带的 `projects/_sample.md` 示例（可选） |
+| **删除文章** | 对 Claude 说「删除文章 xxx.md」触发 delete-article 技能（同时清理 .md 与 data 注册） |
+| **加一个项目（推荐）** | 1) 把 `.md` 放进 `projects-draft/<slug>.md`；2) 对 Claude 说「创建项目 xxx」或「把 xxx 项目发出去」触发 create-project 技能 |
+| **加一个项目（手动）** | 1) 新建 `projects/<slug>.md`（项目根目录）<br>2) 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.md?raw'` 并 push 一项 |
+| **删除项目** | 对 Claude 说「删除项目 xxx.md」触发 delete-project 技能（同时清理 .md 与 data 注册） |
 | **改技能 / 工具** | 编辑 `src/data/skills.js` 或 `src/data/tools.js` |
 | **改关于页经历/座右铭** | `src/pages/About.jsx` 顶部的 `timeline` 数组 + 末尾的 `<blockquote>` |
 | **改导航顺序/标签** | `src/components/Navbar.jsx` 顶部的 `links` 数组 |
@@ -253,3 +262,4 @@ green:  '#788c5d'   // 第三点缀（时间轴、状态）
 5. **新增路由要在三处同步**：`App.jsx` 的 `<Route>`、`Navbar.jsx` 的 `links` 数组、对应 page 文件。
 6. **新增数据文件要在两处同步**：`src/data/*.js` 新建文件 + 引入到对应 page 组件。
 7. **`articles-draft/` 是草稿区**：`articles/` 里的文件才会被 React 渲染；草稿留在 `articles-draft/` 直到调用 create-article 技能。slug 可以是中文（如 `RAG分层检索`）。
+8. **`projects-draft/` 是草稿区**：`projects/` 里的文件才会被 React 渲染；草稿留在 `projects-draft/` 直到调用 create-project 技能。
