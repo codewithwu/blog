@@ -1,6 +1,6 @@
 // articles util 的单元测试：验证 listArticles 排序、findArticleBySlug 查找
 import { describe, it, expect } from 'vitest';
-import { findArticleBySlug, listArticles, listCategories } from '../src/lib/articles.js';
+import { findArticleBySlug, findCategory, listArticles, listCategories } from '../src/lib/articles.js';
 
 describe('articles util', () => {
   it('listArticles returns array sorted by date desc', () => {
@@ -54,5 +54,14 @@ describe('articles util', () => {
     }
     // Currently only 'claude' is categorized (after Task 1)
     expect(cats.find((c) => c.slug === 'claude')?.count).toBe(1);
+  });
+
+  it('findCategory returns {slug, count} for a known category', () => {
+    const c = findCategory('claude');
+    expect(c).toEqual({ slug: 'claude', count: 1 });
+  });
+
+  it('findCategory returns null for an unknown category', () => {
+    expect(findCategory('no-such-category')).toBeNull();
   });
 });
