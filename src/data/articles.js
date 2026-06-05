@@ -4,7 +4,7 @@ import ragFenCengJianSuo from '../../articles/RAG分层检索.md?raw';
 import openClawVsHermars from '../../articles/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
 import agentXingNengLiangHua from '../../articles/Agent 性能量化.md?raw';
 import aiJiShuDiCeng from '../../articles/AI技术底层.md?raw';
-import claudeCodeShangXiaWenGuanLi from '../../articles/Claude-Code-上下文管理.md?raw';
+import claudeCodeShangXiaWenGuanLi from '../../articles/claude/Claude-Code-上下文管理.md?raw';
 import deepSeekJiangBenZengXiao from '../../articles/DeepSeek 的“降本增效”之道.md?raw';
 import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/长对话中模型忘记系统指令.md?raw';
 
@@ -61,7 +61,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['Claude Code', '上下文', '工程'],
     cover: null,
-    content: claudeCodeShangXiaWenGuanLi
+    content: claudeCodeShangXiaWenGuanLi,
+    category: 'claude'
   },
   {
     slug: 'DeepSeek 的“降本增效”之道',
