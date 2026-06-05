@@ -31,7 +31,7 @@ export default function CategoryFilter({ categories, active }) {
                 : 'border border-brand-orange/40 text-brand-orange hover:bg-brand-orange/10'
             }`}
           >
-            {c.slug} <span className="opacity-70">({c.count})</span>
+            {c.name} <span className="opacity-70">({c.count})</span>
           </Link>
         );
       })}
