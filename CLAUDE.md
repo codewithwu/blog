@@ -8,7 +8,7 @@
 7. react-helmet-async@2 不导出 useHelmet 钩子，页面标题用 useEffect 改 document.title
 8. 新增路由必须三处同步：App.jsx 的 <Route>、Navbar.jsx 的 links、对应 pages/*.jsx
 9. 图标统一用 lucide-react，不要混用其他图标库
-10. 文章源文件存放在项目根目录的 `articles/` 文件夹下;每新增一篇文章,必须同时:(a) 把 .md 文件放入 `articles/`;(b) 在 `src/data/articles.js` 中加一行 `import ... from '../../articles/xxx.md?raw'`;(c) 在 `articles` 数组中加一条 metadata 记录(字段:slug / title / excerpt / date / tags / cover)
+10. 文章源文件存放在项目根目录的 `articles/` 文件夹下;每新增一篇文章,必须同时:(a) 把 .md 文件放入 `articles/`;(b) 在 `src/data/articles.js` 中加一行 `import ... from '../../articles/xxx.md?raw'`;(c) 在 `articles` 数组中加一条 metadata 记录(字段:slug / title / excerpt / date / tags / cover / category)
 11. 项目源文件存放在项目根目录的 `projects/` 文件夹下;每新增一个项目,必须同时:(a) 把 .md 文件放入 `projects/`;(b) 在 `src/data/projects.js` 中加一行 `import ... from '../../projects/xxx.md?raw'`;(c) 在 `projects` 数组中加一条 metadata 记录(字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content)
 12. 技能 / 工具 / 关于页签的源文件存放在项目根目录的 `content/` 文件夹下（`content/技能.md`、`content/工具.md`、`content/关于.md`），由 `src/lib/content.js` 解析后供页面消费。修改这三页签的内容必须直接编辑对应的 .md 文件，不要在 `src/data/skills.js`、`src/data/tools.js`、`src/pages/About.jsx` 里硬编码内容。技能等级只能是 `进阶` / `熟练` / `精通` 三档之一。
-13. 文章的分类由一级子目录决定: `articles/<category>/foo.md` 表示 `foo.md` 属于 `category` 分类。`articles/foo.md` 是无分类文章 (`category: null`)。每新增一篇文章,如要分类,必须 (a) 在 `articles/<category>/` 下创建 .md 文件; (b) 在 `src/data/articles.js` 的 import 路径里写明子目录; (c) 在该文章的 metadata 记录里加 `category: '<category>'`。slug 仍须全局唯一,与分类无关。
+13. 文章的分类由一级子目录决定: `articles/<category>/foo.md` 表示 `foo.md` 属于 `category` 分类。`articles/foo.md` 是无分类文章 (`category: null`)。每新增一篇文章,如要分类,必须同时:(a) 在 `articles/<category>/` 下创建 .md 文件;(b) 在 `src/data/articles.js` 的 import 路径里写明子目录;(c) 在该文章的 metadata 记录里加 `category: '<category>'` 字段(其他字段见第 10 条)。slug 仍须全局唯一,与分类无关。
