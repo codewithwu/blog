@@ -1,17 +1,24 @@
-// 文章分类的元数据：单一来源（slug + 中文显示名 + 固定展示顺序）。
-// 任何 UI 上展示的中文分类名、URL 用 slug、分类筛选的固定顺序，都以本文件为准。
-// 修改顺序 = 修改分类筛选条上 chip 的先后顺序；新增条目 = 新增一个允许的分类。
+// 文章分组的元数据：单一来源（slug + 中文显示名 + 固定展示顺序）
+// 一个 category 可选地声明 group: '<group-slug>'，归属某个 group。
+// 同一个 group 的成员按它们在 categories 中的顺序串成 chip 列，
+// group chip 本身插在 group 第一个成员前面渲染一次。
+export const groups = [
+  { slug: 'ai', name: 'AI 主题' },
+];
+
 export const categories = [
-  { slug: 'llm',         name: 'LLM 原理与基础' },
-  { slug: 'prompt',      name: '提示工程' },
-  { slug: 'rag',         name: '检索增强生成' },
-  { slug: 'agent',       name: 'AI 智能体' },
-  { slug: 'tool',        name: 'AI 工具与产品' },
-  { slug: 'industry',    name: 'AI 行业观察' },
+  { slug: 'llm',         name: 'LLM 原理与基础',     group: 'ai' },
+  { slug: 'prompt',      name: '提示工程',           group: 'ai' },
+  { slug: 'rag',         name: '检索增强生成',       group: 'ai' },
+  { slug: 'agent',       name: 'AI 智能体',          group: 'ai' },
+  { slug: 'tool',        name: 'AI 工具与产品',      group: 'ai' },
+  { slug: 'industry',    name: 'AI 行业观察',        group: 'ai' },
   { slug: 'engineering', name: '软件工程与开发实践' },
   { slug: 'product',     name: '产品与设计' },
   { slug: 'notes',       name: '随笔与思考' },
   { slug: 'resources',   name: '资源整理' },
 ];
 
+// 仍然是 10 个原分类 slug 的集合，用于校验 metadata.category。
+// group slug 'ai' 不在集合里——它是组标识，不是分类 slug。
 export const categorySlugSet = new Set(categories.map((c) => c.slug));
