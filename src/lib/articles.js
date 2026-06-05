@@ -11,3 +11,14 @@ export function listArticles({ category } = {}) {
 export function findArticleBySlug(slug) {
   return articles.find((a) => a.slug === slug);
 }
+
+export function listCategories() {
+  const counts = new Map();
+  for (const a of articles) {
+    if (!a.category) continue;
+    counts.set(a.category, (counts.get(a.category) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([slug, count]) => ({ slug, count }))
+    .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug));
+}
