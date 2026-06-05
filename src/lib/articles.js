@@ -1,5 +1,6 @@
 // 文章查找工具：从 data 层封装列表与单篇查询，方便测试
 import articles from '../data/articles.js';
+import { categories } from '../data/categories.js';
 
 export function listArticles({ category } = {}) {
   const filtered = category
@@ -18,7 +19,7 @@ export function listCategories() {
     if (!a.category) continue;
     counts.set(a.category, (counts.get(a.category) ?? 0) + 1);
   }
-  return [...counts.entries()]
-    .map(([slug, count]) => ({ slug, count }))
-    .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug));
+  return categories
+    .filter((c) => counts.has(c.slug))
+    .map((c) => ({ slug: c.slug, name: c.name, count: counts.get(c.slug) }));
 }

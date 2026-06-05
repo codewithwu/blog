@@ -1,6 +1,7 @@
 // articles util 的单元测试：验证 listArticles 排序、findArticleBySlug 查找
 import { describe, it, expect } from 'vitest';
 import { findArticleBySlug, listArticles, listCategories } from '../src/lib/articles.js';
+import { categories } from '../src/data/categories.js';
 
 describe('articles util', () => {
   it('listArticles returns array sorted by date desc', () => {
@@ -39,26 +40,45 @@ describe('articles util', () => {
     expect(listArticles({ category: 'no-such-category' })).toEqual([]);
   });
 
-  it('listCategories returns each category with its article count, sorted by count desc', () => {
+  it('listCategories returns categories in the fixed order from categories.js, with slug+name+count, hiding empty buckets', () => {
     const cats = listCategories();
-    expect(cats.length).toBeGreaterThan(0);
-    // Every entry has slug and count
+    // Every entry has slug (string), name (string), count (number > 0)
     for (const c of cats) {
       expect(typeof c.slug).toBe('string');
+      expect(typeof c.name).toBe('string');
       expect(typeof c.count).toBe('number');
       expect(c.count).toBeGreaterThan(0);
     }
-    // Sorted by count desc
-    for (let i = 0; i < cats.length - 1; i++) {
-      expect(cats[i].count >= cats[i + 1].count).toBe(true);
-    }
-    // All four categories present with expected counts
+    // Order matches categories.js. NOTE: the spec text named "claude" as one of
+    // the expected slugs, but `claude` is intentionally not in categories.js
+    // (Task 9 will migrate the lone claude article away). The new
+    // listCategories iterates categories.js, so `claude` is dropped as an
+    // orphan — only `llm`, `rag`, and `agent` survive.
+    const slugsInOrder = cats.map((c) => c.slug);
+    const expectedOrder = categories
+      .filter((c) => ['llm', 'agent', 'rag'].includes(c.slug))
+      .map((c) => c.slug);
+    expect(slugsInOrder).toEqual(expectedOrder);
+    // Counts are correct for the canonical categories
     const bySlug = Object.fromEntries(cats.map((c) => [c.slug, c.count]));
-    expect(bySlug.claude).toBe(1);
-    expect(bySlug.agent).toBe(2);
     expect(bySlug.llm).toBe(3);
+    expect(bySlug.agent).toBe(2);
     expect(bySlug.rag).toBe(1);
-    // llm should sort first by count desc
-    expect(cats[0].slug).toBe('llm');
+    // Names are looked up from categories.js
+    const llm = cats.find((c) => c.slug === 'llm');
+    expect(llm.name).toBe('LLM 原理与基础');
+  });
+
+  it('listCategories omits categories that have zero articles (no "prompt" / "tool" / "notes" etc. yet)', () => {
+    const cats = listCategories();
+    const slugs = cats.map((c) => c.slug);
+    // None of the empty buckets should appear
+    expect(slugs).not.toContain('prompt');
+    expect(slugs).not.toContain('tool');
+    expect(slugs).not.toContain('notes');
+    expect(slugs).not.toContain('industry');
+    expect(slugs).not.toContain('engineering');
+    expect(slugs).not.toContain('product');
+    expect(slugs).not.toContain('resources');
   });
 });
