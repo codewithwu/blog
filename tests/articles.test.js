@@ -116,4 +116,17 @@ describe('articles util', () => {
     const sumOfMembers = memberCounts.reduce((s, n) => s + n, 0);
     expect(groupChips[0].count).toBe(sumOfMembers);
   });
+
+  it('listCategories does not emit a group chip with count: 0 (all-members-empty groups are hidden)', () => {
+    const cats = listCategories();
+    for (const c of cats) {
+      if (c.isGroup) {
+        expect(c.count).toBeGreaterThan(0);
+      }
+    }
+    // Sanity: confirm the existing AI group chip has the right count
+    const aiChip = cats.find((c) => c.isGroup);
+    expect(aiChip).toBeDefined();
+    expect(aiChip.count).toBe(7);
+  });
 });

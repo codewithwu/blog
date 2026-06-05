@@ -53,6 +53,7 @@ export function listCategories() {
     if (
       c.group &&
       groupBySlug.has(c.group) &&
+      groupCounts.has(c.group) &&
       !emittedGroups.has(c.group)
     ) {
       out.push({
