@@ -8,13 +8,15 @@ import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function Articles() {
   const { category } = useParams();
-  const chips = listCategories();
-  // categoryMeta 查找：先在 chip 列表（含组 chip）里找；找不到时 fallback 到 groups，
-  // 让 group slug（'ai'）也能拿到中文显示名用于页面标题。
-  // chip 列表已经包含组条目，所以正常情况下第一个 find 就命中；
-  // groups.find fallback 是为防御未来直接传 group slug 但 listCategories 顺序变化等边界情况。
+  const categories = listCategories();
+  // categoryMeta 查找：先在 chip 列表（含组 chip）里找；找不到时 fallback 到 groups。
+  // chip 列表里没有组条目（组里没有任何分类有文章）的罕见情况：fallback 让页面标题
+  // 仍能显示组的中文名（如 'AI 主题 · 文章'），而不是默认的 '文章'——给用户
+  // 一个明确的"该组暂无内容"信号，而不是"未知分类"信号。
+  // 注：当前所有 AI 分类都有文章，chips 一定包含 AI 主题组 chip，所以 fallback 不会触发；
+  // 此处保留是为未来可能出现的"空组"路径。
   const categoryMeta = category
-    ? chips.find((c) => c.slug === category)
+    ? categories.find((c) => c.slug === category)
       ?? groups.find((g) => g.slug === category)
       ?? null
     : null;
@@ -25,7 +27,7 @@ export default function Articles() {
   return (
     <section>
       <h1 className="text-3xl font-bold text-brand-light mb-6">文章</h1>
-      <CategoryFilter categories={chips} active={category ?? null} />
+      <CategoryFilter categories={categories} active={category ?? null} />
       {!categoryExists || articles.length === 0 ? (
         <div className="py-12 text-center text-brand-mid">
           <p>该分类下还没有文章。</p>
