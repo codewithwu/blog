@@ -52,7 +52,13 @@ describe('articles util', () => {
     for (let i = 0; i < cats.length - 1; i++) {
       expect(cats[i].count >= cats[i + 1].count).toBe(true);
     }
-    // Currently only 'claude' is categorized (after Task 1)
-    expect(cats.find((c) => c.slug === 'claude')?.count).toBe(1);
+    // All four categories present with expected counts
+    const bySlug = Object.fromEntries(cats.map((c) => [c.slug, c.count]));
+    expect(bySlug.claude).toBe(1);
+    expect(bySlug.agent).toBe(2);
+    expect(bySlug.llm).toBe(3);
+    expect(bySlug.rag).toBe(1);
+    // llm should sort first by count desc
+    expect(cats[0].slug).toBe('llm');
   });
 });

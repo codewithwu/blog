@@ -1,12 +1,12 @@
 // 文章数据：metadata 写在数组里，content 通过 Vite ?raw 导入 markdown 源文件
 import helloWorld from '../../articles/hello-world.md?raw';
-import ragFenCengJianSuo from '../../articles/RAG分层检索.md?raw';
-import openClawVsHermars from '../../articles/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
-import agentXingNengLiangHua from '../../articles/Agent 性能量化.md?raw';
-import aiJiShuDiCeng from '../../articles/AI技术底层.md?raw';
+import ragFenCengJianSuo from '../../articles/rag/RAG分层检索.md?raw';
+import openClawVsHermars from '../../articles/agent/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
+import agentXingNengLiangHua from '../../articles/agent/Agent 性能量化.md?raw';
+import aiJiShuDiCeng from '../../articles/llm/AI技术底层.md?raw';
 import claudeCodeShangXiaWenGuanLi from '../../articles/claude/Claude-Code-上下文管理.md?raw';
-import deepSeekJiangBenZengXiao from '../../articles/DeepSeek 的“降本增效”之道.md?raw';
-import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/长对话中模型忘记系统指令.md?raw';
+import deepSeekJiangBenZengXiao from '../../articles/llm/DeepSeek 的“降本增效”之道.md?raw';
+import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/llm/长对话中模型忘记系统指令.md?raw';
 
 const articles = [
   {
@@ -25,7 +25,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['RAG', '检索'],
     cover: null,
-    content: ragFenCengJianSuo
+    content: ragFenCengJianSuo,
+    category: 'rag'
   },
   {
     slug: 'OpenClaw（龙虾）与Hermars（爱马仕）使用体验',
@@ -34,7 +35,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['智能体', '对比', '工具'],
     cover: null,
-    content: openClawVsHermars
+    content: openClawVsHermars,
+    category: 'agent'
   },
   {
     slug: 'Agent 性能量化',
@@ -43,7 +45,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['Agent', '评测'],
     cover: null,
-    content: agentXingNengLiangHua
+    content: agentXingNengLiangHua,
+    category: 'agent'
   },
   {
     slug: 'AI技术底层',
@@ -52,7 +55,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['AI 基础', '大模型', 'Agent'],
     cover: null,
-    content: aiJiShuDiCeng
+    content: aiJiShuDiCeng,
+    category: 'llm'
   },
   {
     slug: 'Claude-Code-上下文管理',
@@ -71,7 +75,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['DeepSeek', 'MOE', '大模型'],
     cover: null,
-    content: deepSeekJiangBenZengXiao
+    content: deepSeekJiangBenZengXiao,
+    category: 'llm'
   },
   {
     slug: '长对话中模型忘记系统指令',
@@ -80,7 +85,8 @@ const articles = [
     date: '2026-06-03',
     tags: ['LLM', '系统指令', '上下文'],
     cover: null,
-    content: changDuiHuaZhongMoXingWangJiXiTongZhiLing
+    content: changDuiHuaZhongMoXingWangJiXiTongZhiLing,
+    category: 'llm'
   }
 ];
 
