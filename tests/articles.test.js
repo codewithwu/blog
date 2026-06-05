@@ -25,17 +25,6 @@ describe('articles util', () => {
     expect(findArticleBySlug('not-a-real-slug')).toBeUndefined();
   });
 
-  it('listArticles({ category: "claude" }) returns only that category, sorted by date desc', () => {
-    const list = listArticles({ category: 'claude' });
-    expect(list.length).toBeGreaterThan(0);
-    for (const a of list) {
-      expect(a.category).toBe('claude');
-    }
-    for (let i = 0; i < list.length - 1; i++) {
-      expect(new Date(list[i].date) >= new Date(list[i + 1].date)).toBe(true);
-    }
-  });
-
   it('listArticles({ category: "no-such-category" }) returns an empty array', () => {
     expect(listArticles({ category: 'no-such-category' })).toEqual([]);
   });
@@ -64,6 +53,7 @@ describe('articles util', () => {
     expect(bySlug.llm).toBe(2);
     expect(bySlug.agent).toBe(1);
     expect(bySlug.rag).toBe(1);
+    expect(bySlug.tool).toBe(2);
     // Names are looked up from categories.js
     const llm = cats.find((c) => c.slug === 'llm');
     expect(llm.name).toBe('LLM 原理与基础');
