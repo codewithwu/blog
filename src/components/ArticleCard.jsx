@@ -11,7 +11,7 @@ export default function ArticleCard({ article }) {
       role="link"
       tabIndex={0}
       onClick={go}
-      onKeyDown={(e) => { if (e.key === 'Enter') go(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) go(); }}
       className="group block p-6 rounded-xl bg-brand-surface border border-brand-mid/20
                  hover:-translate-y-1 hover:shadow-lg hover:border-brand-orange/40
                  transition-all duration-300 cursor-pointer"
