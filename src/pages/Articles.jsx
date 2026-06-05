@@ -7,10 +7,13 @@ import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function Articles() {
   const { category } = useParams();
-  usePageTitle(category ? `${category} · 文章` : '文章');
-  const articles = listArticles({ category });
   const categories = listCategories();
-  const categoryExists = !category || categories.some((c) => c.slug === category);
+  const categoryMeta = category
+    ? categories.find((c) => c.slug === category)
+    : null;
+  usePageTitle(categoryMeta ? `${categoryMeta.name} · 文章` : '文章');
+  const articles = listArticles({ category });
+  const categoryExists = !category || !!categoryMeta;
 
   return (
     <section>
