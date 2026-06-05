@@ -1,7 +1,7 @@
 // 文章数据：metadata 写在数组里，content 通过 Vite ?raw 导入 markdown 源文件
 import helloWorld from '../../articles/notes/你好，世界.md?raw';
 import ragFenCengJianSuo from '../../articles/rag/RAG分层检索.md?raw';
-import openClawVsHermars from '../../articles/agent/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
+import openClawVsHermars from '../../articles/tool/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
 import agentXingNengLiangHua from '../../articles/agent/Agent 性能量化.md?raw';
 import aiJiShuDiCeng from '../../articles/llm/AI技术底层.md?raw';
 import claudeCodeShangXiaWenGuanLi from '../../articles/claude/Claude-Code-上下文管理.md?raw';
@@ -37,7 +37,7 @@ const articles = [
     tags: ['智能体', '对比', '工具'],
     cover: null,
     content: openClawVsHermars,
-    category: 'agent'
+    category: 'tool'
   },
   {
     slug: 'Agent 性能量化',

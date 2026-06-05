@@ -56,24 +56,23 @@ describe('articles util', () => {
     // orphan — only `llm`, `rag`, and `agent` survive.
     const slugsInOrder = cats.map((c) => c.slug);
     const expectedOrder = categories
-      .filter((c) => ['llm', 'agent', 'rag', 'notes', 'prompt'].includes(c.slug))
+      .filter((c) => ['llm', 'agent', 'rag', 'notes', 'prompt', 'tool'].includes(c.slug))
       .map((c) => c.slug);
     expect(slugsInOrder).toEqual(expectedOrder);
     // Counts are correct for the canonical categories
     const bySlug = Object.fromEntries(cats.map((c) => [c.slug, c.count]));
     expect(bySlug.llm).toBe(2);
-    expect(bySlug.agent).toBe(2);
+    expect(bySlug.agent).toBe(1);
     expect(bySlug.rag).toBe(1);
     // Names are looked up from categories.js
     const llm = cats.find((c) => c.slug === 'llm');
     expect(llm.name).toBe('LLM 原理与基础');
   });
 
-  it('listCategories omits categories that have zero articles (no "prompt" / "tool" / "notes" etc. yet)', () => {
+  it('listCategories omits categories that have zero articles (no "prompt" / "notes" etc. yet)', () => {
     const cats = listCategories();
     const slugs = cats.map((c) => c.slug);
     // None of the empty buckets should appear
-    expect(slugs).not.toContain('tool');
     expect(slugs).not.toContain('industry');
     expect(slugs).not.toContain('engineering');
     expect(slugs).not.toContain('product');
