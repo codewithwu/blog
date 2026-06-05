@@ -1,12 +1,12 @@
 // 文章数据：metadata 写在数组里，content 通过 Vite ?raw 导入 markdown 源文件
-import helloWorld from '../../articles/hello-world.md?raw';
-import ragFenCengJianSuo from '../../articles/rag/RAG分层检索.md?raw';
-import openClawVsHermars from '../../articles/agent/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
-import agentXingNengLiangHua from '../../articles/agent/Agent 性能量化.md?raw';
-import aiJiShuDiCeng from '../../articles/llm/AI技术底层.md?raw';
-import claudeCodeShangXiaWenGuanLi from '../../articles/claude/Claude-Code-上下文管理.md?raw';
-import deepSeekJiangBenZengXiao from '../../articles/llm/DeepSeek 的“降本增效”之道.md?raw';
-import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/llm/长对话中模型忘记系统指令.md?raw';
+import helloWorld from '../../articles/notes/你好，世界.md?raw';
+import ragFenCengJianSuo from '../../articles/ai/RAG分层检索.md?raw';
+import openClawVsHermars from '../../articles/ai/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
+import agentXingNengLiangHua from '../../articles/ai/Agent 性能量化.md?raw';
+import aiJiShuDiCeng from '../../articles/ai/AI技术底层.md?raw';
+import claudeCodeShangXiaWenGuanLi from '../../articles/ai/Claude-Code-上下文管理.md?raw';
+import deepSeekJiangBenZengXiao from '../../articles/ai/DeepSeek 的“降本增效”之道.md?raw';
+import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/ai/长对话中模型忘记系统指令.md?raw';
 
 const articles = [
   {
@@ -16,7 +16,8 @@ const articles = [
     date: '2026-05-12',
     tags: ['随笔', 'Meta'],
     cover: null,
-    content: helloWorld
+    content: helloWorld,
+    category: 'notes'
   },
   {
     slug: 'RAG分层检索',
@@ -36,7 +37,7 @@ const articles = [
     tags: ['智能体', '对比', '工具'],
     cover: null,
     content: openClawVsHermars,
-    category: 'agent'
+    category: 'tool'
   },
   {
     slug: 'Agent 性能量化',
@@ -66,7 +67,7 @@ const articles = [
     tags: ['Claude Code', '上下文', '工程'],
     cover: null,
     content: claudeCodeShangXiaWenGuanLi,
-    category: 'claude'
+    category: 'tool'
   },
   {
     slug: 'DeepSeek 的“降本增效”之道',
@@ -86,7 +87,7 @@ const articles = [
     tags: ['LLM', '系统指令', '上下文'],
     cover: null,
     content: changDuiHuaZhongMoXingWangJiXiTongZhiLing,
-    category: 'llm'
+    category: 'prompt'
   }
 ];
 
