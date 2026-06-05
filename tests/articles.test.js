@@ -23,4 +23,19 @@ describe('articles util', () => {
   it('findArticleBySlug returns undefined when not found', () => {
     expect(findArticleBySlug('not-a-real-slug')).toBeUndefined();
   });
+
+  it('listArticles({ category: "claude" }) returns only that category, sorted by date desc', () => {
+    const list = listArticles({ category: 'claude' });
+    expect(list.length).toBeGreaterThan(0);
+    for (const a of list) {
+      expect(a.category).toBe('claude');
+    }
+    for (let i = 0; i < list.length - 1; i++) {
+      expect(new Date(list[i].date) >= new Date(list[i + 1].date)).toBe(true);
+    }
+  });
+
+  it('listArticles({ category: "no-such-category" }) returns an empty array', () => {
+    expect(listArticles({ category: 'no-such-category' })).toEqual([]);
+  });
 });
