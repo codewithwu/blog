@@ -1,5 +1,5 @@
 // 文章数据：metadata 写在数组里，content 通过 Vite ?raw 导入 markdown 源文件
-import helloWorld from '../../articles/hello-world.md?raw';
+import helloWorld from '../../articles/notes/你好，世界.md?raw';
 import ragFenCengJianSuo from '../../articles/rag/RAG分层检索.md?raw';
 import openClawVsHermars from '../../articles/agent/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
 import agentXingNengLiangHua from '../../articles/agent/Agent 性能量化.md?raw';
@@ -16,7 +16,8 @@ const articles = [
     date: '2026-05-12',
     tags: ['随笔', 'Meta'],
     cover: null,
-    content: helloWorld
+    content: helloWorld,
+    category: 'notes'
   },
   {
     slug: 'RAG分层检索',

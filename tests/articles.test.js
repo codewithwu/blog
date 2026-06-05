@@ -56,7 +56,7 @@ describe('articles util', () => {
     // orphan — only `llm`, `rag`, and `agent` survive.
     const slugsInOrder = cats.map((c) => c.slug);
     const expectedOrder = categories
-      .filter((c) => ['llm', 'agent', 'rag'].includes(c.slug))
+      .filter((c) => ['llm', 'agent', 'rag', 'notes'].includes(c.slug))
       .map((c) => c.slug);
     expect(slugsInOrder).toEqual(expectedOrder);
     // Counts are correct for the canonical categories
@@ -75,7 +75,6 @@ describe('articles util', () => {
     // None of the empty buckets should appear
     expect(slugs).not.toContain('prompt');
     expect(slugs).not.toContain('tool');
-    expect(slugs).not.toContain('notes');
     expect(slugs).not.toContain('industry');
     expect(slugs).not.toContain('engineering');
     expect(slugs).not.toContain('product');
