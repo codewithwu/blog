@@ -6,7 +6,7 @@ import agentXingNengLiangHua from '../../articles/agent/Agent 性能量化.md?ra
 import aiJiShuDiCeng from '../../articles/llm/AI技术底层.md?raw';
 import claudeCodeShangXiaWenGuanLi from '../../articles/claude/Claude-Code-上下文管理.md?raw';
 import deepSeekJiangBenZengXiao from '../../articles/llm/DeepSeek 的“降本增效”之道.md?raw';
-import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/llm/长对话中模型忘记系统指令.md?raw';
+import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/prompt/长对话中模型忘记系统指令.md?raw';
 
 const articles = [
   {
@@ -87,7 +87,7 @@ const articles = [
     tags: ['LLM', '系统指令', '上下文'],
     cover: null,
     content: changDuiHuaZhongMoXingWangJiXiTongZhiLing,
-    category: 'llm'
+    category: 'prompt'
   }
 ];
 
