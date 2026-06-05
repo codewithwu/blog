@@ -22,8 +22,3 @@ export function listCategories() {
     .map(([slug, count]) => ({ slug, count }))
     .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug));
 }
-
-export function findCategory(slug) {
-  const count = articles.filter((a) => a.category === slug).length;
-  return count > 0 ? { slug, count } : null;
-}

@@ -1,4 +1,4 @@
-// 文章分类筛选 chip 栏：显示「全部」+ 所有有文章的分类，当前激活的实心高亮
+// 文章分类筛选 chip 栏：显示「全部」+ 所有有文章的分类，当前激活的实心高亮 + aria-current
 import { NavLink, Link } from 'react-router-dom';
 
 export default function CategoryFilter({ categories, active }) {
@@ -7,6 +7,7 @@ export default function CategoryFilter({ categories, active }) {
       <NavLink
         to="/articles"
         end
+        aria-current={active === null ? 'page' : undefined}
         className={({ isActive }) =>
           `px-3 py-1.5 rounded-full text-sm transition-colors ${
             isActive
@@ -23,6 +24,7 @@ export default function CategoryFilter({ categories, active }) {
           <Link
             key={c.slug}
             to={`/articles/category/${c.slug}`}
+            aria-current={isActive ? 'page' : undefined}
             className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
               isActive
                 ? 'bg-brand-orange text-white'

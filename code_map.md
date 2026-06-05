@@ -65,6 +65,7 @@ blog/
 │   │   ├── Footer.jsx              # 底部版权
 │   │   ├── PageTransition.jsx      # 页面切换淡入淡出包裹器
 │   │   ├── ArticleCard.jsx         # 文章列表卡片
+│   │   ├── CategoryFilter.jsx      # 文章分类筛选 chip 栏（"全部" + 各分类）
 │   │   ├── ProjectCard.jsx         # 项目卡片（含 GitHub/Demo 链接）
 │   │   ├── SkillBar.jsx            # 技能条目（技能名 + 等级徽章，level ∈ 进阶/熟练/精通）
 │   │   ├── ToolCard.jsx            # 工具卡片（动态 lucide 图标）
@@ -87,7 +88,7 @@ blog/
 │   │   └── tools.js                # 工具（icon 字段为 lucide 组件名字符串；数据源 content/工具.md）
 │   │
 │   ├── lib/
-│   │   ├── articles.js             # 文章查询工具：listArticles / findArticleBySlug
+│   │   ├── articles.js             # 文章查询工具：listArticles({category}) / findArticleBySlug / listCategories
 │   │   ├── content.js              # 解析 content/*.md：parseSkills / parseTools / parseAbout
 │   │   └── markdown.jsx            # 统一 Markdown 渲染组件（GFM + 代码高亮 + prose 样式）
 │   │
@@ -186,6 +187,7 @@ ArticleDetail.jsx
 |------|------|------|
 | `/` | `<Navigate to="/articles" replace />` | `src/App.jsx` |
 | `/articles` | `Articles` | `src/pages/Articles.jsx` |
+| `/articles/category/:category` | `Articles`（带过滤） | `src/pages/Articles.jsx` |
 | `/articles/:slug` | `ArticleDetail` | `src/pages/ArticleDetail.jsx` |
 | `/projects` | `Projects` | `src/pages/Projects.jsx` |
 | `/projects/:slug` | `ProjectDetail` | `src/pages/ProjectDetail.jsx` |
@@ -204,6 +206,7 @@ ArticleDetail.jsx
 |--------|--------------|
 | **加一篇文章（推荐）** | 1) 把 `.md` 放进 `articles-draft/<slug>.md`；2) 对 Claude 说「创建文章 xxx」或「把 xxx 文章发出去」触发 create-article 技能 |
 | **加一篇文章（手动）** | 1) 新建 `articles/<slug>.md`（项目根目录）<br>2) 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<slug>.md?raw'` 并 push 一项 |
+| **给文章分类** | 1) `articles/<category>/<slug>.md` 放 .md<br>2) import 路径写明子目录<br>3) metadata 加 `category: '<category>'`<br>4) `src/pages/Articles.jsx` 的 `CategoryFilter` 自动出现 chip |
 | **删除文章** | 对 Claude 说「删除文章 xxx.md」触发 delete-article 技能（同时清理 .md 与 data 注册） |
 | **加一个项目（推荐）** | 1) 把 `.md` 放进 `projects-draft/<slug>.md`；2) 对 Claude 说「创建项目 xxx」或「把 xxx 项目发出去」触发 create-project 技能 |
 | **加一个项目（手动）** | 1) 新建 `projects/<slug>.md`（项目根目录）<br>2) 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.md?raw'` 并 push 一项 |
