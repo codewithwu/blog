@@ -1,6 +1,7 @@
 // 文章卡片：外层用 div + onClick + useNavigate 整体可点；category 徽章作为嵌套 Link 跳转分类页
 import { useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { categories } from '../data/categories.js';
 
 export default function ArticleCard({ article }) {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function ArticleCard({ article }) {
                 className="px-2 py-0.5 rounded bg-brand-orange/15 text-brand-orange
                            hover:bg-brand-orange/25 transition-colors"
               >
-                {article.category}
+                {categories.find((c) => c.slug === article.category)?.name ?? article.category}
               </Link>
             </li>
           )}
