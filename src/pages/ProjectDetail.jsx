@@ -2,7 +2,7 @@
 // 找不到 slug 时 <Navigate replace /> 跳回 /projects
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { findProjectBySlug } from '../lib/projects.js';
-import Markdown from '../lib/markdown.jsx';
+import Html from '../lib/html.jsx';
 import ProjectHeader from '../components/ProjectHeader.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 
@@ -22,7 +22,7 @@ export default function ProjectDetail() {
       </Link>
       <ProjectHeader project={project} />
       <div className="mt-8">
-        <Markdown>{project.content}</Markdown>
+        <Html html={project.content} />
       </div>
     </article>
   );
