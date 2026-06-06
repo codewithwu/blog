@@ -1,4 +1,4 @@
-// 项目详情：URL :slug → 查项目，渲染 ProjectHeader + markdown 正文
+// 项目详情：URL :slug → 查项目，渲染 ProjectHeader + HTML 正文
 // 找不到 slug 时 <Navigate replace /> 跳回 /projects
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { findProjectBySlug } from '../lib/projects.js';
