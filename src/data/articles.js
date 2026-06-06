@@ -3,10 +3,10 @@ import helloWorld from '../../articles/notes/你好，世界.md?raw';
 import ragFenCengJianSuo from '../../articles/ai/RAG分层检索.md?raw';
 import openClawVsHermars from '../../articles/ai/OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md?raw';
 import agentXingNengLiangHua from '../../articles/ai/Agent 性能量化.md?raw';
-import aiJiShuDiCeng from '../../articles/ai/AI技术底层.md?raw';
 import claudeCodeShangXiaWenGuanLi from '../../articles/ai/Claude-Code-上下文管理.md?raw';
 import deepSeekJiangBenZengXiao from '../../articles/ai/DeepSeek 的“降本增效”之道.md?raw';
 import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/ai/长对话中模型忘记系统指令.md?raw';
+import aiJiShuDiCeng from '../../articles/ai/AI技术底层.md?raw';
 
 const articles = [
   {
@@ -27,7 +27,7 @@ const articles = [
     tags: ['RAG', '检索'],
     cover: null,
     content: ragFenCengJianSuo,
-    category: 'rag'
+    category: 'ai'
   },
   {
     slug: 'OpenClaw（龙虾）与Hermars（爱马仕）使用体验',
@@ -37,7 +37,7 @@ const articles = [
     tags: ['智能体', '对比', '工具'],
     cover: null,
     content: openClawVsHermars,
-    category: 'tool'
+    category: 'ai'
   },
   {
     slug: 'Agent 性能量化',
@@ -47,17 +47,7 @@ const articles = [
     tags: ['Agent', '评测'],
     cover: null,
     content: agentXingNengLiangHua,
-    category: 'agent'
-  },
-  {
-    slug: 'AI技术底层',
-    title: '🧠 AI技术底层',
-    excerpt: '模型每次只预测下一个最可能的词，然后把这个词加回输入继续预测，直到输出结束符号。这就是为什么 AI 回答时是一个字一个字蹦出来的。',
-    date: '2026-06-03',
-    tags: ['AI 基础', '大模型', 'Agent'],
-    cover: null,
-    content: aiJiShuDiCeng,
-    category: 'llm'
+    category: 'ai'
   },
   {
     slug: 'Claude-Code-上下文管理',
@@ -67,7 +57,7 @@ const articles = [
     tags: ['Claude Code', '上下文', '工程'],
     cover: null,
     content: claudeCodeShangXiaWenGuanLi,
-    category: 'tool'
+    category: 'ai'
   },
   {
     slug: 'DeepSeek 的“降本增效”之道',
@@ -77,7 +67,7 @@ const articles = [
     tags: ['DeepSeek', 'MOE', '大模型'],
     cover: null,
     content: deepSeekJiangBenZengXiao,
-    category: 'llm'
+    category: 'ai'
   },
   {
     slug: '长对话中模型忘记系统指令',
@@ -87,7 +77,17 @@ const articles = [
     tags: ['LLM', '系统指令', '上下文'],
     cover: null,
     content: changDuiHuaZhongMoXingWangJiXiTongZhiLing,
-    category: 'prompt'
+    category: 'ai'
+  },
+  {
+    slug: 'AI技术底层',
+    title: 'AI技术底层',
+    excerpt: '从 LM/Token 到 Context/RAG，再到 Prompt、Tool/MCP 与 Agent/Skill，一文梳理 AI 技术的四层底层逻辑。',
+    date: '2026-06-06',
+    tags: ['LLM', 'Token', '智能体'],
+    cover: null,
+    content: aiJiShuDiCeng,
+    category: 'ai'
   }
 ];
 
