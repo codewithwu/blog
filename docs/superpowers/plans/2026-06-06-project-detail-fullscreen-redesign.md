@@ -21,7 +21,7 @@
 | `src/components/ProjectHeader.jsx` | 删 | 不再被引用 |
 | `src/App.jsx` | 改 | `useLocation` 检测 `/projects/:slug`,跳过 Navbar;`main` 在该路由下不加 `max-w-5xl` |
 | `CLAUDE.md` | 改 | 规则 11 描述改为「iframe 100vh 全屏,作者自负责样式」 |
-| `tests/html.test.js` | 新建 | `Html` 组件单测:验证完整文档与片段都走 iframe、片段含最小文档包装 |
+| `tests/html.test.jsx` | 新建 | `Html` 组件单测:验证完整文档与片段都走 iframe、片段含最小文档包装 |
 | `tests/project-detail.test.js` | 新建 | 验证 `/projects/_sample` 路由下 Navbar 不渲染、详情页含 iframe + 返回链接 |
 
 ---
@@ -33,7 +33,7 @@
 
 - [ ] **Step 1: 写测试文件**
 
-新建 `tests/html.test.js`:
+新建 `tests/html.test.jsx`:
 
 ```js
 // Html 组件单测：完整文档与 HTML 片段都走 iframe srcDoc

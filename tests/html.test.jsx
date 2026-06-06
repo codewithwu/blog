@@ -37,4 +37,10 @@ describe('Html component', () => {
     const iframe = container.querySelector('iframe');
     expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin');
   });
+
+  it('uses the title prop when provided', () => {
+    const { container } = render(<Html html="<p>x</p>" title="My Project" />);
+    const iframe = container.querySelector('iframe');
+    expect(iframe.getAttribute('title')).toBe('My Project');
+  });
 });
