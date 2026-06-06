@@ -120,16 +120,27 @@ return (
 
 ## 验证清单
 
-- [ ] `ProjectDetail.jsx` 不再 import `ProjectHeader`
-- [ ] `ProjectHeader.jsx` 文件已删除
-- [ ] `src/lib/html.jsx` 只剩单一 iframe 输出,无 `dangerouslySetInnerHTML`
-- [ ] `App.jsx` 在 `/projects/:slug` 下跳过 Navbar
-- [ ] `showcase.html` 在详情页按源文件渲染(墨韵、动效都生效)
-- [ ] `_sample.html` 走片段包装路径,iframe 100vh
-- [ ] 悬浮返回按钮位置正确、可点
-- [ ] `npm run build` 成功,无新增控制台错误
-- [ ] `npm test` 全通过
-- [ ] `CLAUDE.md` 规则 11 已更新
+- [x] `ProjectDetail.jsx` 不再 import `ProjectHeader`
+- [x] `ProjectHeader.jsx` 文件已删除
+- [x] `src/lib/html.jsx` 只剩单一 iframe 输出,无 `dangerouslySetInnerHTML`
+- [x] `App.jsx` 在 `/projects/:slug` 下跳过 Navbar
+- [ ] `showcase.html` 在详情页按源文件渲染(墨韵、动效都生效) — **需用户人眼验证**
+- [x] `_sample.html` 走片段包装路径,iframe 100vh
+- [ ] 悬浮返回按钮位置正确、可点 — **需用户人眼验证**
+- [x] `npm run build` 成功,无新增控制台错误
+- [x] `npm test` 全通过
+- [x] `CLAUDE.md` 规则 11 已更新
+
+## 实施记录
+
+- 2026-06-06: 完成 Task 1–8
+- [x] `npm run build` 成功(已确认)
+- [x] `npm test` 全部通过(38/38,含新增 `tests/html.test.jsx` 5 个 it)
+- [x] `/projects/showcase` 与 `/projects/_sample` 走全屏 iframe 路径(代码层 + 编译层已确认)
+- [x] `/projects/<unknown-slug>` 跳回 `/projects`(行为未变)
+- [x] 路由切换时 `App.jsx` 的 `isProjectDetail` 正则判定正确(`/projects/<slug>` 命中,`/projects` 不命中)
+- [x] 文章页 markdown 渲染未受影响(38 个单测覆盖含 `articles.test.js`)
+- [ ] 详情页悬浮返回按钮 + 100vh iframe + Navbar 隐藏的**视觉确认**需用户在浏览器实测(WebFetch 不支持 hash URL,自动化层未做端到端浏览器渲染验证)
 
 ## 文档同步
 
