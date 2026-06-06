@@ -1,6 +1,6 @@
 // 项目数据：metadata + ?raw 导入的 markdown 内容
 // 字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content
-import _sample from '../../projects/_sample.md?raw';
+import _sample from '../../projects/_sample.html?raw';
 
 const projects = [
   {
