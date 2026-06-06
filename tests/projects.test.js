@@ -13,7 +13,7 @@ describe('projects util', () => {
     const project = findProjectBySlug('_sample');
     expect(project).toBeDefined();
     expect(project.slug).toBe('_sample');
-    expect(project.content).toContain('# 示例项目');
+    expect(project.content).toContain('项目概览');
   });
 
   it('findProjectBySlug returns undefined when not found', () => {
