@@ -1,17 +1,17 @@
 // 项目数据：metadata + ?raw 导入的 HTML 片段
 // 字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content
-import _sample from '../../projects/_sample.html?raw';
+import articles from '../../projects/articles.html?raw';
 
 const projects = [
   {
-    slug: '_sample',
-    name: '示例项目',
-    description: '这是一个示例项目，用来演示项目页与详情页的工作流。',
-    techStack: ['JavaScript'],
-    githubUrl: null,
-    demoUrl: null,
+    slug: 'articles',
+    name: '作文评分智能体 · 高考七维',
+    description: '基于 LangGraph 的多维度评分系统。标准 4 维 / 高考 7 维双模式，条件短路精准识别跑题卷；纯前端 SPA 部署于 GitHub Pages，墨韵设计贯穿始终。',
+    techStack: ['LangGraph', 'React 18', 'TypeScript', 'Vite 5', 'Zod', 'Vitest'],
+    githubUrl: 'https://github.com/codewithwu/langgraph-essay-grading',
+    demoUrl: 'https://codewithwu.github.io/langgraph-essay-grading/',
     cover: null,
-    content: _sample
+    content: articles
   },
 ];
 
