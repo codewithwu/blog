@@ -1,6 +1,7 @@
 // 项目数据：metadata + ?raw 导入的 HTML 片段
 // 字段:slug / name / description / techStack / githubUrl / demoUrl / cover / content
 import articles from '../../projects/articles.html?raw';
+import claudeTaskMonitor from '../../projects/claude-task-monitor.html?raw';
 
 const projects = [
   {
@@ -12,6 +13,16 @@ const projects = [
     demoUrl: 'https://codewithwu.github.io/langgraph-essay-grading/',
     cover: null,
     content: articles
+  },
+  {
+    slug: 'claude-task-monitor',
+    name: 'Claude Task Monitor',
+    description: 'VS Code 侧边栏里实时监控本机所有 Claude Code CLI 会话的执行状态。开源、MIT、跨 IDE。',
+    techStack: ['TypeScript', 'Node.js', 'VS Code Extension API', 'chokidar', 'vitest'],
+    githubUrl: 'https://github.com/codewithwu/Claude-Task-Monitor',
+    demoUrl: null,
+    cover: null,
+    content: claudeTaskMonitor
   },
 ];
 
