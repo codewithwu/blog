@@ -7,6 +7,7 @@ import claudeCodeShangXiaWenGuanLi from '../../articles/ai/Claude-Code-上下文
 import deepSeekJiangBenZengXiao from '../../articles/ai/DeepSeek 的“降本增效”之道.md?raw';
 import changDuiHuaZhongMoXingWangJiXiTongZhiLing from '../../articles/ai/长对话中模型忘记系统指令.md?raw';
 import aiJiShuDiCeng from '../../articles/ai/AI技术底层.md?raw';
+import redisCache from '../../articles/engineering/redis_cache.md?raw';
 
 const articles = [
   {
@@ -88,6 +89,16 @@ const articles = [
     cover: null,
     content: aiJiShuDiCeng,
     category: 'ai'
+  },
+  {
+    slug: 'redis_cache',
+    title: 'Redis 缓存的三种典型问题:雪崩、击穿、穿透——成因、方案与边界',
+    excerpt: '缓存的三种典型故障——雪崩、击穿、穿透——不是"加一层 set/get"的问题,而是在过期、并发、非法访问三种压力下,缓存与数据库分别承担多少负载。',
+    date: '2026-06-09',
+    tags: ['Redis', '缓存', '架构'],
+    cover: null,
+    content: redisCache,
+    category: 'engineering'
   }
 ];
 
