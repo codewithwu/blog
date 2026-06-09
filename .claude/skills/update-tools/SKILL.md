@@ -1,59 +1,61 @@
 ---
 name: update-tools
-description: Use when the user wants to update `content/工具.md` with new tool items / categories / icons / descriptions and have the frontend Tools page reflect it. The user message **must contain both an update verb and a reference to the tools file or the tools page** — Chinese phrases like "更新 content/工具.md"、"按 xxx 更新工具页"、"把 content/工具.md 改成 xxx"、"在 content/工具.md 里加一个 xxx 工具"、"新增一个 ## xxx 工具分类"，or English equivalents like "update content/工具.md"、"add a new tool to the tools page"、"change VS Code's icon to Code". Mentioning "工具" alone (e.g. "看一下工具" or "工具页有 bug") is NOT enough — must include a clear update intent pointing at the file or a specific tool/icon. The skill first rewrites `content/工具.md` per the user's instructions, then runs a format check against the `parseTools` parser (icon-name existence in lucide-react, missing-colon / missing-icon handling), and finally adapts the frontend (`src/lib/content.js`, `src/pages/Tools.jsx`, `src/components/ToolCard.jsx`) when the markdown introduces something the parser/page doesn't already support (new per-tool fields like `link` or `level`, new item shape). Do NOT trigger for editing other pages (About/Skills/Articles/Projects) — those have their own content/data flow. Do NOT trigger for purely visual/styling changes to Tools.jsx that don't involve the markdown. Do NOT trigger for changing `src/data/tools.js` directly — that file is a thin wrapper, content lives in the markdown.
+description: Use when the user wants to apply a pre-edited tools draft file from `content-draft/` into the live Tools page. The user message must contain explicit draft-update phrasing that combines an update verb with a file reference — Chinese "更新工具 xxx.md"、"更新工具 xxx"、"按 xxx.md 更新工具页"、"用 content-draft/xxx 更新工具页", or English "update tools from xxx" / "apply tools draft xxx". Do NOT trigger for direct ad-hoc edits like "把 VS Code 改成 Cursor" or "在工具里加一个 Slack" (those are inline edits — just `Edit` `content/工具.md` directly), for editing About/Skills/Articles/Projects, for editing `content/工具.md` without a draft file, or when `content-draft/<name>.md` doesn't exist on disk. Mentioning "工具" alone (e.g. "看一下工具页") is NOT enough — the trigger needs a filename or a clear reference to the `content-draft/` folder.
 ---
 
 # update-tools
 
 ## What it does
 
-End-to-end workflow for changing the Tools page from the markdown side out:
+Applies one tools draft file (`content-draft/<name>.md`) onto the live tools source (`content/工具.md`), then deletes the draft. The merge is **category-level additive merge**:
 
-1. Rewrite `content/工具.md` per the user's instructions.
-2. Validate the new markdown against the `parseTools` parser in `src/lib/content.js` — flag any structural issue and verify that every `(icon)` name actually exists in `lucide-react`.
-3. Detect content that the current frontend cannot render (new per-tool fields like `link` / `level`, new item shape, ordering hints) and extend the parser + page to handle it.
-4. Build to confirm the page compiles and renders without errors.
+1. Reads the draft and runs a format check against the `parseTools` parser + `lucide-react` icon validation.
+2. Reads the current `content/工具.md`.
+3. Computes a category-wise merge:
+   - Categories that exist only in the draft → appended at the end.
+   - Categories in both → items are merged (draft items added; on name collision, the draft's `icon` / `desc` wins; items only in current are preserved).
+   - Categories that exist only in the current file → kept untouched.
+4. Shows a structured diff and waits for confirmation.
+5. Rewrites `content/工具.md`, deletes `content-draft/<name>.md`.
+6. Adapts the frontend (`src/lib/content.js` / `src/pages/Tools.jsx` / `src/components/ToolCard.jsx`) **only** when the draft introduces something the parser/page cannot render today (per-tool `link` / `level` / `tags`, per-category `intro`, etc.).
 
-The Tools page is *data-driven*: `src/pages/Tools.jsx` imports `tools` (which is `parseTools(工具.md)`) and maps it to a responsive card grid. So the markdown is the source of truth, and the only time you touch React code is when the markdown introduces something the parser/page doesn't already support.
+The Tools page is data-driven: `src/data/tools.js` is just `parseTools(import 工具.md)`, and `Tools.jsx` maps the parsed groups to category cards. So in 95% of cases this skill only touches the markdown and no JSX changes are needed.
 
 ## When to use
 
-Trigger **only** when the user message contains a clear update intent pointing at `content/工具.md`, the Tools page, or a specific tool/icon. Match phrases such as:
+Trigger **only** when the user message names a draft file in `content-draft/` (with or without the `.md` suffix). Match phrases such as:
 
-- "更新 content/工具.md，按以下内容：…"
-- "把 content/工具.md 改成 …"
-- "在 content/工具.md 里加一个 Slack (MessageSquare) 工具"
-- "新增一个 ## 终端 工具分类"
-- "把 VS Code 的 icon 改成 Code2"
-- "按这份内容更新工具页：…"
-- "update content/工具.md with …"
-- "add a new tool Postman to the tools page"
+- "更新工具 v2.md" / "更新工具 v2"
+- "按 content-draft/v2.md 更新工具页"
+- "用 content-draft/2026Q3 更新工具"
+- "apply tools draft v2"
+- "update tools from content-draft/v2"
 
 The phrase must NOT trigger if:
 
-- The user just wants to *view* the Tools page — read the file, don't run this skill.
-- The update targets About (`content/关于.md`), Skills (`content/技能.md`), Articles, or Projects — those have different data flows; ask the user to clarify.
-- The change is purely a styling tweak to `Tools.jsx` (e.g. "把卡片圆角改大" or "改一下 hover 动画") with no markdown change — just `Edit` the JSX file directly.
-- The user wants to edit `src/data/tools.js` directly — that file is a thin wrapper, the source of truth is the markdown.
+- The user gives inline content without a draft file (e.g. "按以下内容更新工具页：\n## 编辑器\n- Cursor (Code2): AI 编辑器") — just `Edit` `content/工具.md` directly.
+- The user wants a single point edit ("把 VS Code 改成 Cursor"、"加一个 Slack 工具"、"Figma 的 icon 改成 Pen") — just `Edit` `content/工具.md` directly.
+- The user wants to view, lint, or restyle the Tools page without changing the markdown — just read or `Edit` directly.
+- The target file `content-draft/<name>.md` doesn't exist — block and tell the user to create it first.
 
-When the instruction is ambiguous between an "update this file" and a "rewrite this whole page" intent, prefer running this skill — the user can always say "no, just the markdown".
+This skill is **draft-only**. The distinguishing rule is **"is there a file in `content-draft/` referenced in the request?"**. If yes → run this skill. If no → use the `Edit` tool on `content/工具.md` directly.
 
 ## When NOT to use
 
-- **Viewing the tools page** — just read `content/工具.md`.
+- **Writing a brand-new draft from scratch** — this skill assumes `content-draft/<name>.md` already exists. To create a new draft, just write the file to `content-draft/<name>.md` and stop.
 - **Editing About / Skills / Articles / Projects** — different content/data flow; not this skill's job.
-- **Pure visual changes to Tools.jsx or ToolCard.jsx** with no markdown involvement — use `Edit` on the JSX directly.
+- **Pure visual changes to `Tools.jsx` / `ToolCard.jsx`** with no markdown involvement (e.g. "把卡片圆角改大"、"改一下 hover 动画") — `Edit` the JSX directly.
 - **Adding brand-new functionality** (e.g. a tool-search box, drag-to-reorder, a "recently used" indicator) — surface the scope, propose a design, and let the user confirm before extending the skill's reach.
 
 ## Project context
 
-- Source of truth: `content/工具.md` (project root, *not* under `src/`).
+- Draft location: `content-draft/<name>.md` (project root, *not* under `src/`).
+- Source of truth (after merge): `content/工具.md`.
 - Wrapper: `src/data/tools.js` is just `import … from '../../content/工具.md?raw'` + `parseTools(toolMd)`. **Do not edit this file** for content changes.
-- Parser: `src/lib/content.js`, function `parseTools(md)`. Returns `[{ category, items: [{ name, icon?, desc? }, …] }, …]`. The parser is a pure string handler — no frontmatter, no gray-matter; sections are delimited by `##` headings.
+- Parser: `parseTools` in `src/lib/content.js`. Returns `[{ category, items: [{ name, icon?, desc? }, …] }, …]`. The parser is a pure string handler — no frontmatter, no gray-matter; sections are delimited by `##` headings.
 - Page: `src/pages/Tools.jsx`. Renders one H2 per group, then a `grid gap-4 sm:grid-cols-2 lg:grid-cols-3` of `<ToolCard tool={…} />` cards. The grid is mobile-1 / tablet-2 / desktop-3 columns.
 - Tool card: `src/components/ToolCard.jsx`. Receives `{ tool }` where `tool` is `{ name, icon?, desc? }`. Icon resolution is dynamic: `Icons[tool.icon] || Icons.Wrench` (a generic fallback for unknown icons). The card is **not clickable** today — there is no `url` field.
 - Icon library: `lucide-react` is the only icon source per `CLAUDE.md` rule 9. `ToolCard` imports `* as Icons from 'lucide-react'` and resolves by name, so adding a new icon name to the markdown is enough — no import or `ICON_MAP` change is needed (unlike `About.jsx`).
-- Brand color tokens live in `tailwind.config.js` (`brand-orange/blue/green/light/mid/surface`). Don't add new color tokens unless the user asks — reuse what exists.
 
 ## `parseTools` reference (what the parser currently supports)
 
@@ -70,183 +72,228 @@ The parser is the contract. If the markdown doesn't conform, the data simply won
 | `###` / `#` headings | ignored | The parser only recognizes `##`. |
 | Other lines (preamble, blank, lists without `-`, etc.) | ignored | Won't show up. |
 
-**Notable: the parser does NOT support** per-tool `link` / `url` / `level` / `tags` fields. Any shape beyond `name (icon): desc` is silently dropped or merged into `desc`. If the user wants any of these, step 4 covers the parser + page extension.
+**Notable: the parser does NOT support** per-tool `link` / `url` / `level` / `tags` fields. Any shape beyond `name (icon): desc` is silently dropped or merged into `desc`. If the user wants any of these, step 5 covers the parser + page extension.
 
 ## `lucide-react` icon validation
 
 `ToolCard` resolves icons at runtime with `Icons[tool.icon] || Icons.Wrench`. An unknown icon name silently falls back to `Wrench` — the page won't crash, but the user almost certainly didn't mean a wrench. Before writing the markdown, validate each `(icon)` name:
 
-- Easiest check: `node_modules/lucide-react/dist/lucide-react.d.ts` (TypeScript declaration) — every export is a valid icon name. Alternatively, `grep -oP 'export \{(?:declare const )?(\w+)(?:: |,)' node_modules/lucide-react/dist/lucide-react.d.ts | sort -u | head` (rough).
-- Common icons used in the current file: `Code2`, `Terminal`, `PenTool`, `Bug`, `Send`, `Zap`, `BookOpen`, `Wrench`.
-- If a name is wrong or the user wrote an obvious typo (e.g. `Code-2` with a hyphen, `code2` lowercase), suggest the correct casing in step 3's check report and let the user pick.
-- If the icon doesn't exist at all in `lucide-react`, flag it and propose `Wrench` (or a related icon like `Box`, `Star`, `Tag`) as a substitute.
+- Easiest check: `node_modules/lucide-react/dist/lucide-react.d.ts` (TypeScript declaration) — every export is a valid icon name. Alternatively, run a small Node script to list all valid names.
+- Common icons used in the current file: `Code2`, `Terminal`, `PenTool`, `Bug`, `Send`, `Zap`, `BookOpen`, `Wrench`. Other safe choices: `Code`, `Github`, `Link`, `Globe`, `Box`, `Star`, `Tag`, `Search`, `Settings`, `MessageSquare`, `FlaskConical`, `Container`, `GitBranch`, `Database`, `Cloud`, `Mail`, `Slack` (verify in lucide-react first).
+- If a name is wrong or the user wrote an obvious typo (e.g. `Code-2` with a hyphen, `code2` lowercase), suggest the correct casing in the format-check report and let the user pick.
+- If the icon doesn't exist at all in `lucide-react`, flag it and propose `Wrench` (or a related icon) as a substitute.
+
+## Draft file shape
+
+The draft uses the same syntax as `content/工具.md`:
+
+```markdown
+## 编辑器
+- VS Code (Code2): 日常主力编辑器
+- Cursor (Code2): AI 编辑器
+
+## 设计工具
+- Figma (PenTool): 界面设计与原型
+
+## 效率工具（新）
+- Raycast (Zap): 快捷启动与脚本
+- Notion (BookOpen): 笔记与知识库
+```
+
+A draft can be a **partial update** (only the categories you want to touch) or a **complete replacement** (all categories you want the live file to have). The merge algorithm treats both the same way — categories not mentioned in the draft are preserved. Within a shared category, items not mentioned in the draft are preserved (additive merge). If the user wants a hard replace (drop existing categories or items that aren't in the draft), they must say so explicitly; this skill defaults to additive merge.
 
 ## Workflow
 
-Follow these steps in order. **Do not skip the format check or the frontend adaptation step.**
+Follow these steps in order. **Do not skip the format check, the icon validation, the diff preview, or the confirmation.**
 
-### 1. Read the current state
+### 1. Resolve target
 
-- Read `content/工具.md` to see the current content.
-- Read `parseTools` in `src/lib/content.js`, `src/pages/Tools.jsx`, and `src/components/ToolCard.jsx` to confirm what the current code supports.
+Parse the user message for the draft filename. Strip a trailing `.md` if present; the bare name is the draft identifier.
 
-The user often says "把 X 改成 Y" — you need to know what X currently is before rewriting. Tool names, categories, and icon strings in particular may have casing/whitespace differences in the markdown vs. what's rendered.
+- Verify `content-draft/<name>.md` exists. If not, `ls content-draft/` and tell the user what's available.
+- Reject filenames with spaces, path separators, or `..`. These shouldn't reach the merge phase.
 
-### 2. Compose the new markdown
+Only one draft per invocation. If the user passes multiple names, ask which one to apply first; don't batch (merge order would matter and is hard to reason about).
 
-Apply the user's instructions. Rules:
+### 2. Format-check and normalize the draft
 
-- Preserve the `## category` structure when the user is only changing part of the file. When the user provides a complete replacement, honor their structure even if it diverges — but note when the new structure requires parser/page changes (step 4).
-- Each tool line should be one of: `- name (icon): desc`, `- name (icon)`, `- name: desc`, or `- name`. The first form is the most common in the current file; the parser handles all four.
-- For new icons, write the exact `PascalCase` export name from `lucide-react` (e.g. `Code2`, `PenTool`, `MessageSquare`). Don't use kebab-case, snake_case, or all-lowercase.
-- For new categories, write `## category`. Avoid trailing colons, leading numbers, or emojis unless the user explicitly asked for them — the parser doesn't care, but the UI does (the H2 just renders the text verbatim).
-- Tool names with colons in them (e.g. `Bash: Shell (Terminal): everyday shell`) will be parsed as `name='Bash'` and `desc='Shell (Terminal): everyday shell'` — the rest of the line gets shoved into `desc`. Warn the user and suggest quoting the icon part with a different separator (the parser uses `(` and `)` for the icon, so any other `: `-split content is fine to keep in `desc`).
-- Don't introduce frontmatter, code fences, HTML, or `###` sub-headings inside a category. The parser ignores all of them.
-
-### 3. Run the format check
-
-After writing the new `content/工具.md`, re-read it and check:
+Read `content-draft/<name>.md` and check:
 
 **(a) Sections that the parser knows about are well-formed.**
 - Every `## category` line is followed by at least one valid `- name (…): …` line. (A category with zero items renders as an H2 with no cards under it — likely a bug, flag it.)
-- No `- ` lines with an empty name.
-- No `- foo: ` lines that have a name but an empty desc — fine, but worth noting.
+- No `- ` lines with an empty name (parser drops them silently).
+- No `- name: ` lines that have an empty desc — fine, but worth noting.
 
-**(b) Icon names exist in `lucide-react`.**
-- For every `(IconName)` in the file, verify it exists in `node_modules/lucide-react/dist/lucide-react.d.ts` or via the dynamic-import approach. If not, flag it.
-- Common real icons: `Code2`, `Code`, `Terminal`, `PenTool`, `Pen`, `Bug`, `Send`, `Zap`, `BookOpen`, `Wrench`, `MessageSquare`, `Github`, `Link`, `Globe`, `Box`, `Star`, `Tag`, `Search`, `Settings`.
-- `Wrench` is the runtime fallback — using it deliberately is fine, but it's the visual default.
+**(b) Tool name shape.**
+- Every `- ` line should have a non-empty `name` (the part before `:` or the part before the first `(` if no colon). List every offender.
+- Names containing `:` (e.g. `Bash: Shell`) will be split at the first `:` — `Bash` becomes name, ` Shell` becomes desc. Flag this; suggest the user use a different separator or quote.
 
-**(c) Lines the parser will drop or merge.**
-- Any `- ` line with an empty name.
-- Any non-`##` heading (`#` or `###`).
-- Preamble lines before the first `## category` (they get rendered as part of the page chrome — actually no, the parser returns `[]` until it sees a `##`. There's no tagline support. Tell the user if they wrote a tagline and want it shown.)
-- Any per-tool field beyond `name (icon): desc` — e.g. `| https://example.com` or `level=精通` will be folded into `desc` and shown as a description string, not interpreted as a link. Flag this and propose the parser extension in step 4.
+**(c) Icon names exist in `lucide-react`.**
+- For every `(IconName)` capture in the file, verify it exists. If not, flag it and propose a substitute.
+- Casing: must be exact `PascalCase` as exported by `lucide-react` (e.g. `Code2`, not `code2` or `CODE2`).
+- Icon names are case-sensitive in `Icons[tool.icon]` — `code2` and `Code2` are different.
 
-**(d) Categories the user might have meant to split or merge.**
-- If the user wrote a brand-new `##` category that doesn't exist in the old file, that's fine — it'll render as a new group.
-- If the user merged two old categories into one, the old categories' items all collapse into the new one. Surface this in the report.
+**(d) Lines the parser will drop silently.**
+- `- foo` (no colon) — parsed but desc is empty. This is valid; just note it.
+- `- ` (empty) or `- :` (no name) — silently dropped. Flag these.
+- `#` / `###` headings — silently ignored.
+- Preamble before the first `##` — silently ignored (parser returns `[]` until it sees a `##`).
 
-Print a brief check report:
+**(e) Per-tool fields beyond `name (icon): desc`.**
+- Any trailing `| url`, `level=精通`, `[tag1, tag2]` etc. will be folded into `desc`. Flag this and propose the parser extension in step 5.
+
+**(f) Whitespace / encoding.**
+- Trim trailing whitespace on each line.
+- Normalize line endings to `\n` (no CRLF).
+- File must be UTF-8.
+
+If issues are found, list them all and pause. Do **not** auto-fix. Let the user fix the draft and re-run, or acknowledge the trade-offs and proceed.
+
+### 3. Read current state and compute the merge
+
+Read `content/工具.md` and parse it the same way (mentally — you don't need to run JS; the shape is `[{category, items: [{name, icon?, desc?}]}]`).
+
+Compute three sets:
+
+- **新增分类** — `## X` in draft, not in current. Will be appended at the end of the current file's category list.
+- **修改分类** — `## X` in both. For each item in the draft:
+  - If `name` not in current's items for that category → **新增** (append at the end of the category's item list).
+  - If `name` in current's items → **修改** (the draft's `icon` AND `desc` win, even if just one changed; track before/after for both).
+- **保留分类** — `## X` in current, not in draft. No change.
+
+Also detect:
+
+- **Reordering within an existing category** — if the draft mentions only some of the existing items and they appear in a different order in the draft, **do not reorder** — the merge appends new items at the end and keeps the existing order. If the user wants to reorder, they must say so explicitly.
+- **Deletion intent** — this skill does NOT delete items by omission. If the user wants to remove `- Vim: 进阶`, they must `Edit` `content/工具.md` directly. State this in the plan so the user isn't surprised.
+- **Icon-only change** — if a tool's icon differs but name and desc are identical, the draft's icon wins. Show as `~ icon: Code2 → Code`.
+
+### 4. Show the merge plan and confirm
+
+Print a structured diff. Group by what's changing; skip "不变" items to keep it readable.
 
 ```
+即将合并 content-draft/v2.md → content/工具.md：
+
+新增分类：
+  ## 效率工具（新）
+    + Notion (BookOpen): 笔记与知识库
+    + Raycast (Zap): 快捷启动与脚本
+
+修改分类：
+  ## 编辑器
+    + Cursor (Code2): AI 编辑器                  (新增)
+    ~ VS Code (Code2): "日常主力编辑器" → "日常主力编辑器，副业也用"  (改 desc)
+    (其余 Vim 不变)
+  ## 设计工具
+    ~ Figma (PenTool): 界面设计与原型 → 界面设计与原型 / 团队协作    (改 desc)
+
+保留分类（无改动）：调试工具
+
+合并后会删除 content-draft/v2.md。
+
 格式检查：
-  ✓ 5 个分类：编辑器 / 设计工具 / 调试工具 / 效率工具 / 新增的"终端"
-  ✓ 9 条工具，全部命中 lucide-react 的图标名
-  ⚠ (Foo) 不是 lucide-react 的有效图标名 → 渲染时回退到 Wrench；建议改用 (Box) 或 (Star)
-  ⚠ - Postman: HTTP 客户端 | https://postman.com 中的 '| https://...' 会被并入 desc；如要可点击卡片见 step 4
-  ⚠ 新增 ## 终端 分类（1 条工具），前端无需改动
+  ✓ 4 条新增/修改的工具，全部命中 lucide-react 的图标名
+  ✓ 无解析器会丢弃的行
+  ⚠ 草稿未提及现有的 - Vim (Terminal): 终端里的编辑器，按"无删除"语义保留。若要删除请直接 Edit content/工具.md
+
+前端代码：
+  ✓ 无需改动（parser/page 已支持当前所有新增内容）
+
+确认合并？(y/n)  如需修改可直接说"VS Code 的 desc 不要改"或"效率工具不要 Notion"。
 ```
 
-### 4. Adapt the frontend (only when needed)
+Wait for explicit `y` / `yes` / "确认" / "好". If the user edits the merge (changes a desc, drops a tool), apply the edit and re-print the affected block.
 
-Most updates are markdown-only because the parser + page already support what most users want — the dynamic icon lookup + `Wrench` fallback means new icons "just work". Walk through the format-check warnings and decide which to address. For each one, propose a minimal change:
+### 5. Determine frontend adaptations (rare)
 
-**(a) User wants a clickable tool card (per-tool link / url).**
-- Extend `parseTools` to capture a trailing `| url` segment on the line. Match the existing style: pure string handling, no deps. Suggested shape: `- name (icon): desc | https://example.com` or `- name (icon): https://example.com` (no desc, just a link).
-- In `ToolCard.jsx`, wrap the card's outer `<div>` in an `<a>` when `tool.url` is set, and add `hover:border-brand-blue/40` (already there) plus `cursor-pointer`. Keep the icon and text layout the same.
-- Decide on the URL shape (always external `target="_blank"`? Or auto-detect `http`?). Surface the choice before implementing.
+In almost every case, the answer here is "no JSX changes needed". The dynamic icon lookup + `Wrench` fallback means new icons "just work". Flag any of the following and confirm separately before touching React code:
 
-**(b) User wants a per-tool level / tier (like Skills).**
-- Extend `parseTools` to read a trailing `| level` segment. Levels are free-form (no CLAUDE.md restriction here — only Skills has the three-tier rule per rule 12).
-- In `ToolCard.jsx`, render the level as a small badge in the top-right corner. Reuse `brand-orange/blue/green` or `brand-mid` for muted treatment.
-- Confirm the visual treatment (badge? muted text? colored dot?) before implementing.
+| Trigger | Required code change |
+| --- | --- |
+| Draft uses a `(Foo)` icon that doesn't exist in `lucide-react` and user wants it kept | The page won't crash (falls back to `Wrench`), but the visual will be wrong. Easiest fix: edit the draft to use a real icon. If the user insists, extend `ToolCard` to add a custom mapping (`CUSTOM_ICONS = { Foo: SomeComponent }`) — confirm shape first. |
+| Draft uses `- name (icon): desc \| https://example.com` shape (per-tool URL) | (1) Extend `parseTools` to capture a trailing `\| url` segment; (2) In `ToolCard.jsx`, wrap the outer `<div>` in an `<a href={tool.url} target="_blank" rel="noreferrer">` when `tool.url` is set, and add `cursor-pointer`. Confirm URL semantics (auto-detect `http://`? or always external `target="_blank"`?) before implementing. |
+| Draft uses per-tool `level` / `tier` (e.g. `- name (icon): desc [精通]`) | (1) Extend `parseTools` to capture a trailing bracket or pipe-delimited level; (2) Render as a small badge in `ToolCard`. Reuse `brand-orange/blue/green`. Confirm shape first. **No `CLAUDE.md` rule-12 restriction on tool tiers** (that rule applies to Skills only). |
+| Draft uses per-tool tags (e.g. `- name (icon): desc #tag1 #tag2`) | (1) Extend `parseTools` to capture tags (decide shape — trailing `#` or `[a, b]` brackets); (2) Render as small pills below the description in `ToolCard`. Confirm shape first. |
+| Draft has a paragraph between `## category` and the first `-` (per-category intro) | (1) Extend `parseTools` to capture the first non-bullet line under each `##` as a `group.intro`; (2) Render the intro in `Tools.jsx` between the H2 and the items grid. Use `text-brand-mid`. Confirm before implementing. |
+| Draft uses `###` sub-headings inside a category (group sub-categories) | (1) Extend `parseTools` to support nested groups; (2) Render in `Tools.jsx`. Heavier lift — confirm before implementing. |
 
-**(c) User wants per-tool tags.**
-- Extend `parseTools` to read a `tags: a, b, c` segment or `[a, b, c]` brackets. Decide the shape with the user — there are several reasonable conventions.
-- Render the tags as small pills below the description, in `text-brand-mid` or `bg-brand-mid/15 text-brand-mid`.
+If none of the above apply, skip step 5's frontend work entirely.
 
-**(d) User wants a per-category intro (e.g. one paragraph under `## 调试工具`).**
-- Extend `parseTools` to capture the first non-bullet line under each `##` as a `group.intro` field.
-- Render the intro in `src/pages/Tools.jsx` between the H2 and the items grid. Use `text-brand-mid` or a similar muted token; do not introduce a new color.
-
-**(e) User wants a different category treatment (e.g. collapsible groups, a "Pinned" section with a different background).**
-- Surface it as a UI design decision; confirm before implementing.
-
-**(f) User wants the Tools page layout to change** (e.g. remove the grid, use a compact list).
-- This is a pure `Tools.jsx` / `ToolCard.jsx` change with no markdown impact. The skill can do it, but the user's instruction is then a styling change, not a content change — point this out.
-
-**Don't add features the user didn't ask for.** If the user only added a new tool, do not refactor `ToolCard` to add a level badge.
-
-### 5. Confirm before changing frontend code
-
-Frontend changes are visible. Show the user what you plan to change and wait for `y` / "好" / "确认" before editing `src/lib/content.js`, `src/pages/Tools.jsx`, or `src/components/ToolCard.jsx`. Markdown changes can be made immediately; frontend changes need sign-off.
-
-```
-即将修改的前端代码：
-
-1. src/lib/content.js — parseTools 解析 '| url' 后缀
-   形态：- name (icon): desc | https://example.com
-
-2. src/components/ToolCard.jsx — 整张卡片包 <a>，target='_blank' 仅当 url 以 http 开头
-   现有 hover 样式保持不变
-
-确认？
-```
-
-If the user says no or wants a different shape, adjust and re-confirm.
-
-### 6. Apply the changes
+### 6. Execute
 
 In order:
 
-1. `Edit` `content/工具.md` with the new content.
-2. `Edit` `src/lib/content.js` if the parser needs extending.
-3. `Edit` `src/components/ToolCard.jsx` if the card shape needs extending.
-4. `Edit` `src/pages/Tools.jsx` only if the page-level layout (e.g. grid → list, or per-category intros) needs to change.
+1. `Write` the merged content to `content/工具.md`. The output preserves:
+   - The original category order, with new categories appended at the end.
+   - The original item order within existing categories, with new items appended at the end.
+   - The original `icon` and `desc` text for unchanged items.
+   - The `## category` heading text exactly as it appeared (preserves any user-added inline annotations like `## 效率工具（新）`).
+2. `Bash rm content-draft/<name>.md` to remove the draft.
+3. If frontend code edits were confirmed in step 5, `Edit` `src/lib/content.js` / `src/pages/Tools.jsx` / `src/components/ToolCard.jsx` accordingly.
+
+If any step fails, stop and report the partial state. Do not retry silently. Do not roll back.
 
 ### 7. Verify
 
-- Read the edited files back to confirm the changes landed correctly.
-- Run `npm run build` (or `npx vite build`) to confirm the page compiles. If the build is slow, skip it and tell the user to run it themselves, but always at least sanity-check with `grep`:
-
 ```
-grep -nE "^[#-]" content/工具.md | head -20
-grep -n "Icons\[" src/components/ToolCard.jsx
-grep -n "parseTools" src/lib/content.js
+grep -n "^[#-]" content/工具.md
+ls content-draft/<name>.md 2>&1
+ls content-draft/
 ```
 
-- Expected: the markdown file's `date -r` timestamp is fresh, the parser/card/page edits are present, no leftover references to dropped categories or tools.
+Expected:
+- `content/工具.md` shows the new categories/items.
+- `content-draft/<name>.md` is gone.
+- `content-draft/` is empty (or contains other unrelated drafts, plus `.gitkeep`).
+
+If frontend code was edited, also:
+
+```
+grep -n "intro\|tags\|level\|url" src/lib/content.js src/components/ToolCard.jsx
+```
+
+Run `npm run build` if it's fast; otherwise skip and tell the user to verify via `npm run dev → http://localhost:5173/#/tools`.
 
 ### 8. Report
 
 Print a one-block summary:
 
 ```
-已更新 content/工具.md：
-  - 编辑器：- Vim (Terminal): 终端里的编辑器
-  - 新增 ## 终端：iTerm2 (Terminal): 终端模拟器
-  - VS Code 的 icon 由 Code 改成 Code2
+已应用 content-draft/v2.md → content/工具.md：
+  - 新增分类：效率工具（Notion 笔记 / Raycast 启动）
+  - 编辑器：+ Cursor (Code2)，VS Code desc 改为"日常主力编辑器，副业也用"
+  - 设计工具：Figma desc 改为"界面设计与原型 / 团队协作"
+  - 保留：调试工具（无改动）
 
-前端代码调整：
-  - （无）
-
-构建：已运行 `npm run build`，通过 / 跳过
+草稿：已删除 content-draft/v2.md
+前端代码：无改动
 预览：npm run dev → http://localhost:5173/#/tools
 ```
 
 ## Edge cases
 
-- **User pastes a complete replacement and the new structure has only some categories** — items in the dropped categories are gone from the page. Surface the drops in the report so the user notices.
-- **User adds the same tool name in two categories** (e.g. `Terminal` in `编辑器` and `终端`) — both will render. The component uses `name` as the React key within a group, so duplicates *across* groups are fine; duplicates *within* a single group will trigger a React key warning. Flag and confirm.
-- **User writes a category with no items** — it renders as a bare H2. Likely a mistake; flag and ask.
-- **User uses non-Chinese category names** (e.g. `## Frontend`) — fine, the parser doesn't care. The H2 just renders whatever text follows `## `.
-- **User wants a tool that has no icon and no desc** (e.g. `- Astro`) — renders as a card with `Wrench` and no description. Tell the user; the typical fix is `- Astro (Box): Static site generator`.
-- **User adds a `### subheading` inside a category** — the parser ignores it. The items below it (if they match `- name (…): …`) are still picked up. This works but produces no visible subheading; warn the user.
-- **User uses emoji in tool names** (e.g. `- ⚛️ Astro (Box): SSG`) — works, renders as text. No code change.
-- **User wants tool ordering to differ from the markdown order** — the page renders in markdown order. Tell the user to reorder the markdown; do not introduce a `sort` field without their explicit ask.
-- **User wants a `link` field but writes it inside `desc`** (e.g. `- Foo (Box): https://foo.com`) — the URL ends up as the description text; the card is not clickable. Tell the user the recommended shape (`- Foo (Box): Foo 官网 | https://foo.com`) and what frontend changes that would require.
-- **User writes an icon name that doesn't exist in `lucide-react`** — the card falls back to `Wrench` silently. The format check (step 3) catches this; surface it before writing the file.
+- **Draft is empty or has no `## category`** — block. There's nothing to merge.
+- **Draft mentions a category whose name only differs by whitespace/case** (e.g. `## 编辑器 ` vs `## 编辑器`) — the parser uses the trimmed text, so they collide. Surface as a warning before merging.
+- **Draft has tools with duplicate names within one category** (e.g. two `- Slack` lines under `## 效率工具`) — parser keeps both, React warns about duplicate keys. Surface and ask the user to dedupe in the draft.
+- **Draft contains a `## category` that already exists in `content/工具.md` but the user clearly intended to replace it** — by default this skill **merges** (adds + updates, preserves untouched items). If the user wants a hard replace (drop items not in the draft), they must say "替换 ## 编辑器" or similar; otherwise stick to additive merge.
+- **User wants to delete a tool via the draft** (e.g. draft omits `- Vim (Terminal)` and the user assumes that means "remove Vim") — this skill does NOT delete by omission. Surface in the plan; tell the user to `Edit` `content/工具.md` directly for deletions.
+- **User wants to delete an entire category via the draft** (e.g. draft omits `## 调试工具` entirely) — same rule. Tell the user to `Edit` `content/工具.md` directly.
+- **Draft uses an icon name that doesn't exist in `lucide-react`** — flag with a substitute. Don't auto-replace.
+- **Tool name has a colon in it** (e.g. `Bash: Shell (Terminal): shell scripting`) — parser splits at first `:` → name becomes `Bash`, desc becomes `Shell (Terminal): shell scripting`. Surface and suggest renaming the tool to avoid the colon.
+- **Tool name has parens but no icon** (e.g. `- Foo (bar): desc`) — regex matches `Foo` as name and `bar` as icon. If `bar` isn't a real `lucide-react` icon, the card renders with `Wrench`. Flag this; suggest either removing the parens (so it's just a description) or using a real icon.
+- **User passes a filename with spaces or path separators** — reject. The draft must be a single file at the top of `content-draft/`.
+- **User passes a path like `content/工具.md`** instead of a draft filename — clarify. This skill operates on files in `content-draft/`, not on the live file.
+- **`content-draft/` doesn't exist** — `mkdir -p content-draft` and tell the user the folder was empty (their file isn't there). Don't proceed with a merge.
+- **Draft is a complete replacement and only contains some of the existing categories** — by default the missing categories are kept (additive merge). If the user wants the missing categories dropped, they must explicitly confirm "丢弃未提到的分类"; treat that as a destructive op and surface it.
 
-## Quick reference: the four "what changed" cases
+## Quick reference: the three "what changed" cases
 
-| User's instruction | Markdown only? | Parser change? | Page/card change? | Typical extra step |
-| --- | --- | --- | --- | --- |
-| Add / remove / edit a tool's name, icon, or desc | ✓ | — | — | Verify icon exists in lucide-react |
-| Add a new `## category` | ✓ | — | — | None |
-| Edit the H1 text or page-level layout (no markdown) | — | — | ✓ | Just edit the JSX (don't run this skill) |
-| Add a per-tool link / url (clickable card) | ✓ | + parse `| url` segment | + wrap card in `<a>` | Confirm URL handling (external link heuristic) |
-| Add a per-tool level / tier | ✓ | + parse level segment | + render badge | Confirm visual treatment (badge vs. text vs. dot) |
-| Add per-tool tags | ✓ | + parse tags segment | + render pills | Confirm tag shape (comma-separated, brackets, etc.) |
-| Add a per-category intro | ✓ | + parse intro line | + render intro in card | Decide muted-token color |
-| Pure visual change to Tools.jsx / ToolCard.jsx | — | — | ✓ | Just edit the JSX (don't run this skill) |
+| Draft shape | Markdown only? | Parser change? | Page/component change? |
+| --- | --- | --- | --- |
+| Add new tool / new category / change desc / change icon | ✓ | — | — |
+| Use a `(Foo)` icon that doesn't exist in `lucide-react` | ✓* | — | — (falls back to `Wrench`) |
+| Use a per-tool URL (`- name (icon): desc \| url`) | ✓ | + `parseTools` URL capture | + `<a>` wrapper in `ToolCard` |
+| Use a per-tool level / tier | ✓ | + `parseTools` level capture | + badge in `ToolCard` |
+| Use per-tool tags | ✓ | + `parseTools` tag capture | + pills in `ToolCard` |
+| Add a per-category intro paragraph | ✓ | + `parseTools` intro capture | + intro block in `Tools.jsx` |
+| Use `###` sub-headings inside a category | ✓ | + `parseTools` nested groups | + nested render in `Tools.jsx` |

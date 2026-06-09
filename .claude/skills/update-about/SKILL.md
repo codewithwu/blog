@@ -1,224 +1,306 @@
 ---
 name: update-about
-description: Use when the user wants to update `content/关于.md` with new content and have the frontend About page reflect it. The user message **must mention both an update verb and the about file** — Chinese phrases like "更新 content/关于.md"、"按 xxx 内容修改 content/关于.md"、"把 content/关于.md 改成 xxx"、"更新关于页面"、"修改关于页内容"、"在 content/关于.md 里加 xxx"，or English equivalents like "update content/关于.md"、"rewrite the about page"、"change the about content". Mentioning "关于" or "about" alone is NOT enough — must include a clear update/replace intent pointing at the file or the About page. The skill first rewrites `content/关于.md` per the user's instructions, then runs a format check against the `parseAbout` parser, and finally adapts the frontend (`src/lib/content.js`, `src/pages/About.jsx`, possibly `src/components/TimelineItem.jsx`) to render any new fields, sections, or contact types that the current code doesn't handle. Do NOT trigger for editing other pages (Skills/Tools/Articles/Projects) — those have their own content/data flow. Do NOT trigger for purely visual/styling changes to the About page that don't involve the markdown.
+description: Use when the user wants to apply a pre-edited About draft file from `content-draft/` into the live About page. The user message must contain explicit update-about phrasing that combines an update verb with a file reference — Chinese "更新关于 xxx.md"、"更新关于 xxx"、"按 xxx.md 更新关于页"、"用 content-draft/xxx 更新关于页", or English "update about from xxx" / "apply about draft xxx". Do NOT trigger for inline ad-hoc edits like "把座右铭改成 XXX"、"在经历里加一段 2020 实习" (those are inline edits — just `Edit` `content/关于.md` directly), for editing Skills/Tools/Articles/Projects, for editing `content/关于.md` without a draft file, or when `content-draft/<name>.md` doesn't exist on disk. Mentioning "关于" alone (e.g. "看一下关于页") is NOT enough — the trigger needs a filename or a clear reference to the `content-draft/` folder.
 ---
 
 # update-about
 
 ## What it does
 
-End-to-end workflow for changing the About page from the markdown side out:
+Applies one About draft file (`content-draft/<name>.md`) onto the live About source (`content/关于.md`), then deletes the draft. The merge is **section-level replace**:
 
-1. Rewrite `content/关于.md` per the user's instructions.
-2. Validate the new markdown against the `parseAbout` parser in `src/lib/content.js` — flag any structural issue.
-3. Detect content that the current frontend cannot render (new contact types, new sections, new fields) and extend the parser + About page to handle it.
-4. Build to confirm the page compiles and renders without errors.
+1. Reads the draft and runs a format check against the `parseAbout` parser.
+2. Reads the current `content/关于.md`.
+3. Computes a section-level merge:
+   - Sections that appear in the draft (preamble / `## 联系方式` / `## 经历` / `## 座右铭` / …) → the draft's version **replaces** the live version for that section.
+   - Sections only in the live file → kept untouched.
+   - New `##` sections in the draft that the parser doesn't know about → flagged; require explicit confirmation + parser extension.
+4. Shows a structured diff and waits for confirmation.
+5. Rewrites `content/关于.md`, deletes `content-draft/<name>.md`.
+6. Adapts the frontend (`src/lib/content.js` / `src/pages/About.jsx`) **only** when the draft introduces something the parser/page cannot render today (new contact icon, new top-level section, new hard-coded field).
 
-The About page is *data-driven*: `src/pages/About.jsx` imports `content/关于.md?raw` and feeds it to `parseAbout`. So the markdown is the source of truth, and the only time you touch React code is when the markdown introduces something the parser/page doesn't already support.
+The About page is data-driven: `src/pages/About.jsx` calls `parseAbout(import 关于.md)` and renders `tagline / intro / contacts / timeline / motto`. So in most cases this skill only touches the markdown and no JSX changes are needed. The exceptions are listed in step 5.
 
 ## When to use
 
-Trigger **only** when the user message contains a clear update/replace intent pointing at `content/关于.md` or the About page. Match phrases such as:
+Trigger **only** when the user message names a draft file in `content-draft/` (with or without the `.md` suffix). Match phrases such as:
 
-- "更新 content/关于.md，按以下内容：…"
-- "把 content/关于.md 改成 …"
-- "按这份内容更新关于页面：…"
-- "在 content/关于.md 里加一个 Twitter 联系方式"
-- "修改 content/关于.md，把经历部分换成 …"
-- "rewrite content/关于.md with …"
-- "update the about page to say …"
+- "更新关于 v2.md" / "更新关于 v2"
+- "按 content-draft/v2.md 更新关于页"
+- "用 content-draft/2026 更新关于"
+- "apply about draft v2"
+- "update about from content-draft/v2"
 
 The phrase must NOT trigger if:
 
-- The user just wants to *view* the About page — read the file, don't run this skill.
-- The update targets Skills (`content/技能.md`), Tools (`content/工具.md`), Articles, or Projects — those have different data flows; ask the user to clarify or use the appropriate tool.
-- The change is purely a styling tweak to `About.jsx` (e.g. "把头像放大" or "改一下座右铭的颜色") with no markdown change — just `Edit` the JSX file directly.
+- The user gives inline content without a draft file (e.g. "把关于改成：\n后端工程师 / …") — just `Edit` `content/关于.md` directly.
+- The user wants a single point edit ("把座右铭改成 XXX"、"GitHub 链接改成 …"、"加一段 2020 实习经历") — just `Edit` `content/关于.md` directly.
+- The user wants to view, lint, or restyle the About page without changing the markdown — just read or `Edit` directly.
+- The target file `content-draft/<name>.md` doesn't exist — block and tell the user to create it first.
 
-When the instruction is ambiguous between an "update this file" and a "rewrite this whole page" intent, prefer running this skill — the user can always say "no, just the markdown".
+This skill is **draft-only**. The distinguishing rule is **"is there a file in `content-draft/` referenced in the request?"**. If yes → run this skill. If no → use the `Edit` tool on `content/关于.md` directly.
 
 ## When NOT to use
 
-- **Viewing the about page** — just read `content/关于.md`.
-- **Editing Skills / Tools / Articles / Projects** — different content/data flow; not this skill's job.
-- **Pure visual changes to About.jsx** with no markdown involvement — use `Edit` on the JSX directly.
-- **Adding a brand-new content section that requires extensive UI work** (e.g. a skill chart, an embedded timeline with images) — surface the scope, propose a design, and let the user confirm before extending the skill's reach.
+- **Writing a brand-new draft from scratch** — this skill assumes `content-draft/<name>.md` already exists. To create a new draft, just write the file to `content-draft/<name>.md` and stop.
+- **Editing Skills / Tools / Articles / Projects** — different content/data flow; not this skill's job (use `update-skills` for skills; for tools/articles/projects use their respective skills or `Edit` directly).
+- **Pure visual changes to `About.jsx`** with no markdown involvement (e.g. "把头像换成圆角矩形") — `Edit` the JSX directly.
+- **Renaming the hard-coded display name `极客熊猫` or the avatar text `极客`** — these are NOT in `content/关于.md` today. Surface and ask whether the user wants to (a) `Edit` `About.jsx` directly, or (b) move them into the markdown (a parser extension).
 
 ## Project context
 
-- Source of truth: `content/关于.md` (project root, *not* under `src/`).
-- Parser: `src/lib/content.js`, function `parseAbout(md)`. Returns `{ tagline, intro, contacts, timeline, motto }`. The parser is a pure string handler — no frontmatter, no gray-matter; sections are delimited by `##` headings.
-- Page: `src/pages/About.jsx`. It calls `parseAbout(aboutMd)` at module top level, then maps each field to a small block of JSX. The avatar (top-left circle with "极客" inside) and the H1 ("极客熊猫") are currently **hardcoded** in `About.jsx`, not parsed from the markdown.
-- Timeline item: `src/components/TimelineItem.jsx`. Receives `{ year, title, subtitle, desc }` from the parser. Multi-line `desc` is rendered as a single `<p>` with embedded newlines.
-- Brand color tokens live in `tailwind.config.js` (`brand-orange/blue/green/light/mid/surface`). Don't add new color tokens unless the user asks — reuse what exists.
-- Icon library: `lucide-react` is the only icon source per `CLAUDE.md` rule 9. The `About.jsx` `ICON_MAP` currently only knows `Github` and `Mail`. Anything else needs to be added there.
+- Draft location: `content-draft/<name>.md` (project root, *not* under `src/`).
+- Source of truth (after merge): `content/关于.md`.
+- Parser: `parseAbout` in `src/lib/content.js`. Returns `{ tagline, intro, contacts, timeline, motto }`.
+- Page: `src/pages/About.jsx`. Maps the parsed fields onto a header card, a timeline list, and a motto block.
+- Timeline node: `src/components/TimelineItem.jsx`. Props: `year / title / subtitle / desc`.
+- Hard-coded in `About.jsx` (NOT in the markdown):
+  - Display name `极客熊猫` (h1)
+  - Avatar text `极客` (gradient circle)
+  - `ICON_MAP = { Github, Mail }` from `lucide-react`
+- Parser conventions:
+  - Preamble (everything before the first `##`): first non-empty line → `tagline`; remaining lines joined → `intro`.
+  - `## 联系方式` items: `- label: href`. Only `label === 'GitHub'` (icon `Github`) and `label === '邮箱'` (icon `Mail`) get mapped to a `lucide-react` icon today. Other labels render label-only (no icon).
+  - `## 经历` items: `- **year** title @ subtitle\n  desc`. The year/title/subtitle line is **strict regex** (`/^-\s+\*\*(.+?)\*\*\s+(.+?)\s+@\s+(.+?)\s*$/`). A leading-whitespace non-`-` line that follows is captured as `desc`.
+  - `## 座右铭` items: any non-empty lines, leading `>` stripped, joined by space.
+  - Any other `## XXX` sections are **silently dropped** by the parser.
 
-## `parseAbout` reference (what the parser currently supports)
+## Draft file shape
 
-The parser is the contract. If the markdown doesn't conform, the data simply won't show up.
+The draft uses the same syntax as `content/关于.md`:
 
-| Markdown shape | Parsed field | Notes |
-| --- | --- | --- |
-| First non-empty line of the file (before any `##`) | `tagline` | Single line. |
-| Remaining preamble lines | `intro` | Joined with newlines. |
-| `## 联系方式` + `- Label: href` lines | `contacts[]` | `Label` of `GitHub` → icon `Github`; `邮箱` → icon `Mail`; anything else → `icon: null` (renders without an icon). |
-| `## 经历` + `- **year** title @ subtitle` lines, optionally followed by indented lines | `timeline[]` | `year`, `title`, `subtitle`, `desc` (string). |
-| `## 座右铭` + `> quote` lines | `motto` | Quote marker stripped, lines joined. |
-| Anything else | ignored | Won't show up on the page. |
+```markdown
+后端工程师 / Agent开发 / 终身学习者
 
-The avatar (the circle on the left of the header) and the H1 name are *not* in the parser — they're hardcoded in `About.jsx`. If the user wants these to be markdown-driven, that's a parser + JSX extension; surface the change explicitly before doing it.
+喜欢写干净的代码，热爱开源。业余时间折腾个人项目、写博客、跑马拉松。
+
+## 联系方式
+- GitHub: https://github.com/codewithwu
+- 邮箱: codewithwu@gmail.com
+
+## 经历
+- **2024 – 今** 高级前端工程师 @ 某科技公司
+  负责内部 SaaS 平台架构与性能优化。
+- **2021 – 2024** 前端工程师 @ 某创业公司
+  从 0 到 1 搭建 B 端产品。
+
+## 座右铭
+> "Stay hungry, stay foolish."
+```
+
+Same parser, same rules:
+
+| Line shape | Behavior |
+| --- | --- |
+| Top of file (before first `##`) | first non-empty line → tagline; rest → intro |
+| `## 联系方式` then `- label: href` | adds a contact (icon only for `GitHub` / `邮箱`) |
+| `## 经历` then `- **year** title @ subtitle` | adds a timeline entry; next indented non-`-` line → `desc` |
+| `## 座右铭` then `> quote` | sets motto (leading `>` stripped) |
+| `## XXX` (parser doesn't know) | silently dropped — flag in format check |
+| `### / #` heading | ignored |
+
+A draft can be a **partial update** (only the sections you want to touch) or a **full bio rewrite** (every section). The merge algorithm treats both the same way — sections not mentioned in the draft are preserved verbatim. Sections mentioned in the draft are **replaced wholesale** (not item-merged), because About sections are coherent units (a tagline isn't "merged with" another tagline; a refreshed `## 联系方式` shouldn't keep stale links).
+
+If the user wants to **append** to `## 经历` without retyping the older entries, they need to either:
+- copy the existing entries into the draft and add the new one, OR
+- say "在草稿基础上保留现有经历" explicitly — surface this option in the diff preview.
 
 ## Workflow
 
-Follow these steps in order. **Do not skip the format check or the frontend adaptation step.**
+Follow these steps in order. **Do not skip the format check, the diff preview, or the confirmation.**
 
-### 1. Read the current state
+### 1. Resolve target
 
-- Read `content/关于.md` to see the current content.
-- Read `src/lib/content.js` (`parseAbout` only) and `src/pages/About.jsx` to confirm what the current code supports.
-- Read `src/components/TimelineItem.jsx` if the timeline shape might change.
+Parse the user message for the draft filename. Strip a trailing `.md` if present; the bare name is the draft identifier.
 
-The user often says "把 X 改成 Y" — you need to know what X currently is before rewriting.
+- Verify `content-draft/<name>.md` exists. If not, `ls content-draft/` and tell the user what's available.
+- Reject filenames with spaces, path separators, or `..`. These shouldn't reach the merge phase.
 
-### 2. Compose the new markdown
+Only one draft per invocation. If the user passes multiple names, ask which one to apply first; don't batch (merge order would matter and is hard to reason about).
 
-Apply the user's instructions. Rules:
+### 2. Format-check and normalize the draft
 
-- Preserve the section structure (`## 联系方式`, `## 经历`, `## 座右铭`) when the user is only changing part of the page. When the user provides a complete replacement, honor their structure even if it diverges from the existing one — but make a note when the new structure requires parser/page changes (step 4).
-- Keep the timeline line format `- **year** title @ subtitle` exactly. Regex is `^-\s+\*\*(.+?)\*\*\s+(.+?)\s+@\s+(.+?)\s*$` — any deviation (e.g. `**year**` without space before title, no `@`) silently drops the entry. The parser is strict; tell the user if their natural phrasing won't parse.
-- For contacts, the format is `- Label: href`. A `Label` of `GitHub` or `邮箱` gets an icon; anything else renders as plain text with an external-link behavior. If the user wants an icon for a new label (e.g. `Twitter`, `LinkedIn`, `微信`, `B站`), step 4 covers it.
-- For the motto, use `> …` lines under `## 座右铭`. The parser strips the leading `>`.
-- Don't introduce frontmatter, code fences, or HTML — `parseAbout` is plain text only.
+Read `content-draft/<name>.md` and check:
 
-### 3. Run the format check
+**(a) Sections the parser knows about.**
 
-After writing the new `content/关于.md`, re-read it and check:
+Allowed `##` headings: `联系方式` / `经历` / `座右铭`. List every other `## XXX` heading found — these will be **silently dropped by the parser** unless the parser is extended (see step 5).
 
-**(a) Sections that the parser knows about are still well-formed.**
-- Preamble has at least one non-empty line if the user wants a tagline; otherwise it's fine to be empty.
-- `## 联系方式` lines are `- Label: href`. No code fences or blank lines between `-` and content.
-- `## 经历` lines match the timeline regex. Multi-line `desc` lines are indented (start with whitespace) and are not themselves `- …` bullets.
-- `## 座右铭` lines start with `>` (or are blank).
+**(b) Preamble shape.**
+- First non-empty line is the `tagline` — should be short (one line, like a strap-line). Flag if it's a paragraph.
+- All remaining preamble lines join into `intro` (multi-line allowed; joined with newlines).
+- A draft with no preamble at all means "no tagline / intro change"? No — it means the page will render with empty tagline/intro. Flag if this looks unintentional.
 
-**(b) Sections the parser doesn't know about are flagged.**
-- Any `## Foo` other than `联系方式` / `经历` / `座右铭` will be silently ignored. List it for the user and ask whether to (i) extend the parser + page to render it, or (ii) drop it.
+**(c) Contacts shape (`## 联系方式`).**
+- Every line should be `- label: href`. Lines without `:` are dropped silently — flag them.
+- Labels other than `GitHub` and `邮箱` will render without an icon today. List every offender and ask whether to (a) accept icon-less rendering, or (b) extend `ICON_MAP` in step 5.
+- Hrefs starting with `http(s)://` will open in a new tab (`target=_blank`); others (`mailto:`, internal anchors) won't. Flag if a contact looks like it expects external behavior but lacks a protocol.
 
-**(c) Contact labels without a known icon.**
-- A label other than `GitHub` / `邮箱` parses to `icon: null` and renders as plain text. If the user expects an icon (because they wrote "Twitter" or "微信" and want the bird/WeChat glyph), step 4 covers it.
+**(d) Timeline shape (`## 经历`).**
+- Every entry header line must match `/^-\s+\*\*(year)\*\*\s+(title)\s+@\s+(subtitle)\s*$/`. List every `- ` line under `## 经历` that doesn't match — the parser will skip them silently.
+- Common breakers: missing `**` around the year, missing ` @ ` (must be space-`@`-space), description line not indented (parser requires leading whitespace), or description placed on the same line as the header.
+- Years like `2024 – 今` use an en-dash `–`; this is fine, just don't normalize it to `-`.
 
-**(d) Hardcoded fields that the user might assume are markdown-driven.**
-- The avatar text (`极客`) and the H1 (`极客熊猫`) are hardcoded in `About.jsx`. If the user's new content implies a different name, surface this — do not silently mismatch the markdown and the H1.
+**(e) Motto shape (`## 座右铭`).**
+- Leading `>` is stripped by the parser; missing `>` still works (lines are joined by space). Flag multi-line mottos so the user knows they'll be space-joined.
 
-Print a brief check report:
+**(f) Whitespace / encoding.**
+- Trim trailing whitespace on each line.
+- Normalize line endings to `\n` (no CRLF).
+- File must be UTF-8.
+
+If issues are found, list them all and pause. Do **not** auto-fix. Let the user fix the draft and re-run, or acknowledge the trade-offs and proceed.
+
+### 3. Read current state and compute the merge
+
+Read `content/关于.md` and segment it the same way the parser does:
+
+- `preamble` (everything before the first `##`)
+- `## 联系方式` block
+- `## 经历` block
+- `## 座右铭` block
+- Any unknown `## XXX` block (rare; preserved verbatim — the parser ignores it but we don't touch it)
+
+For each section that appears in the draft, the draft's text replaces the live text. For sections in the live file but not in the draft, the live text is preserved as-is.
+
+Track per-section deltas for the diff preview:
+
+- **preamble** — show old vs new `tagline`, and old vs new `intro` (truncate long intros to ~80 chars).
+- **`## 联系方式`** — list added contacts (in draft, not in live), removed contacts (in live, not in draft), and changed contacts (same label, different href).
+- **`## 经历`** — list added entries (by `year` key), removed entries, and changed entries (same year, different title/subtitle/desc). If the draft has *fewer* entries than the live file, treat the missing ones as **removed** and surface them prominently — this is the most likely "I forgot to include these" mistake.
+- **`## 座右铭`** — show old vs new motto.
+- **unknown `##` sections in draft** — flag separately; require parser extension (step 5) before applying.
+
+### 4. Show the merge plan and confirm
+
+Print a structured diff. Group by section; skip sections with no change.
 
 ```
+即将应用 content-draft/v2.md → content/关于.md（section-level replace）：
+
+preamble:
+  tagline:  "后端工程师 / 终身学习者"
+        →  "后端工程师 / Agent开发 / Vibe Coding / 终身学习者"
+  intro:    (无改动)
+
+## 联系方式:
+  + Twitter: https://x.com/cooper          (新增，⚠ 无 icon 映射，详见步骤 5)
+  ~ GitHub:  …/codewithwu → …/cooperwu     (修改)
+  - 邮箱:    codewithwu@gmail.com           (删除，⚠ 草稿未包含)
+
+## 经历:
+  + **2024 – 今** 高级前端工程师 @ 某科技公司   (新增)
+  - **2017 – 2021** 计算机科学学士 @ 某大学    (删除，⚠ 草稿未包含)
+  (其余 2 段不变)
+
+## 座右铭:
+  ~ "Stay hungry, stay foolish."
+   → "Stay curious."
+
+保留分区（草稿未涉及，原样保留）：（无）
+
+合并后会删除 content-draft/v2.md。
+
 格式检查：
-  ✓ tagline / intro 完整
-  ✓ 联系方式：3 条（GitHub / 邮箱 / Twitter，Twitter 无图标）
-  ✓ 经历：2 条，正则匹配
-  ✓ 座右铭：1 条
-  ⚠ 新增 ## 教育 章节，当前解析器不支持
-  ⚠ 头像文字 "极客" 和 H1 "极客熊猫" 仍是硬编码，未与新内容对齐
+  ✓ 4 段经历，全部命中 - **year** title @ subtitle 模板
+  ⚠ 草稿删掉了 1 个联系方式（邮箱）、1 段经历（学历），确认是有意为之？
+  ⚠ 新增了 Twitter 联系方式，但 ICON_MAP 不识别 — 将渲染为无 icon
+      要为 Twitter 加 icon，需要扩展 src/lib/content.js + src/pages/About.jsx（见步骤 5）
+
+前端代码：
+  ✓ 无需改动（如不为 Twitter 加 icon）
+  ✗ 若要为 Twitter 加 icon → 需要 2 处 Edit（见下方"步骤 5"）
+
+确认合并？(y/n)  如需修改可直接说"保留邮箱"或"经历不要删学历"。
 ```
 
-### 4. Adapt the frontend (only when needed)
+Wait for explicit `y` / `yes` / "确认" / "好". If the user objects to a deletion ("保留邮箱"、"经历加回学历"), apply the edit (treat the live entry as carried over) and re-print the affected block.
 
-Walk through the list of format-check warnings and decide which to address. For each one, propose a minimal change:
+### 5. Determine frontend adaptations (rare)
 
-**(a) New contact type needing an icon.**
-- Pick a matching `lucide-react` icon (e.g. `Twitter` → `Twitter`, `LinkedIn` → `Linkedin`, `B站` / `Bilibili` → there isn't a direct icon; fall back to `Link` or `Globe`; `微信` / `WeChat` → `MessageCircle`).
-- Add it to the import line in `src/pages/About.jsx` and to the `ICON_MAP`. Update the label-to-icon map in `parseAbout` (`src/lib/content.js`) so the parser outputs the right icon name string.
-- Verify the icon exists in `lucide-react@0.400.0` by checking `node_modules/lucide-react/dist/lucide-react.d.ts` or by trying it; if uncertain, fall back to a generic icon like `Link`.
+In almost every case, the answer here is "no JSX/parser changes needed". Flag any of the following and confirm separately before touching code:
 
-**(b) New `## section` that should render.**
-- Extend `parseAbout` in `src/lib/content.js` to parse the new section. Match the existing style: pure string handling, no deps.
-- Add a render block in `src/pages/About.jsx`. Reuse the existing `brand-*` color tokens and Tailwind spacing rhythm (`mt-12` between major sections, `p-6 rounded-xl` cards, etc.). Do not introduce new colors.
-- If the section needs a brand-new component (e.g. a list with icons), put it under `src/components/` and import it in `About.jsx`. Keep the component small and prop-driven.
+| Trigger | Required code change |
+| --- | --- |
+| Draft adds a contact label other than `GitHub` / `邮箱` and user wants an icon | (1) Pick a `lucide-react` icon; (2) In `src/lib/content.js` `parseAbout`, add a branch like `else if (label === 'Twitter') icon = 'Twitter';`; (3) In `src/pages/About.jsx`, import the icon and add it to `ICON_MAP`. |
+| Draft introduces a new `##` section (e.g. `## 兴趣` / `## 项目` / `## 教育背景`) | (1) Extend `parseAbout` to capture the new section into the returned object; (2) Extend `About.jsx` to render it. Confirm both the data shape (list? paragraph? key-value?) and the visual treatment (which Tailwind block) before implementing. |
+| Draft wants to change the hard-coded display name `极客熊猫` or avatar text `极客` (e.g. user has put `# 张三` at the top of the draft) | Decide: (a) keep them hard-coded and `Edit` `About.jsx` directly (simple, no markdown change); or (b) move them into the markdown by extending `parseAbout` to read a `# name` heading (or a frontmatter block) and the avatar from a convention. Option (b) is heavier — confirm with the user first. |
+| Timeline `desc` uses multi-paragraph or markdown formatting (e.g. bullet sub-items, bold inline) | Today `TimelineItem` renders `desc` as a single `<p>` and the parser joins desc lines with `\n`. If the user wants real rendering, switch to a markdown renderer (e.g. `react-markdown`). Heavy lift — flag and confirm. |
+| Draft uses a different contact href shape (e.g. label-only, no href) | Parser drops lines without `:`. If the user wants label-only entries (e.g. "微信: 联系我"), either tell them to use `- 微信: 联系我` and accept it as plain text, or extend the parser to allow an optional href. |
 
-**(c) Avatar / H1 alignment.**
-- The simplest fix is to add `avatar` and `name` fields to the `parseAbout` output (e.g. by reading a frontmatter-like header at the top of the file, or by promoting a specific line). The H1 and avatar would then read from the parser. If the user is OK with that, do it; otherwise just update the hardcoded strings in `About.jsx` to match.
+If none of the above apply, skip step 5's frontend work entirely.
 
-**(d) Tagline missing because the user deleted the preamble.**
-- If `tagline` is empty after the rewrite, just don't render the `<p>` (the page already conditionally renders). No code change needed.
-
-**Don't add features the user didn't ask for.** If the user only changed the motto, do not refactor the avatar. If they added one new contact type, do not redesign the contacts block.
-
-### 5. Confirm before changing frontend code
-
-Frontend changes are visible. Show the user what you plan to change and wait for `y` / "好" / "确认" before editing `src/lib/content.js` or `src/pages/About.jsx`. Markdown changes can be made immediately; frontend changes need sign-off.
-
-```
-即将修改的前端代码：
-
-1. src/lib/content.js — parseAbout 中联系方式的 label→icon 映射
-   添加：Twitter → Twitter、LinkedIn → Linkedin
-
-2. src/pages/About.jsx — ICON_MAP
-   import { Github, Mail, Twitter, Linkedin } from 'lucide-react';
-   const ICON_MAP = { Github, Mail, Twitter, Linkedin };
-
-确认？
-```
-
-If the user says no or wants a different icon, adjust and re-confirm.
-
-### 6. Apply the changes
+### 6. Execute
 
 In order:
 
-1. `Edit` `content/关于.md` with the new content.
-2. `Edit` `src/lib/content.js` if the parser needs extending.
-3. `Edit` `src/pages/About.jsx` if rendering or icon mapping needs extending.
-4. `Edit` `src/components/TimelineItem.jsx` only if the timeline shape changed in a way the existing component can't handle.
+1. `Write` the merged content to `content/关于.md`. The output preserves:
+   - The original section order (preamble first, then `## 联系方式` → `## 经历` → `## 座右铭`, then any unknown sections).
+   - The text of sections not mentioned in the draft (verbatim, including blank lines).
+   - For replaced sections, the draft's text is inserted directly (post-normalization from step 2).
+2. `Bash rm content-draft/<name>.md` to remove the draft.
+3. If frontend code edits were confirmed in step 5, `Edit` `src/lib/content.js` / `src/pages/About.jsx` (and `src/components/TimelineItem.jsx` if timeline rendering changes) accordingly.
+
+If any step fails, stop and report the partial state. Do not retry silently. Do not roll back.
 
 ### 7. Verify
 
-- Read the edited files back to confirm the changes landed correctly.
-- Run `npm run build` (or `npx vite build`) to confirm the page compiles. If the build is slow, skip it and tell the user to run it themselves, but always at least sanity-check with `grep` for the new sections/icons:
-
 ```
-grep -n "Twitter\|Linkedin" src/pages/About.jsx
-grep -n "'Twitter'" src/lib/content.js
-ls -la content/关于.md
+grep -n "^##\\|^-\\|^>" content/关于.md
+ls content-draft/<name>.md 2>&1
+ls content-draft/
 ```
 
-- Expected: the markdown file's `date -r` timestamp is fresh, the new icon imports are present, the icon-map entries are present, no leftover references to dropped sections.
+Expected:
+- `content/关于.md` shows the new sections/items.
+- `content-draft/<name>.md` is gone.
+- `content-draft/` is empty (or contains other unrelated drafts, plus `.gitkeep`).
+
+If frontend code was edited, also:
+
+```
+grep -n "ICON_MAP\\|parseAbout" src/pages/About.jsx src/lib/content.js
+```
+
+Run `npm run build` if it's fast; otherwise skip and tell the user to verify via `npm run dev → http://localhost:5173/#/about`.
 
 ### 8. Report
 
 Print a one-block summary:
 
 ```
-已更新 content/关于.md：
-  - 联系方式：+ Twitter (icon: Twitter), + LinkedIn (icon: Linkedin)
-  - 经历：调整 2 条 desc 文案
-  - 座右铭：替换为新内容
+已应用 content-draft/v2.md → content/关于.md：
+  - preamble：tagline 更新（"后端工程师 / Agent开发 / Vibe Coding / 终身学习者"）
+  - 联系方式：+ Twitter，~ GitHub 链接，- 邮箱（按用户确认删除）
+  - 经历：+ 1 段（2024 高级前端），保留旧的 2 段
+  - 座右铭：更新为 "Stay curious."
 
-前端代码调整：
-  - src/lib/content.js: parseAbout 增加 Twitter/LinkedIn 的 icon 映射
-  - src/pages/About.jsx:  ICON_MAP 新增 Twitter/Linkedin，import 同步
-
-构建：已运行 `npm run build`，通过 / 跳过
+草稿：已删除 content-draft/v2.md
+前端代码：无改动（Twitter 无 icon，渲染为纯文本链接）
 预览：npm run dev → http://localhost:5173/#/about
 ```
 
 ## Edge cases
 
-- **User wants to add a profile image** — there's no `cover`/`avatar` field today. Surface this as a frontend change: add a small frontmatter-style header to the markdown (e.g. `<!-- avatar: path/to/img.png -->`) or a separate `## Avatar` section, extend `parseAbout`, and render it in `About.jsx`. Confirm before doing it.
-- **User wants the avatar/name to be markdown-driven** — same approach as a profile image; recommend the frontmatter-style header line at the very top of `content/关于.md` so the parser picks it up.
-- **User adds a contact with a non-URL value** (e.g. `微信: codewithwu`) — the parser will set `href` to whatever they wrote; the `<a>` tag will navigate to that string. Flag this and suggest a `tel:` / `weixin://` scheme or a `mailto:`-style href.
-- **User pastes a long bio that overflows the avatar header** — the existing layout uses `flex-col sm:flex-row`, so the bio will wrap under the avatar on mobile and beside it on desktop. No change needed unless the user complains.
-- **User deletes a section entirely** (e.g. removes `## 座右铭`) — the page already conditionally renders, so the block just disappears. No code change.
-- **User adds a new section like `## 教育背景` that maps to the existing timeline UI** — the parser can be told to accept `教育背景` as an alias for `经历` if the entries follow the same `- **year** title @ subtitle` shape. Or, if the section's *visual* treatment is different (no year emphasis, etc.), build a small dedicated component. Confirm the intent.
-- **Two contacts share the same label** (e.g. two `GitHub` links) — the parser will produce two entries; React keys will collide on `label`. The existing code uses `label` as the `key`. Either de-dupe by adding a unique suffix or switch the key to `href` (or a counter). Flag and confirm.
-- **User uses `##` headings inside a section that already has `>` blocks** — the parser's section splitter re-buckets on any `## `, so an H3 inside a section is fine but a stray `## Foo` will start a new section. The format check in step 3 catches this.
+- **Draft is empty or whitespace-only** — block. There's nothing to merge.
+- **Draft has only a preamble (no `##` sections)** — valid; only the preamble (tagline + intro) is replaced. Confirm with the user that this is intentional (no contacts / timeline / motto change).
+- **Draft mentions a `##` section but with zero items** (e.g. `## 联系方式` immediately followed by `## 经历`) — treat as "replace with empty". This effectively wipes the section. Surface prominently and confirm — most likely the user forgot to fill it.
+- **Draft has a typo in a known section heading** (e.g. `## 联系` instead of `## 联系方式`) — the parser treats it as an unknown section, so its contents are dropped. Catch this in step 2 with a similarity check against the 3 known headings and suggest the fix.
+- **Live file has a `## XXX` section the parser doesn't know about** (left over from an earlier edit) — preserve verbatim during merge. Mention it in step 4 so the user knows it's still there.
+- **Draft's timeline order differs from live's** — the draft's order wins (sections are replaced wholesale). Mention "顺序：按草稿" in the diff so the user isn't surprised.
+- **Draft has a contact label that differs from live only by case or whitespace** (e.g. `Github` vs `GitHub`) — parser uses exact-match for icon mapping, so `Github` → no icon. Flag as a likely typo.
+- **User wants to remove a section entirely** (e.g. drop `## 座右铭`) — this skill does NOT delete by omission. To remove a section, the user must `Edit` `content/关于.md` directly. State this in the plan.
+- **User passes a filename with spaces or path separators** — reject. The draft must be a single file at the top of `content-draft/`.
+- **User passes a path like `content/关于.md`** instead of a draft filename — clarify. This skill operates on files in `content-draft/`, not on the live file.
+- **`content-draft/` doesn't exist** — `mkdir -p content-draft` and tell the user the folder was empty (their file isn't there). Don't proceed with a merge.
+- **Draft includes a `# title` heading (e.g. `# 张三`)** — the parser ignores it. If the user clearly intended this to be the display name, surface the trade-off (hard-code in `About.jsx` vs. extend the parser — see step 5).
 
-## Quick reference: the four "what changed" cases
+## Quick reference: the three "what changed" cases
 
-| User's instruction | Markdown only? | Parser change? | Page change? | Typical extra step |
-| --- | --- | --- | --- | --- |
-| Edit tagline / intro / motto text | ✓ | — | — | None |
-| Add a `GitHub` / `邮箱` contact | ✓ | — | — | None |
-| Add a new contact type that should have an icon | ✓ | + icon mapping | + import + ICON_MAP | Confirm icon choice |
-| Add a new `## section` (e.g. 教育) | ✓ | + parse block | + render block | Decide which existing component to reuse, or build new |
-| Make avatar / H1 markdown-driven | ✓ | + frontmatter parsing | + bind to parser output | Decide on the frontmatter syntax |
-| Pure visual change to About.jsx | — | — | ✓ | Just edit the JSX (don't run this skill) |
+| Draft shape | Markdown only? | Parser change? | Page/component change? |
+| --- | --- | --- | --- |
+| Refresh tagline / intro / contact href / timeline entry / motto | ✓ | — | — |
+| New contact label (e.g. Twitter) with no icon needed | ✓ | — | — |
+| New contact label with an icon | ✓ | + `parseAbout` icon branch | + `ICON_MAP` entry, + import |
+| New `##` section (e.g. `## 兴趣`) | ✓ | + parse new section into the result object | + render block in `About.jsx` |
+| Change the hard-coded display name / avatar | depends — confirm option (a) or (b) | option (b) only | option (a) only / option (b) both |

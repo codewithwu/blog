@@ -1,244 +1,262 @@
 ---
 name: update-skills
-description: Use when the user wants to update `content/技能.md` with new skill items / categories / levels and have the frontend Skills page reflect it. The user message **must contain both an update verb and a reference to the skills file or the skills page** — Chinese phrases like "更新 content/技能.md"、"按 xxx 更新技能页"、"把 content/技能.md 改成 xxx"、"把 React 改成精通"、"在 content/技能.md 里加一个 xxx 技能"、"新增一个 ## xxx 技能分类"，or English equivalents like "update content/技能.md"、"add a new skill to the skills page"、"change React from 熟练 to 精通". Mentioning "技能" alone (e.g. "看一下技能" or "技能页有 bug") is NOT enough — must include a clear update intent pointing at the file or a specific skill's tier. The skill first rewrites `content/技能.md` per the user's instructions, then runs a format check against the `parseSkills` parser, and finally adapts the frontend (`src/lib/content.js`, `src/pages/Skills.jsx`, `src/components/SkillBar.jsx`) when the markdown introduces something the parser/page doesn't already support (new fields like descriptions, per-skill icons, per-category intros, custom ordering). Do NOT trigger for editing other pages (About/Tools/Articles/Projects) — those have their own content/data flow. Do NOT trigger for purely visual/styling changes to Skills.jsx that don't involve the markdown. Do NOT trigger for changing `src/data/skills.js` directly — that file is a thin wrapper, content lives in the markdown.
+description: Use when the user wants to apply a pre-edited skills draft file from `content-draft/` into the live skills page. The user message must contain explicit draft-update phrasing that combines an update verb with a file reference — Chinese "更新技能 xxx.md"、"更新技能 xxx"、"按 xxx.md 更新技能"、"用 content-draft/xxx 更新技能页", or English "update skills from xxx" / "apply skills draft xxx". Do NOT trigger for direct ad-hoc edits like "把 React 改成精通" or "在技能里加一个 Vue:进阶" (those are inline edits — just `Edit` `content/技能.md` directly), for editing About/Tools/Articles/Projects, for editing `content/技能.md` without a draft file, or when `content-draft/<name>.md` doesn't exist on disk. Mentioning "技能" alone (e.g. "看一下技能") is NOT enough — the trigger needs a filename or a clear reference to the `content-draft/` folder.
 ---
 
 # update-skills
 
 ## What it does
 
-End-to-end workflow for changing the Skills page from the markdown side out:
+Applies one skills draft file (`content-draft/<name>.md`) onto the live skills source (`content/技能.md`), then deletes the draft. The merge is **smart-merge**:
 
-1. Rewrite `content/技能.md` per the user's instructions.
-2. Validate the new markdown against the `parseSkills` parser in `src/lib/content.js` — flag any structural issue.
-3. Detect content that the current frontend cannot render (descriptions, per-skill icons, category intros, custom ordering) and extend the parser + page to handle it.
-4. Build to confirm the page compiles and renders without errors.
+1. Reads the draft and runs a format check against the `parseSkills` parser.
+2. Reads the current `content/技能.md`.
+3. Computes a category-wise merge:
+   - Categories that exist only in the draft → appended at the end.
+   - Categories in both → items are merged (draft items added; on name collision, the draft's level wins).
+   - Categories that exist only in the current file → kept untouched.
+4. Shows a structured diff and waits for confirmation.
+5. Rewrites `content/技能.md`, deletes `content-draft/<name>.md`.
+6. Adapts the frontend (`src/lib/content.js` / `src/pages/Skills.jsx` / `src/components/SkillBar.jsx`) **only** when the draft introduces something the parser/page cannot render today.
 
-The Skills page is *data-driven*: `src/pages/Skills.jsx` imports `skills` (which is `parseSkills(技能.md)`) and maps it to a grid of category cards. So the markdown is the source of truth, and the only time you touch React code is when the markdown introduces something the parser/page doesn't already support.
+The skills page is data-driven: `src/data/skills.js` is just `parseSkills(import 技能.md)`, and `Skills.jsx` maps the parsed groups to category cards. So in 95% of cases this skill only touches the markdown and no JSX changes are needed.
 
 ## When to use
 
-Trigger **only** when the user message contains a clear update intent pointing at `content/技能.md`, the Skills page, or a specific skill's level. Match phrases such as:
+Trigger **only** when the user message names a draft file in `content-draft/` (with or without the `.md` suffix). Match phrases such as:
 
-- "更新 content/技能.md，按以下内容：…"
-- "把 content/技能.md 改成 …"
-- "把 React 改成精通"
-- "在 content/技能.md 里加一个 Vue 技能：进阶"
-- "新增一个 ## 测试 技能分类"
-- "按这份内容更新技能页：…"
-- "update content/技能.md with …"
-- "change React from 熟练 to 精通 in the skills page"
+- "更新技能 v2.md" / "更新技能 v2"
+- "按 content-draft/v2.md 更新技能页"
+- "用 content-draft/2026Q3 更新技能"
+- "apply skills draft v2"
+- "update skills from content-draft/v2"
 
 The phrase must NOT trigger if:
 
-- The user just wants to *view* the Skills page — read the file, don't run this skill.
-- The update targets About (`content/关于.md`), Tools (`content/工具.md`), Articles, or Projects — those have different data flows; ask the user to clarify.
-- The change is purely a styling tweak to `Skills.jsx` (e.g. "把技能徽章放大" or "改一下卡片背景色") with no markdown change — just `Edit` the JSX file directly.
-- The user wants to edit `src/data/skills.js` directly — that file is a thin wrapper, the source of truth is the markdown.
+- The user gives inline content without a draft file (e.g. "按以下内容更新技能页：\n## 前端\n- React: 精通") — just `Edit` `content/技能.md` directly.
+- The user wants a single point edit ("把 React 改成精通"、"加一个 Vue: 进阶") — just `Edit` `content/技能.md` directly.
+- The user wants to view, lint, or restyle the skills page without changing the markdown — just read or `Edit` directly.
+- The target file `content-draft/<name>.md` doesn't exist — block and tell the user to create it first.
 
-When the instruction is ambiguous between an "update this file" and a "rewrite this whole page" intent, prefer running this skill — the user can always say "no, just the markdown".
+This skill is **draft-only**. The distinguishing rule is **"is there a file in `content-draft/` referenced in the request?"**. If yes → run this skill. If no → use the `Edit` tool on `content/技能.md` directly.
 
 ## When NOT to use
 
-- **Viewing the skills page** — just read `content/技能.md`.
+- **Writing a brand-new draft from scratch** — this skill assumes `content-draft/<name>.md` already exists. To create a new draft, just write the file to `content-draft/<name>.md` and stop.
 - **Editing About / Tools / Articles / Projects** — different content/data flow; not this skill's job.
-- **Pure visual changes to Skills.jsx** with no markdown involvement — use `Edit` on the JSX directly.
-- **Adding brand-new functionality** (e.g. a skill-search box, a chart of skill counts, drag-to-reorder) — surface the scope, propose a design, and let the user confirm before extending the skill's reach.
+- **Pure visual changes to `Skills.jsx`** with no markdown involvement — `Edit` the JSX directly.
+- **Adding a brand-new tier (e.g. `专家` / `了解`)** — forbidden by `CLAUDE.md` rule 12. Surface the violation and ask the user to coerce or shelve.
 
 ## Project context
 
-- Source of truth: `content/技能.md` (project root, *not* under `src/`).
-- Wrapper: `src/data/skills.js` is just `import … from '../../content/技能.md?raw'` + `parseSkills(skillMd)`. **Do not edit this file** for content changes.
-- Parser: `src/lib/content.js`, function `parseSkills(md)`. Returns `[{ category, items: [{ name, level }, …] }, …]`. The parser is a pure string handler — no frontmatter, no gray-matter; sections are delimited by `##` headings.
-- Page: `src/pages/Skills.jsx`. Renders a 2-col grid of category cards, each card showing a list of `<SkillBar name level />` rows.
-- Skill bar: `src/components/SkillBar.jsx`. Receives `{ name, level }` and renders the name + a colored tier badge. The badge style is keyed by `level`:
+- Draft location: `content-draft/<name>.md` (project root, *not* under `src/`).
+- Source of truth (after merge): `content/技能.md`.
+- Wrapper: `src/data/skills.js` is just `parseSkills(import '../../content/技能.md?raw')`. **Do not edit this file** for content changes.
+- Parser: `parseSkills` in `src/lib/content.js`. Returns `[{ category, items: [{ name, level }, …] }, …]`.
+- Page: `src/pages/Skills.jsx`. Renders a 2-col grid of category cards.
+- Skill bar: `src/components/SkillBar.jsx`. Renders the name + a tier badge keyed on `level`:
   - `精通` → `brand-orange`
   - `熟练` → `brand-blue`
   - `进阶` → `brand-green`
   - anything else → falls back to `进阶` (green)
-- Brand color tokens live in `tailwind.config.js` (`brand-orange/blue/green/light/mid/surface`). Don't add new color tokens unless the user asks — reuse what exists.
-- Icon library: `lucide-react` is the only icon source per `CLAUDE.md` rule 9. Skills don't currently use icons.
+- Per `CLAUDE.md` rule 12, tiers are fixed: `进阶` / `熟练` / `精通`. No 4th tier without explicit user override.
 
-## `parseSkills` reference (what the parser currently supports)
+## Draft file shape
 
-The parser is the contract. If the markdown doesn't conform, the data simply won't show up.
+The draft uses the same syntax as `content/技能.md`:
 
-| Markdown shape | Parsed field | Notes |
-| --- | --- | --- |
-| `## category` line | starts a new group | The text after `## ` becomes `group.category`. |
-| `- name: level` line inside a group | `items.push({ name, level })` | `name` = text before the first `:`; `level` = text after, normalized to one of `进阶` / `熟练` / `精通` (anything else → `进阶`). |
-| `- name` (no colon) | **silently dropped** | The parser requires the colon. Tell the user. |
-| `- name: ` (empty level) | **silently dropped** (treated as no-colon) | Same as above. |
-| `###` / `#` headings | ignored | The parser only recognizes `##`. |
-| Other lines (preamble, blank, lists without `-`, etc.) | ignored | Won't show up. |
+```markdown
+## 前端
+- React: 精通
+- Vue: 进阶
 
-**Tier vocabulary is fixed by `CLAUDE.md` rule 12**: levels must be one of `进阶` / `熟练` / `精通`. Common mistypes that the parser will silently coerce to `进阶`:
+## 测试
+- Jest: 熟练
+```
 
-- `"中级"` / `"入门"` / `"熟悉"` / `"了解"` / `"Expert"` / `"Intermediate"` — all become `进阶`.
-- A leading space, a trailing space, or a stray period (`精通。`) — also gets normalized; punctuation may produce an unintended fallback. Warn the user.
+Same parser, same rules:
 
-**No support today** for: skill descriptions, per-skill icons, per-category intros, ordering hints, featured/pinned skills, multi-line entries, nested sub-categories. If the user wants any of these, step 4 covers the parser + page extension.
+| Line shape | Behavior |
+| --- | --- |
+| `## category` | starts a new group |
+| `- name: level` (level ∈ {`进阶`,`熟练`,`精通`}) | adds an item |
+| `- name: level` (level out of vocab) | silently coerced to `进阶` — warn the user |
+| `- name` (no colon) | silently dropped — warn the user |
+| `###` / `#` / preamble | ignored |
+
+A draft can be a **partial update** (only the categories you want to touch) or a **complete replacement** (all categories you want the live file to have). The merge algorithm treats both the same way — categories not mentioned in the draft are preserved. If the user wants a hard replacement (drop existing categories that aren't in the draft), they need to say so explicitly; this skill defaults to additive merge.
 
 ## Workflow
 
-Follow these steps in order. **Do not skip the format check or the frontend adaptation step.**
+Follow these steps in order. **Do not skip the format check, the diff preview, or the confirmation.**
 
-### 1. Read the current state
+### 1. Resolve target
 
-- Read `content/技能.md` to see the current content.
-- Read `parseSkills` in `src/lib/content.js`, `src/pages/Skills.jsx`, and `src/components/SkillBar.jsx` to confirm what the current code supports.
+Parse the user message for the draft filename. Strip a trailing `.md` if present; the bare name is the draft identifier.
 
-The user often says "把 X 改成 Y" — you need to know what X currently is before rewriting. Skill names in particular may have casing/whitespace differences in the markdown vs. what's rendered.
+- Verify `content-draft/<name>.md` exists. If not, `ls content-draft/` and tell the user what's available.
+- Reject filenames with spaces, path separators, or `..`. These shouldn't reach the merge phase.
 
-### 2. Compose the new markdown
+Only one draft per invocation. If the user passes multiple names, ask which one to apply first; don't batch (merge order would matter and is hard to reason about).
 
-Apply the user's instructions. Rules:
+### 2. Format-check the draft
 
-- Preserve the `## category` structure when the user is only changing part of the file. When the user provides a complete replacement, honor their structure even if it diverges — but note when the new structure requires parser/page changes (step 4).
-- Each skill line MUST be `- name: level`. The `:` is mandatory; the level is mandatory. Format: a single `-`, a space, the name, a `:`, a space, the level. The parser's regex is informal but the body must satisfy `body.indexOf(':') !== -1` and `name` must be non-empty.
-- Use only the three allowed tiers: `进阶` / `熟练` / `精通`. No `中级`, `入门`, `熟悉`, `了解`, or English. If the user provides a non-standard tier, surface it and ask whether to (a) coerce to the closest tier or (b) extend the page with a new color.
-- For category headings, write `## category`. Avoid trailing colons, leading numbers, or emojis unless the user explicitly asked for them — the parser doesn't care, but the UI does (the H2 just renders the text verbatim).
-- Don't introduce frontmatter, code fences, HTML, or `###` sub-headings inside a category. The parser ignores all of them.
-- Skill names with colons in them (e.g. `Bash: 进阶`) will be parsed as `name='Bash'` and `level='进阶'` — fine. Skill names with colons in the *level* (e.g. `Bash: 熟练/精通`) will be parsed as `name='Bash'`, `level='熟练/精通'` → coerced to `进阶`. Warn the user.
+Read `content-draft/<name>.md` and check:
 
-### 3. Run the format check
-
-After writing the new `content/技能.md`, re-read it and check:
-
-**(a) Sections that the parser knows about are well-formed.**
-- Every `## category` line is followed by at least one valid `- name: level` line. (A category with zero items renders as an empty card on the page — likely a bug, flag it.)
-- Every skill line has the form `- name: level` with a non-empty `name` and a non-empty `level`.
-- No `- foo` lines without a colon.
+**(a) Sections that the parser knows about.**
+- Every `## category` line is followed by at least one valid `- name: level` line (a category with zero items is a no-op; flag it).
+- Every `- ` line has the form `- name: level` with non-empty `name` and `level`.
 
 **(b) Tiers are within the allowed set.**
-- Every `level` value is one of `进阶` / `熟练` / `精通`. Anything else is a silent fallback to `进阶` — the user almost certainly didn't intend that. List every offender and ask the user to confirm or replace.
+- Every `level` is one of `进阶` / `熟练` / `精通`. List every offender (`中级`, `入门`, `了解`, `Expert`, `精通。`) and ask the user to confirm coercion to `进阶` or fix the draft.
 
-**(c) Lines the parser will drop.**
-- Any `- ` line without a colon.
-- Any non-`##` heading (`#` or `###`).
-- Preamble lines before the first `## category` (they get rendered as part of the page chrome — actually no, the parser returns `[]` until it sees a `##`. There's no tagline support. Tell the user if they wrote a tagline and want it shown.)
+**(c) Lines the parser will drop silently.**
+- `- foo` (no colon).
+- `#` / `###` headings.
+- Preamble before the first `##`.
 
-**(d) Categories the user might have meant to split or merge.**
-- If the user wrote a brand-new `##` category that doesn't exist in the old file, that's fine — it'll render as a new card.
-- If the user merged two old categories into one, the old categories' items all collapse into the new one. Surface this in the report.
+**(d) Trivial issues to surface.**
+- Duplicate skill names within the same category in the draft (parser keeps both; React would warn about duplicate keys).
+- Empty category headings.
 
-Print a brief check report:
+If issues are found, list them all and pause. Do **not** auto-fix. Let the user fix the draft and re-run, or acknowledge and proceed.
+
+### 3. Read current state and compute the merge
+
+Read `content/技能.md` and parse it the same way (mentally — you don't need to run JS; the shape is `[{category, items: [{name, level}]}]`).
+
+Compute three sets:
+
+- **新增分类** — `## X` in draft, not in current. Will be appended at the end of the current file's category list.
+- **修改分类** — `## X` in both. For each item in the draft:
+  - If `name` not in current's items for that category → **新增** (append at the end of the category's item list).
+  - If `name` in current's items, level differs → **修改** (the draft's level wins; track the before/after).
+  - If `name` in current's items, level same → **不变** (no-op; don't list).
+- **保留分类** — `## X` in current, not in draft. No change.
+
+Also detect:
+
+- **Reordering within an existing category** — if the draft mentions only some of the existing items and they appear in a different order in the draft, **do not reorder** — the merge appends new items at the end and keeps the existing order. If the user wants to reorder, they must say so explicitly (this skill doesn't infer reorder intent from a partial draft).
+- **Deletion intent** — this skill does NOT delete items by omission. If the user wants to remove `- Redis: 进阶`, they must `Edit` `content/技能.md` directly. State this in the plan so the user isn't surprised.
+
+### 4. Show the merge plan and confirm
+
+Print a structured diff. Group by what's changing; skip "不变" items to keep it readable.
 
 ```
+即将合并 content-draft/v2.md → content/技能.md：
+
+新增分类：
+  ## 测试 (新)
+    + Jest: 熟练
+    + Cypress: 进阶
+
+修改分类：
+  ## 前端
+    + Vue: 进阶                  (新增)
+    ~ React: 熟练 → 精通          (升级)
+    (其余 2 条不变)
+  ## 后端
+    + Fastify: 进阶              (新增)
+
+保留分类（无改动）：后端、数据库、工具 中除上面提到的之外
+
+合并后会删除 content-draft/v2.md。
+
 格式检查：
-  ✓ 5 个分类：前端 / 后端 / 数据库 / 工具 / 新增的"测试"
-  ✓ 14 条技能，level 全部命中 进阶/熟练/精通
-  ⚠ 1 条 - GraphQL （无冒号）会被解析器丢弃
-  ⚠ - TensorFlow: 中级 → 会回退到 进阶
-  ⚠ - Docker: 熟练/精通 → 会回退到 进阶
-  ⚠ 新增 ## 测试 分类（1 条技能），前端无需改动
+  ✓ 5 条新增/修改的技能，level 全部命中 进阶/熟练/精通
+  ✓ 无解析器会丢弃的行
+  ⚠ 草稿未提及现有的 - Redis: 进阶，按"无删除"语义保留。若要删除请直接 Edit content/技能.md
+
+前端代码：
+  ✓ 无需改动（parser/page 已支持当前所有新增内容）
+
+确认合并？(y/n)  如需修改可直接说"把 Vue 改成熟练"或"测试分类不要 Cypress"。
 ```
 
-### 4. Adapt the frontend (only when needed)
+Wait for explicit `y` / `yes` / "确认" / "好". If the user edits the merge (changes a level, drops a skill), apply the edit and re-print the affected block.
 
-Most updates are markdown-only because the parser + page already support what most users want. Walk through the format-check warnings and decide which to address. For each one, propose a minimal change:
+### 5. Determine frontend adaptations (rare)
 
-**(a) User asks for a new tier (e.g. `入门`, `了解`, `中级`).**
-- Two options:
-  1. Coerce the user's value to the closest existing tier (no code change, but tell the user).
-  2. Add a new tier: add a new entry to `LEVEL_STYLES` in `src/components/SkillBar.jsx` (reuse a brand color if one fits, otherwise propose a new one), add the new value to `SKILL_LEVELS` in `src/lib/content.js` so the parser stops coercing it to `进阶`. Confirm the choice.
-- Per `CLAUDE.md` rule 12, the *only* allowed tiers are `进阶` / `熟练` / `精通`. Adding a new tier violates the rule. Surface this explicitly before making the change.
+In almost every case, the answer here is "no JSX changes needed". Flag any of the following and confirm separately before touching React code:
 
-**(b) User asks for per-skill descriptions or icons.**
-- Extend `parseSkills` to read a new shape. Easiest: allow `- name (icon): level` (mirroring the `parseTools` shape) or `- name: level — desc`. Match the style used in `parseTools` for consistency.
-- Extend `SkillBar.jsx` to accept `icon` / `desc` props and render them.
-- Confirm the shape before implementing — there are several reasonable conventions.
+| Trigger | Required code change |
+| --- | --- |
+| Draft uses a 4th tier (`专家` / `了解` / `中级`) and user wants the new tier kept | Extend `SKILL_LEVELS` in `src/lib/content.js`, add a `LEVEL_STYLES` entry in `src/components/SkillBar.jsx`. **Violates `CLAUDE.md` rule 12 — require explicit override.** |
+| Draft uses `- name (icon): level` shape | Extend `parseSkills` to capture the icon (mirror `parseTools`), accept the icon in `SkillBar`. Confirm shape first. |
+| Draft uses `- name: level — desc` shape | Extend `parseSkills` for the trailing desc, render under the badge in `SkillBar`. Confirm shape first. |
+| Draft has a paragraph between `## 前端` and the first `-` | Extend `parseSkills` to capture an `intro` field, render in `Skills.jsx` between H2 and items list. Confirm before implementing. |
 
-**(c) User asks for a per-category intro (e.g. one paragraph under `## 前端`).**
-- Extend `parseSkills` to capture the first non-bullet line under each `##` as a `category.intro` field.
-- Render the intro in `src/pages/Skills.jsx` between the H2 and the items list. Use `text-brand-mid` or a similar muted token; do not introduce a new color.
+If none of the above apply, skip step 5's frontend work entirely.
 
-**(d) User asks for ordering / featured skills.**
-- Cheapest: just reorder the markdown lines. The page renders in document order. If the user wants a "featured first" treatment, surface it as a UI design decision (sticky row? badge? different background?) and confirm before implementing.
-
-**(e) User wants a different category grouping.**
-- Same as (d): a markdown reorder is usually enough. If they want a dedicated visual treatment (e.g. a "Pinned" section with a different background), it's a component design — confirm before implementing.
-
-**Don't add features the user didn't ask for.** If the user only changed the React level, do not refactor SkillBar to add icons.
-
-### 5. Confirm before changing frontend code
-
-Frontend changes are visible. Show the user what you plan to change and wait for `y` / "好" / "确认" before editing `src/lib/content.js`, `src/pages/Skills.jsx`, or `src/components/SkillBar.jsx`. Markdown changes can be made immediately; frontend changes need sign-off.
-
-```
-即将修改的前端代码：
-
-1. src/lib/content.js — parseSkills 增加对每条技能 desc 的解析
-   形态：`- name: level — desc`
-
-2. src/components/SkillBar.jsx — 接收 desc 并在徽章下方一行小字渲染
-   使用 text-brand-mid 颜色
-
-确认？
-```
-
-If the user says no or wants a different shape, adjust and re-confirm.
-
-### 6. Apply the changes
+### 6. Execute
 
 In order:
 
-1. `Edit` `content/技能.md` with the new content.
-2. `Edit` `src/lib/content.js` if the parser needs extending.
-3. `Edit` `src/pages/Skills.jsx` if rendering needs extending.
-4. `Edit` `src/components/SkillBar.jsx` if the badge shape needs extending.
+1. `Write` the merged content to `content/技能.md`. The output preserves:
+   - The original category order, with new categories appended at the end.
+   - The original item order within existing categories, with new items appended at the end.
+   - The original tier text for unchanged items.
+2. `Bash rm content-draft/<name>.md` to remove the draft.
+3. If frontend code edits were confirmed in step 5, `Edit` `src/lib/content.js` / `src/pages/Skills.jsx` / `src/components/SkillBar.jsx` accordingly.
+
+If any step fails, stop and report the partial state. Do not retry silently. Do not roll back.
 
 ### 7. Verify
 
-- Read the edited files back to confirm the changes landed correctly.
-- Run `npm run build` (or `npx vite build`) to confirm the page compiles. If the build is slow, skip it and tell the user to run it themselves, but always at least sanity-check with `grep`:
+```
+grep -n "^[#-]" content/技能.md
+ls content-draft/<name>.md 2>&1
+ls content-draft/
+```
+
+Expected:
+- `content/技能.md` shows the new categories/items.
+- `content-draft/<name>.md` is gone.
+- `content-draft/` is empty (or contains other unrelated drafts).
+
+If frontend code was edited, also:
 
 ```
-grep -n "^[#-]" content/技能.md | head -20
-grep -n "LEVEL_STYLES" src/components/SkillBar.jsx
 grep -n "SKILL_LEVELS" src/lib/content.js
+grep -n "LEVEL_STYLES" src/components/SkillBar.jsx
 ```
 
-- Expected: the markdown file's `date -r` timestamp is fresh, the parser/page/component edits are present, no leftover references to dropped categories or skills.
+Run `npm run build` if it's fast; otherwise skip and tell the user to verify.
 
 ### 8. Report
 
 Print a one-block summary:
 
 ```
-已更新 content/技能.md：
-  - 前端：+ Vue (进阶)，React 等级 熟练 → 精通
-  - 后端：- Express
-  - 新增 ## 测试：Cypress (熟练)
+已应用 content-draft/v2.md → content/技能.md：
+  - 新增分类：测试（Jest 熟练 / Cypress 进阶）
+  - 前端：+ Vue (进阶)，React 熟练 → 精通
+  - 后端：+ Fastify (进阶)
+  - 保留：数据库、工具（无改动）
 
-前端代码调整：
-  - （无）
-
-构建：已运行 `npm run build`，通过 / 跳过
+草稿：已删除 content-draft/v2.md
+前端代码：无改动
 预览：npm run dev → http://localhost:5173/#/skills
 ```
 
 ## Edge cases
 
-- **User pastes a complete replacement and the new structure has only some categories** — items in the dropped categories are gone from the page. Surface the drops in the report so the user notices.
-- **User wants to add the same skill in two categories** — both will render (e.g. `Git` in `工具` and `后端`). The component uses `name` as the React key, so React will warn about duplicate keys if the same `(group, name)` pair appears twice. In practice this only happens within a single group; cross-group duplicates are fine.
-- **User writes a category with no items** — it renders as an empty card. Likely a mistake; flag and ask.
-- **User uses non-Chinese category names** (e.g. `## Frontend`) — fine, the parser doesn't care. The H2 just renders whatever text follows `## `.
-- **User wants a skill that has no level** (e.g. `- Astro (new)`) — the parser drops it. Tell the user. The closest valid form is `- Astro: 进阶`.
-- **User adds a `### subheading` inside a category** — the parser ignores it. The items below it (if they match `- name: level`) are still picked up. This works but produces no visible subheading; warn the user.
-- **User uses emoji in skill names** (e.g. `- ⚛️ React: 精通`) — works, renders as text. No code change.
-- **User wants skill ordering to differ from the markdown order** — the page renders in markdown order. Tell the user to reorder the markdown; do not introduce a `sort` field without their explicit ask.
-- **User wants a 4th tier (e.g. `专家` / `了解`)** — `CLAUDE.md` rule 12 forbids tiers other than `进阶` / `熟练` / `精通`. Surface this; do not silently add a 4th tier.
+- **Draft is empty or has no `## category`** — block. There's nothing to merge.
+- **Draft mentions a category whose name only differs by whitespace/case** (e.g. `## 前端 ` vs `## 前端`) — the parser uses the trimmed text, so they collide. Surface as a warning before merging.
+- **Draft uses a non-standard tier** (e.g. `## 前端\n- Vue: 中级`) — surface every occurrence and ask: coerce all to `进阶` (no code change), or extend the page with a new tier (violates `CLAUDE.md` rule 12, requires explicit confirmation).
+- **Draft has skills with duplicate names within one category** (e.g. two `- React` lines under `## 前端`) — parser keeps both, React warns about duplicate keys. Surface and ask the user to dedupe in the draft.
+- **Draft contains a `## category` that already exists in `content/技能.md` but the user clearly intended to replace it** — by default this skill **merges** (adds + updates, preserves untouched items). If the user wants a hard replace (drop items not in the draft), they must say "替换 ## 前端" or similar; otherwise stick to additive merge.
+- **User wants to delete a skill via the draft** (e.g. draft omits `- Redis: 进阶` and the user assumes that means "remove Redis") — this skill does NOT delete by omission. Surface in the plan; tell the user to `Edit` `content/技能.md` directly for deletions.
+- **User passes a filename with spaces or path separators** — reject. The draft must be a single file at the top of `content-draft/`.
+- **User passes a path like `content/技能.md`** instead of a draft filename — clarify. This skill operates on files in `content-draft/`, not on the live file.
+- **`content-draft/` doesn't exist** — `mkdir -p content-draft` and tell the user the folder was empty (their file isn't there). Don't proceed with a merge.
+- **Draft is a complete replacement and only contains some of the existing categories** — by default the missing categories are kept (additive merge). If the user wants the missing categories dropped, they must explicitly confirm "丢弃未提到的分类"; treat that as a destructive op and surface it.
 
-## Quick reference: the four "what changed" cases
+## Quick reference: the three "what changed" cases
 
-| User's instruction | Markdown only? | Parser change? | Page/component change? | Typical extra step |
-| --- | --- | --- | --- | --- |
-| Edit existing skill's name or level | ✓ | — | — | None |
-| Add / remove a skill in an existing category | ✓ | — | — | None |
-| Add a new `## category` | ✓ | — | — | None |
-| Use a non-standard tier (e.g. `中级`) | ✓* | — | — | *Coerce to `进阶` and tell the user; or push back on the tier choice* |
-| Add a 4th tier (`专家` / `了解`) | — | + `SKILL_LEVELS` entry | + `LEVEL_STYLES` entry | **Violates CLAUDE.md rule 12 — confirm before doing** |
-| Per-skill descriptions or icons | ✓ | + parse new shape | + SkillBar prop | Confirm the shape |
-| Per-category intro | ✓ | + parse intro line | + render intro in card | Decide muted-token color |
-| Pure visual change to Skills.jsx | — | — | ✓ | Just edit the JSX (don't run this skill) |
+| Draft shape | Markdown only? | Parser change? | Page/component change? |
+| --- | --- | --- | --- |
+| Add new skill / new category / change level | ✓ | — | — |
+| Use a 4th tier (e.g. `专家`) | ✓* | + `SKILL_LEVELS` entry | + `LEVEL_STYLES` entry | **Violates `CLAUDE.md` rule 12 — confirm before doing** |
+| Per-skill icon (`- name (icon): level`) or desc (`- name: level — desc`) | ✓ | + parse new shape | + `SkillBar` prop | Confirm the shape first |
