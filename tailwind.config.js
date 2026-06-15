@@ -1,7 +1,4 @@
 // Tailwind 配置：注入 Anthropic 品牌色（dark/light/mid/gray + orange/blue/green 点缀）
-// 引入 typography 插件：Task 6 的 markdown 渲染依赖 prose 系列类
-import typography from '@tailwindcss/typography';
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}', './projects/**/*.html'],
@@ -21,7 +18,5 @@ export default {
         }
       }
     }
-  },
-  // 注册 typography 插件，否则 prose-* 类不会生成任何 CSS
-  plugins: [typography]
+  }
 };
