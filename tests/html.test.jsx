@@ -32,10 +32,10 @@ describe('Html component', () => {
     expect(iframe.className).toMatch(/border-0/);
   });
 
-  it('uses a sandbox that allows scripts and same-origin', () => {
+  it('uses a sandbox that allows scripts, popups, and forms (no same-origin)', () => {
     const { container } = render(<Html html="<p>x</p>" />);
     const iframe = container.querySelector('iframe');
-    expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin');
+    expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-popups allow-forms');
   });
 
   it('uses the title prop when provided', () => {

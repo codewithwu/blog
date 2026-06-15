@@ -76,7 +76,7 @@ The article HTML renders inside a 100vh iframe with `sandbox="allow-scripts allo
 - `<link rel="stylesheet" href="...">` pointing at a stylesheet bundled with the article (use a relative path).
 - Inline `style="..."` attributes on individual elements.
 
-**Reference example:** `projects/articles.html` is a good model — it ships its own styles and lives happily inside the iframe. When in doubt, mirror its structure: a full `<!doctype html>` document, a `<head>` with `<meta charset>` and inline `<style>`, and a `<body>` containing the article content.
+**Reference example:** `projects/articles.html` is a good model — it ships its own styles and lives happily inside the iframe. (Yes, the file lives under `projects/`, not `articles/`: it's a project demo whose own subject is an article layout, kept here as the canonical reference for full-doc iframe content.) When in doubt, mirror its structure: a full `<!doctype html>` document, a `<head>` with `<meta charset>` and inline `<style>`, and a `<body>` containing the article content.
 
 The iframe sandbox is locked down: scripts run, popups and forms work, but `same-origin` is off, so anything requiring `localStorage`, cookies, or fetch to the parent site will fail. Plain HTML/CSS/JS for reading and display is fine.
 
