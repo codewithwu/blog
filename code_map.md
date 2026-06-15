@@ -48,18 +48,11 @@ blog/
 │   └── favicon.svg                 # 站点图标
 ├── articles/                       # 已发布文章的 HTML 源文件（项目根目录；Vite ?raw 打包进 JS）
 │   ├── ai/                         # 分类子目录（6 个固定 slug 之一，来源：src/data/categories.js）
-│   │   ├── RAG分层检索.html
-│   │   ├── OpenClaw（龙虾）与Hermars（爱马仕）使用体验.html
-│   │   ├── Agent 性能量化.html
-│   │   ├── Claude-Code-上下文管理.html
-│   │   ├── DeepSeek 的"降本增效"之道.html
-│   │   ├── 长对话中模型忘记系统指令.html
-│   │   └── AI技术底层.html
-│   ├── engineering/
-│   │   └── redis_cache.html
-│   └── notes/
-│       └── 你好，世界.html
+│   │   └── sirchmunk-deep-dive.html
+│   ├── engineering/                # （暂未发布文章；通过 create-article 技能填充）
+│   └── notes/                      # （暂未发布文章；通过 create-article 技能填充）
 ├── articles-draft/                 # 文章草稿（仍是 Markdown；通过 create-article 技能转成品牌样式的 .html 后发布到 articles/<category>/）
+│   └── sirchmunk-deep-dive.md      # 已发布文章的源草稿（保留作再版时使用）
 ├── projects/                       # 已发布项目的 HTML 源文件（项目根目录；Vite ?raw 打包进 JS）
 │   ├── articles.html               # 作文评分智能体 · 高考七维
 │   └── claude-task-monitor.html
