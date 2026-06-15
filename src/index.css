@@ -26,10 +26,3 @@
   animation: fadeIn 300ms ease-out;
 }
 
-/* 代码块高亮（highlight.js 主题定制：深色 + 品牌色） */
-.hljs { background: #1c1b1a; color: #faf9f5; padding: 1rem; border-radius: 0.75rem; }
-.hljs-comment, .hljs-quote { color: #b0aea5; }
-.hljs-keyword, .hljs-selector-tag { color: #d97757; }
-.hljs-string, .hljs-attr { color: #788c5d; }
-.hljs-number, .hljs-literal { color: #6a9bcc; }
-.hljs-title, .hljs-section { color: #faf9f5; font-weight: 600; }
