@@ -47,17 +47,19 @@ ArticleDetail.jsx
 **Navbar 显隐**：当前 `App.jsx` 只在 `/projects/:slug` 隐藏 Navbar。改为统一匹配 `/articles/:slug` 与 `/projects/:slug`：
 
 ```js
-const isFullBleedDetail = /^\/(articles|projects)\/[^/]+/.test(location.pathname);
+const isProjectDetail = /^\/projects\/[^/]+/.test(location.pathname);
+const isArticleDetail = /^\/articles\/(?!category\/)[^/]+/.test(location.pathname);
+const isFullBleedDetail = isProjectDetail || isArticleDetail;
 ```
 
-这样两套详情页共用「全屏让出 viewport」语义。
+注意 `/articles` 下还有一个 `/articles/category/:category` 路由(分类筛选页)，需要 `(?!category\/)` 排除掉，否则会把筛选页的 Navbar 也误隐藏。`/projects` 没有同类路由，正则保持原样。
 
 ## 文件改动清单
 
 | 文件 | 动作 | 说明 |
 |---|---|---|
 | `src/pages/ArticleDetail.jsx` | 改 | 删除 `<Markdown>` 引用、删除标题/日期/标签区段、删除「文章不存在」分支（改用 `<Navigate to="/articles" replace />`，与 `ProjectDetail` 对齐）；整页变 `<悬浮返回链接> + <Html html={article.content} title={article.title} />` |
-| `src/App.jsx` | 改 | `isProjectDetail` 改名为 `isFullBleedDetail`，正则同时匹配 `/articles/:slug` 与 `/projects/:slug`；对应变量名同步更新 |
+| `src/App.jsx` | 改 | 新增 `isArticleDetail = /^\/articles\/(?!category\/)[^/]+/.test(pathname)`；`isProjectDetail` 保留原正则；合并为 `isFullBleedDetail = isProjectDetail \|\| isArticleDetail`；对应变量名/JSX 条件同步更新 |
 | `src/data/articles.js` | 改 | 删除 `import helloWorld from '../../articles/notes/你好，世界.md?raw'` 行；`articles` 数组清空（等新 HTML 文章发布时再填） |
 | `src/lib/articles.js` | 不动 | — |
 | `src/lib/markdown.jsx` | 删 | 唯一调用方是 `ArticleDetail.jsx` |
