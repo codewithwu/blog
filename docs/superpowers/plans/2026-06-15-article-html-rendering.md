@@ -716,7 +716,7 @@ Find the text of rule 10 (article source location and metadata schema) and repla
 > - (c) 在 `articles` 或 `projects` 数组中加一条 metadata 记录:
 >   - 文章:slug / title / excerpt / date / tags / cover / **content** / **category**（必填, 取自规则 13）
 >   - 项目:slug / name / description / techStack / githubUrl / demoUrl / cover / **content**
-> - (d) **详情页(`/articles/:slug` 和 `/projects/:slug`)统一为 100vh 全屏 iframe**(`<iframe className="w-full h-screen border-0" srcDoc={...} sandbox="allow-scripts allow-same-origin" />`),HTML 文档按作者原样渲染;这两个路由下全局 `<Navbar />` 隐藏,顶部仅保留一个固定定位的「← 返回」悬浮按钮。
+> - (d) **详情页(`/articles/:slug` 和 `/projects/:slug`)统一为 100vh 全屏 iframe**(`<iframe className="w-full h-screen border-0" srcDoc={...} sandbox="allow-scripts allow-popups allow-forms" />`),HTML 文档按作者原样渲染;这两个路由下全局 `<Navbar />` 隐藏,顶部仅保留一个固定定位的「← 返回」悬浮按钮。
 > - (e) **列表页卡片(文章卡 / 项目卡)不嵌入 iframe**,仍用主站 `brand-*` 类保持导航层风格统一。
 > - (f) iframe 视口**不继承**主站 Tailwind 编译产物,作者在自己写的 HTML 内部需用内联 `<style>` 或 `<link rel="stylesheet">` 补全样式;`Html` 组件**不做事后消毒**,作者对自己写的内容负责。
 
