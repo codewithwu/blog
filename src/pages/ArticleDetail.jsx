@@ -1,7 +1,9 @@
-// 文章详情：从 URL 取 slug，查文章，渲染 markdown
-import { useParams, Link } from 'react-router-dom';
+// 文章详情：URL :slug → 查文章，渲染悬浮「返回文章列表」按钮 + 100vh iframe。
+// Navbar 在 App.jsx 的路由级逻辑下隐藏，详情页 viewport 完全让给 iframe。
+// 找不到 slug 时 <Navigate replace /> 跳回 /articles。
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { findArticleBySlug } from '../lib/articles.js';
-import Markdown from '../lib/markdown.jsx';
+import Html from '../lib/html.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 
 export default function ArticleDetail() {
@@ -10,35 +12,24 @@ export default function ArticleDetail() {
   usePageTitle(article?.title || '未找到文章');
 
   if (!article) {
-    return (
-      <div className="py-24 text-center">
-        <h1 className="text-3xl font-bold text-brand-light">文章不存在</h1>
-        <Link to="/articles" className="mt-4 inline-block text-brand-blue hover:text-brand-orange">
-          ← 返回文章列表
-        </Link>
-      </div>
-    );
+    return <Navigate to="/articles" replace />;
   }
 
   return (
-    <article className="max-w-3xl mx-auto">
-      <Link to="/articles" className="text-sm text-brand-blue hover:text-brand-orange">
-        ← 返回
+    <>
+      <Link
+        to="/articles"
+        className="fixed top-4 left-4 z-50 inline-flex items-center
+                   px-3 py-1.5 rounded-md text-sm
+                   bg-brand-dark/70 text-brand-light
+                   border border-brand-mid/30
+                   backdrop-blur-sm
+                   hover:bg-brand-dark/90 hover:border-brand-orange/60
+                   transition-colors"
+      >
+        ← 返回文章列表
       </Link>
-      <h1 className="mt-4 text-4xl font-bold text-brand-light">{article.title}</h1>
-      <div className="mt-2 flex items-center gap-3 text-sm text-brand-mid">
-        <time>{article.date}</time>
-        <ul className="flex gap-2">
-          {article.tags.map((t) => (
-            <li key={t} className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue">
-              {t}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="mt-8">
-        <Markdown>{article.content}</Markdown>
-      </div>
-    </article>
+      <Html html={article.content} title={article.title} />
+    </>
   );
 }
