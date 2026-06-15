@@ -22,8 +22,8 @@
 
 | 想做的事 | 跟 Claude 说 | 背后发生了什么 |
 |----------|------------|----------------|
-| 发布新文章 | 「创建文章 RAG分层检索」 | create-article：草稿 `articles-draft/<slug>.md` → `articles/<category>/`，同步注册到 `src/data/articles.js` |
-| 删除文章 | 「删除文章 RAG分层检索.md」 | delete-article：清理 `.md` 和 data 注册 |
+| 发布新文章 | 「创建文章 RAG分层检索」 | create-article：草稿 `articles-draft/<slug>.md` → 品牌样式 `articles/<category>/<slug>.html`，同步注册到 `src/data/articles.js` |
+| 删除文章 | 「删除文章 RAG分层检索.html」 | delete-article：清理 `.html` 和 data 注册 |
 | 发布新项目 | 「创建项目 claude-task-monitor」 | create-project：草稿 `projects-draft/<slug>.html` → `projects/`，同步注册到 `src/data/projects.js` |
 | 删除项目 | 「删除项目 claude-task-monitor.html」 | delete-project：清理 `.html` 和 data 注册 |
 | 更新技能页 | 「更新技能 v2.md」 | update-skills：智能合并 `content-draft/v2.md` → `content/技能.md` |
@@ -60,8 +60,7 @@ npm run test         # vitest 单元测试
 - **构建**：Vite 5（`.md` / `.html` 用 `?raw` 后缀打包）
 - **路由**：react-router-dom v6（HashRouter，兼容 GitHub Pages）
 - **样式**：Tailwind CSS 3 + 自定义品牌色（Anthropic 风格）
-- **Markdown**：react-markdown + remark-gfm + rehype-highlight
-- **项目 HTML**：iframe `srcDoc` + sandbox（项目作者可自由发挥样式）
+- **文章 / 项目 HTML**：iframe `srcDoc` + sandbox（作者可自由发挥样式；`create-article` 技能发布的文章自带品牌样式表）
 - **图标**：lucide-react
 - **测试**：vitest + @testing-library/react
 - **部署**：GitHub Actions → GitHub Pages
@@ -71,7 +70,7 @@ npm run test         # vitest 单元测试
 ## 目录结构
 
 ```
-articles/<category>/   # 已发布文章（按 6 个固定分类分目录：ai / python / engineering / product / notes / resources）
+articles/<category>/   # 已发布文章的 HTML 源文件（按 6 个固定分类分目录：ai / python / engineering / product / notes / resources）
 articles-draft/        # 文章草稿（通过 create-article 技能发布）
 projects/              # 已发布项目的 HTML 源文件（完整文档或片段均可）
 projects-draft/        # 项目草稿（通过 create-project 技能发布）
@@ -83,7 +82,7 @@ src/
 ├── pages/             # 路由页面
 ├── data/              # 静态数据（articles, projects, categories, skills, tools）
 ├── hooks/             # 自定义 Hook
-└── lib/               # 工具函数（articles, projects, content, markdown, html）
+└── lib/               # 工具函数（articles, projects, content, html）
 ```
 
 > 完整代码地图见 [`code_map.md`](./code_map.md)。
@@ -94,7 +93,7 @@ src/
 
 不想用 Claude 也可以——所有内容都是文件：
 
-- **加文章**：新建 `articles/<category>/<slug>.md`（`<category>` 必须是 `src/data/categories.js` 声明的 6 个固定 slug 之一）→ 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<category>/<slug>.md?raw'` → 在数组里加一条 metadata 记录（必填 `category` 字段）
+- **加文章**：新建 `articles/<category>/<slug>.html`（`<category>` 必须是 `src/data/categories.js` 声明的 6 个固定 slug 之一；完整 HTML 文档或片段都可以——`src/lib/html.jsx` 会自动包成完整文档）→ 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<category>/<slug>.html?raw'` → 在数组里加一条 metadata 记录（必填 `category` 字段）
 - **加项目**：新建 `projects/<slug>.html`（完整 HTML 文档或片段都可以）→ 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.html?raw'` → 加一条 metadata 记录
 - **改技能 / 工具 / 关于**：直接编辑 `content/技能.md` / `content/工具.md` / `content/关于.md`（不要改 `src/data/*.js`，它们只是 `parseSkills` / `parseTools` 的运行时调用）
 

@@ -14,8 +14,7 @@
 | 构建 | Vite | ^5.4.21 | 开发服务器 + 生产构建 |
 | 路由 | react-router-dom | ^6.30.4 | `HashRouter`（GitHub Pages 兼容） |
 | 样式 | Tailwind CSS | ^3.4.19 | 原子化 CSS + 自定义品牌色 |
-| Markdown | react-markdown + remark-gfm + rehype-highlight | ^9 / ^4 / ^7 | 文章渲染、表格、高亮 |
-| HTML 渲染 | iframe `srcDoc` + sandbox | — | 项目详情页正文 |
+| HTML 渲染 | iframe `srcDoc` + sandbox | — | 文章/项目详情页正文（统一走 `<Html>` 组件） |
 | 标题 | react-helmet-async | ^2.0.5 | 页面标题（实际用 useEffect 兜底，Provider 保留供 meta 标签） |
 | 图标 | lucide-react | ^0.400.0 | 全站统一图标 |
 | 测试 | vitest + @testing-library/react | ^1.6 / ^14 | 单元测试 |
@@ -47,20 +46,20 @@ blog/
 │       └── deploy.yml              # push main → build → 部署到 GitHub Pages
 ├── public/
 │   └── favicon.svg                 # 站点图标
-├── articles/                       # 已发布文章的 Markdown 源文件（项目根目录；Vite ?raw 打包进 JS）
+├── articles/                       # 已发布文章的 HTML 源文件（项目根目录；Vite ?raw 打包进 JS）
 │   ├── ai/                         # 分类子目录（6 个固定 slug 之一，来源：src/data/categories.js）
-│   │   ├── RAG分层检索.md
-│   │   ├── OpenClaw（龙虾）与Hermars（爱马仕）使用体验.md
-│   │   ├── Agent 性能量化.md
-│   │   ├── Claude-Code-上下文管理.md
-│   │   ├── DeepSeek 的"降本增效"之道.md
-│   │   ├── 长对话中模型忘记系统指令.md
-│   │   └── AI技术底层.md
+│   │   ├── RAG分层检索.html
+│   │   ├── OpenClaw（龙虾）与Hermars（爱马仕）使用体验.html
+│   │   ├── Agent 性能量化.html
+│   │   ├── Claude-Code-上下文管理.html
+│   │   ├── DeepSeek 的"降本增效"之道.html
+│   │   ├── 长对话中模型忘记系统指令.html
+│   │   └── AI技术底层.html
 │   ├── engineering/
-│   │   └── redis_cache.md
+│   │   └── redis_cache.html
 │   └── notes/
-│       └── 你好，世界.md
-├── articles-draft/                 # 文章草稿（未发布，不出现在网站上；通过 create-article 技能发到 articles/<category>/）
+│       └── 你好，世界.html
+├── articles-draft/                 # 文章草稿（仍是 Markdown；通过 create-article 技能转成品牌样式的 .html 后发布到 articles/<category>/）
 ├── projects/                       # 已发布项目的 HTML 源文件（项目根目录；Vite ?raw 打包进 JS）
 │   ├── articles.html               # 作文评分智能体 · 高考七维
 │   └── claude-task-monitor.html
@@ -108,7 +107,6 @@ blog/
 │   │   ├── articles.js             # 文章查询工具：listArticles({category}) / findArticleBySlug / listCategories（只返回有文章的分类，按 categories.js 顺序排，附 count）
 │   │   ├── projects.js             # 项目查询工具：listProjects() / findProjectBySlug（不排序）
 │   │   ├── content.js              # 解析 content/*.md：parseSkills / parseTools / parseAbout
-│   │   ├── markdown.jsx            # 统一 Markdown 渲染组件（GFM + 代码高亮 + prose 样式）
 │   │   └── html.jsx                # 统一 HTML 渲染组件（iframe srcDoc，自动包成完整文档 + 注入 <base href="about:srcdoc">）
 │   │
 │   └── hooks/
@@ -138,7 +136,7 @@ blog/
 │       │   └── SKILL.md
 │       ├── create-project/         # 发布草稿：projects-draft/*.html → projects/ + 注册到 data/projects.js
 │       │   └── SKILL.md
-│       ├── delete-article/         # 删除文章：清理 articles/<category>/<slug>.md + data/articles.js 注册项
+│       ├── delete-article/         # 删除文章：清理 articles/<category>/<slug>.html + data/articles.js 注册项
 │       │   └── SKILL.md
 │       ├── delete-project/         # 删除项目：清理 projects/<slug>.html + data/projects.js 注册项
 │       │   └── SKILL.md
@@ -196,9 +194,12 @@ ArticleDetail.jsx
   ├─ useParams() → slug
   ├─ findArticleBySlug(slug)                ← src/lib/articles.js
   │     └─ 在 data/articles.js 中查找
-  │           └─ content 字段是 .md ?raw 字符串
-  └─ <Markdown>{article.content}</Markdown>  ← src/lib/markdown.jsx
-        └─ react-markdown + remark-gfm + rehype-highlight
+  │           └─ content 字段是 .html?raw 字符串
+  └─ <Html html={article.content}/>         ← src/lib/html.jsx（与项目详情页共用同一组件）
+        └─ 完整 HTML → 直接进 iframe srcDoc
+        └─ HTML 片段 → 包成 <!doctype><html><head>...<body>{片段}</body></html>
+        └─ 自动注入 <base href="about:srcdoc"> 修正锚点
+        └─ <iframe className="w-full h-screen border-0" sandbox="allow-scripts allow-popups allow-forms" />
 ```
 
 **项目详情页**：
@@ -223,7 +224,7 @@ ProjectDetail.jsx
 
 | 文件 | 形状 | 怎么加新条目 |
 |------|------|--------------|
-| `src/data/articles.js` | `[{ slug, title, excerpt, date, tags, cover, content, category }]` | 1) 在 `articles/<category>/<slug>.md` 新建 `.md`（`<category>` 必须是 `categories.js` 声明的 6 个 slug 之一）；2) 顶部 `import xxx from '../../articles/<category>/<slug>.md?raw'`；3) 把 `content: xxx` 填进去；4) metadata 必填 `category: '<category>'` |
+| `src/data/articles.js` | `[{ slug, title, excerpt, date, tags, cover, content, category }]` | 1) 把 `.html` 放进 `articles/<category>/<slug>.html`（`<category>` 必须是 `categories.js` 声明的 6 个 slug 之一；HTML 可以是**完整文档**含 `<!doctype>` 包装，也可以是 **HTML 片段**——`html.jsx` 会自动包成完整文档）；2) 顶部 `import xxx from '../../articles/<category>/<slug>.html?raw'`；3) 把 `content: xxx` 填进去；4) metadata 必填 `category: '<category>'` |
 | `src/data/categories.js` | `[{ slug, name }]` + `categorySlugSet` | **6 个分类固定**（`ai` / `python` / `engineering` / `product` / `notes` / `resources`），**不允许新增 slug**。改中文显示名 / 调展示顺序都改这一处（`ArticleCard` 徽章、`CategoryFilter` chip、`Articles` 页面标题都从这里取名）。`categorySlugSet` 供测试断言。 |
 | `src/data/projects.js` | `[{ slug, name, description, techStack, githubUrl, demoUrl, cover, content }]` | 1) 把 `.html` 放进 `projects/`（项目根目录；可以是**完整 HTML 文档**含 `<!doctype>` 包装，也可以是 **HTML 片段**——`html.jsx` 会自动包装）；2) 在数组顶部 `import xxx from '../../projects/<slug>.html?raw'` 并 push 一项；3) 把 `content: xxx` 填进去 |
 | `src/data/skills.js` | `parseSkills(import 技能.md)`（运行时解析，不存储数组） | 1) 编辑 `content/技能.md`（源文件）；level ∈ 进阶/熟练/精通；2) 不要在 `skills.js` 内直接写数据 |
@@ -255,10 +256,10 @@ ProjectDetail.jsx
 
 | 我想…… | 看 / 改哪里 |
 |--------|--------------|
-| **加一篇文章（推荐）** | 1) 把 `.md` 放进 `articles-draft/<slug>.md`；2) 对 Claude 说「创建文章 xxx」或「把 xxx 文章发出去」触发 create-article 技能（技能会负责挑选 6 个固定分类之一） |
-| **加一篇文章（手动）** | 1) 在 `articles/<category>/<slug>.md` 新建 .md（`<category>` 必须是 `categories.js` 声明的 6 个 slug 之一）<br>2) 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<category>/<slug>.md?raw'` 并 push 一项<br>3) metadata 必填 `category: '<category>'` 字段（缺这个字段列表页和详情页都不正常） |
+| **加一篇文章（推荐）** | 1) 把 `.md` 放进 `articles-draft/<slug>.md`（草稿区仍用 Markdown 写）；2) 对 Claude 说「创建文章 xxx」或「把 xxx 文章发出去」触发 create-article 技能（技能会把 .md 转成品牌样式的 .html，放进 `articles/<category>/`，并注册到 `data/articles.js`） |
+| **加一篇文章（手动）** | 1) 把 `.html` 放进 `articles/<category>/<slug>.html`（`<category>` 必须是 `categories.js` 声明的 6 个 slug 之一；完整文档或 HTML 片段都可以）<br>2) 在 `src/data/articles.js` 顶部 `import xxx from '../../articles/<category>/<slug>.html?raw'` 并 push 一项<br>3) metadata 必填 `category: '<category>'` 字段（缺这个字段列表页和详情页都不正常） |
 | **改文章分类中文显示名 / 顺序** | `src/data/categories.js` 的 `categories` 数组（**单一来源**；`ArticleCard` 徽章、`CategoryFilter` chip、`Articles` 页面标题都从这里取名） |
-| **删除文章** | 对 Claude 说「删除文章 xxx.md」触发 delete-article 技能（同时清理 `articles/<category>/<slug>.md` 与 `data/articles.js` 注册） |
+| **删除文章** | 对 Claude 说「删除文章 xxx.html」触发 delete-article 技能（同时清理 `articles/<category>/<slug>.html` 与 `data/articles.js` 注册） |
 | **加一个项目（推荐）** | 1) 把 `.html` 放进 `projects-draft/<slug>.html`；2) 对 Claude 说「创建项目 xxx」或「把 xxx 项目发出去」触发 create-project 技能 |
 | **加一个项目（手动）** | 1) 新建 `projects/<slug>.html`（项目根目录；完整 HTML 文档或 HTML 片段都可以）<br>2) 在 `src/data/projects.js` 顶部 `import xxx from '../../projects/<slug>.html?raw'` 并 push 一项 |
 | **删除项目** | 对 Claude 说「删除项目 xxx.html」触发 delete-project 技能（同时清理 `.html` 与 data 注册） |
@@ -285,11 +286,10 @@ ProjectDetail.jsx
 - **`src/App.jsx` 用了 `HashRouter` 而不是 `BrowserRouter`**：GitHub Pages 项目页（`/blog/`）无法做服务端重定向，HashRouter 是 CLAUDE.md 强制的方案。
 - **`src/App.jsx` 拆出 `AppShell` 子组件**：`useLocation` 必须在 `<HashRouter>` 内部调用；`AppShell` 用 `/^\/projects\/[^/]+/` 正则判断是否项目详情页，命中则不渲染 `<Navbar/>` 也不给 `<main>` 加 `max-w-5xl mx-auto` 容器，让 iframe 占满 100vh。
 - **`src/pages/ProjectDetail.jsx` 不渲染项目 metadata 头部**：CLAUDE.md 规则 11 要求项目详情页只有「悬浮返回按钮 + iframe 全屏」，项目名/描述/技术栈/链接全部交给作者自己在 HTML 里写。
-- **`src/lib/html.jsx` 用 iframe srcDoc 而非 `dangerouslySetInnerHTML`**：项目 HTML 经常自带 `<!doctype>` / `<style>` / `<script>`，直接注入会污染宿主页面的 CSS/字体栈，且作者用了 Tailwind 之外的样式会冲突。iframe + sandbox 是天然的样式隔离。
+- **`src/lib/html.jsx` 用 iframe srcDoc 而非 `dangerouslySetInnerHTML`**：文章/项目 HTML 经常自带 `<!doctype>` / `<style>` / `<script>`，直接注入会污染宿主页面的 CSS/字体栈，且作者用了 Tailwind 之外的样式会冲突。iframe + sandbox 是天然的样式隔离——`ArticleDetail` 与 `ProjectDetail` 共享同一组件。
 - **`src/lib/html.jsx` 注入 `<base href="about:srcdoc">`**：Chromium 在 srcDoc iframe 里把 `document.baseURI` 设为父页面 URL，`<a href="#xxx">` 会被解析成父页 URL+hash，点击后 iframe 被导航到父页 React Router 404。注入 base 后锚点回到 iframe 自身的 about:srcdoc，变成同文档滚动。
-- **`src/lib/html.jsx` 的 sandbox 加了 `allow-popups allow-forms`**：默认 sandbox 拦截 `target="_blank"` 弹窗和 `<form>` 提交，项目 HTML 里偶尔会有这两类元素。注意**不做事后消毒**——项目 HTML 由作者控制（`projects/<slug>.html`），不是外部输入。
-- **`src/lib/markdown.jsx` 用 `.jsx` 后缀**：文件里写 JSX 表达式（如 `<div className="prose ...">`），esbuild 对 `.js` 文件拒绝 JSX 语法；`html.jsx` 同理。
-- **`src/data/articles.js` 用 `?raw` 后缀**：把 markdown 源文件直接以字符串形式打包进 JS bundle，避免 fetch + 异步加载。`src/data/projects.js` 对 `.html` 同样用 `?raw`。
+- **`src/lib/html.jsx` 的 sandbox 加了 `allow-popups allow-forms`**：默认 sandbox 拦截 `target="_blank"` 弹窗和 `<form>` 提交，文章/项目 HTML 里偶尔会有这两类元素。注意**不做事后消毒**——HTML 由作者控制（`articles/<category>/<slug>.html` 与 `projects/<slug>.html`），不是外部输入。
+- **`src/data/articles.js` 用 `.html?raw` 后缀**：把 HTML 源文件直接以字符串形式打包进 JS bundle，避免 fetch + 异步加载。`src/data/projects.js` 同样用 `.html?raw`。
 - **`src/hooks/usePageTitle.js` 用 `useEffect` 而非 `Helmet`**：`react-helmet-async@2.0.5` 不导出 `useHelmet` 钩子，直接操作 `document.title` 行为等价；`HelmetProvider` 仍保留在 `main.jsx` 供后续 meta/OG 标签使用。
 - **`src/data/categories.js` 是文章分类的「单一来源」**：6 个固定 slug + 中文显示名 + 展示顺序三件事都集中在这里。`ArticleCard` 徽章、`CategoryFilter` chip、`Articles` 页面标题都从这里取显示名；改中文名 / 调顺序 = 改这一处。CLAUDE.md 规则 13 明确禁止新增 slug，所以这个数组是「加新分类」和「改老分类」的唯一入口。
 - **`src/lib/articles.js` 的 `listCategories()` 只返回有文章的分类**：扫描所有文章算出每分类 `count`，按 `categories.js` 的声明顺序输出，空分类自动隐藏。这样新分类还没文章时，UI 上不会出现空 chip；`ArticleCard` 拿不到 slug 对应显示名时回退到 slug 字符串本身。
@@ -334,7 +334,7 @@ green:  '#788c5d'   // 第三点缀（时间轴、状态）
 7. **`articles-draft/` 是草稿区**：`articles/<category>/` 里的文件才会被 React 渲染；草稿留在 `articles-draft/` 直到调用 create-article 技能。`<category>` 必须是 `src/data/categories.js` 声明的 6 个 slug 之一（`ai` / `python` / `engineering` / `product` / `notes` / `resources`），**不允许新增**；slug 自身仍是全局唯一、与分类无关，可以是中文（如 `RAG分层检索`）。
 8. **`projects-draft/` 是草稿区**：`projects/` 里的文件才会被 React 渲染；草稿留在 `projects-draft/` 直到调用 create-project 技能。
 9. **`content-draft/` 是草稿区**：`content/*.md` 才会被前端消费；草稿留在 `content-draft/` 直到调用 update-skills / update-tools / update-about 三个合并技能之一。
-10. **项目 HTML 内部不能用 Tailwind brand-* 类**：项目详情页是独立 iframe 视口，Tailwind 配置和宿主页 CSS 都没注入。作者若要主题一致，需在 HTML 内部自己写 `<style>` 或硬编码 hex（`#141413` / `#d97757` 等，见 §8）。
+10. **文章 / 项目 HTML 内部都不能用 Tailwind brand-* 类**：详情页是独立 iframe 视口，Tailwind 配置和宿主页 CSS 都没注入。作者若要主题一致，需在 HTML 内部自己写 `<style>` 或硬编码 hex（`#141413` / `#d97757` 等，见 §8）。`create-article` 技能生成的 HTML 自带品牌样式表，发布时无需手写 CSS。
 11. **iframe 锚点跳转必须有 `<base href="about:srcdoc">`**：否则 `<a href="#xxx">` 会把 iframe 导航到父页面（React Router 404）。`Html` 组件自动注入；已有 `<base>` 标签的文档保持原样。
-12. **iframe 中 `target="_blank"` / `<form>` 已放行**：sandbox 包含 `allow-popups allow-forms`；但**不允许 `allow-same-origin`**——项目 HTML 不应该假设它能访问宿主 cookie 或 localStorage。
-13. **`Html` 组件不做 HTML 消毒**：项目 HTML 由作者控制（`projects/<slug>.html`），是受信内容；不要把这套机制用于外部用户上传的 HTML。
+12. **iframe 中 `target="_blank"` / `<form>` 已放行**：sandbox 包含 `allow-popups allow-forms`；但**不允许 `allow-same-origin`**——文章/项目 HTML 不应该假设它能访问宿主 cookie 或 localStorage。
+13. **`Html` 组件不做 HTML 消毒**：HTML 由作者控制（`articles/<category>/<slug>.html` 与 `projects/<slug>.html`），是受信内容；不要把这套机制用于外部用户上传的 HTML。
