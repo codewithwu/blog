@@ -17,11 +17,13 @@ import PageTransition from './components/PageTransition.jsx';
 function AppShell() {
   const location = useLocation();
   const isProjectDetail = /^\/projects\/[^/]+/.test(location.pathname);
+  const isArticleDetail = /^\/articles\/(?!category\/)[^/]+/.test(location.pathname);
+  const isFullBleedDetail = isProjectDetail || isArticleDetail;
 
   return (
     <>
-      {!isProjectDetail && <Navbar />}
-      <main className={isProjectDetail ? '' : 'max-w-5xl mx-auto px-6 py-8'}>
+      {!isFullBleedDetail && <Navbar />}
+      <main className={isFullBleedDetail ? '' : 'max-w-5xl mx-auto px-6 py-8'}>
         <PageTransition>
           <Routes>
             <Route path="/" element={<Navigate to="/articles" replace />} />
