@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>亲密关系曲线 · Stellarium Intimarum Relationum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Cormorant+Unicase:wght@400;500;600;700&family=IM+Fell+English:ital@0;1&family=Italiana&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:         #ece3cb;
+  --paper-deep:    #ddd0b1;
+  --paper-light:   #f4ecd6;
+  --paper-cream:   #f9f2dd;
+  --ink-deep:      #1a2238;
+  --ink-mid:       #3d4a66;
+  --ink-faded:     #7a8398;
+  --ink-soft:      #b8ad94;
+  --gold:          #a88647;
+  --gold-bright:   #c89e5c;
+  --gold-soft:     #c4a978;
+  --sienna:        #9b3b2f;
+  --sienna-bright: #c44a39;
+  --cream:         #f9f1de;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { min-height: 100%; }
+
+body {
+  font-family: "Cormorant Garamond", "Songti SC", "STSong", serif;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(248,238,210,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 90%, rgba(168,134,71,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, rgba(155,59,47,0.04) 0%, transparent 70%);
+  color: var(--ink-deep);
+  min-height: 100vh;
+  padding: 56px 24px 64px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── Paper grain overlay (SVG noise) ── */
+.paper-grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.55;
+}
+.paper-grain svg { width: 100%; height: 100%; display: block; }
+
+/* Subtle vignette */
+.vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 2;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(58,40,20,0.18) 100%);
+}
+
+/* ── Side marginalia ornaments ── */
+.margin-ornament {
+  position: fixed;
+  width: 48px;
+  height: 280px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.35;
+  color: var(--gold);
+}
+.margin-ornament.left  { left: 14px; top: 50%; transform: translateY(-50%); }
+.margin-ornament.right { right: 14px; top: 50%; transform: translateY(-50%) scaleX(-1); }
+.margin-ornament svg { width: 100%; height: 100%; }
+
+/* ── The page itself ── */
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 3;
+  background-color: var(--paper-light);
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(168,134,71,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(155,59,47,0.05) 0%, transparent 55%);
+  border: 1px solid var(--paper-deep);
+  box-shadow:
+    0 0 0 1px rgba(168,134,71,0.18),
+    0 0 0 4px rgba(168,134,71,0.06),
+    0 24px 60px rgba(26,34,56,0.14),
+    0 6px 18px rgba(26,34,56,0.08);
+  padding: 64px 72px 56px;
+}
+
+/* Decorative double-line frame */
+.page::before {
+  content: ''; position: absolute; inset: 14px;
+  border: 1px solid var(--gold);
+  opacity: 0.45;
+  pointer-events: none;
+}
+.page::after {
+  content: ''; position: absolute; inset: 19px;
+  border: 1px solid var(--gold);
+  opacity: 0.20;
+  pointer-events: none;
+}
+
+/* Corner flourishes on the page */
+.corner {
+  position: absolute; width: 28px; height: 28px;
+  pointer-events: none; z-index: 4;
+}
+.corner svg { width: 100%; height: 100%; }
+.corner.tl { top: 8px; left: 8px; }
+.corner.tr { top: 8px; right: 8px; transform: scaleX(-1); }
+.corner.bl { bottom: 8px; left: 8px; transform: scaleY(-1); }
+.corner.br { bottom: 8px; right: 8px; transform: scale(-1,-1); }
+
+/* ── Masthead ── */
+.masthead { text-align: center; margin-bottom: 36px; position: relative; }
+
+.ornament-line {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; color: var(--gold);
+  font-family: "IM Fell English", serif;
+  font-size: 22px;
+  margin-bottom: 20px;
+  opacity: 0; animation: fade-in 1.4s ease-out 0.2s forwards;
+  letter-spacing: 0.4em;
+}
+.ornament-line .dash {
+  width: 80px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+  opacity: 0.8;
+}
+
+.title {
+  font-family: "Italiana", serif;
+  font-size: 64px; font-weight: 400;
+  color: var(--ink-deep);
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+  margin-bottom: 10px;
+  opacity: 0; animation: fade-up 1.5s ease-out 0.5s forwards;
+}
+
+.subtitle {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic; font-weight: 500;
+  font-size: 24px; color: var(--ink-mid);
+  letter-spacing: 0.05em;
+  margin-bottom: 14px;
+  opacity: 0; animation: fade-up 1.5s ease-out 0.85s forwards;
+}
+
+.epigraph {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 12px; font-weight: 400;
+  color: var(--ink-faded);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0; animation: fade-up 1.5s ease-out 1.15s forwards;
+}
+.epigraph::before, .epigraph::after {
+  content: '·'; margin: 0 14px; color: var(--gold); font-weight: 700;
+}
+
+.rule-ornamental {
+  display: flex; align-items: center; justify-content: center;
+  gap: 18px; margin: 28px 0 24px;
+  opacity: 0; animation: fade-in 1.5s ease-out 1.45s forwards;
+}
+.rule-ornamental .line {
+  flex: 0 0 120px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+}
+.rule-ornamental .star {
+  font-size: 12px; color: var(--gold); font-family: serif;
+  letter-spacing: 0.6em;
+}
+
+/* ── Plate (chart) ── */
+.plate { position: relative; margin: 8px 0 36px; }
+
+.plate-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+.plate-meta .center {
+  flex: 1; text-align: center;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic; font-size: 13px;
+  letter-spacing: 0.08em; text-transform: none;
+  color: var(--ink-mid);
+}
+
+.chart-frame {
+  position: relative;
+  border: 1px solid var(--gold-soft);
+  padding: 0;
+  background-color: var(--paper-cream);
+  background-image:
+    linear-gradient(rgba(168,134,71,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168,134,71,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  overflow: hidden;
+}
+
+.chart-frame .corner-mark {
+  position: absolute; width: 18px; height: 18px;
+  border: 1px solid var(--gold);
+  z-index: 2;
+}
+.chart-frame .corner-mark.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.chart-frame .corner-mark.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.chart-frame .corner-mark.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.chart-frame .corner-mark.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+.compass-rose {
+  position: absolute; top: 16px; right: 22px;
+  width: 78px; height: 78px;
+  opacity: 0.45; pointer-events: none;
+  animation: slow-rotate 90s linear infinite;
+  z-index: 3;
+}
+.compass-rose svg { width: 100%; height: 100%; display: block; }
+
+.north-arrow {
+  position: absolute; top: 16px; left: 22px;
+  font-family: "Cormorant Unicase", serif;
+  font-size: 11px; letter-spacing: 0.25em;
+  color: var(--gold);
+  opacity: 0.65;
+  z-index: 3;
+}
+.north-arrow .arrow { display: inline-block; margin-left: 6px; transform: translateY(-1px); }
+
+svg.chart {
+  width: 100%; height: auto; display: block; position: relative; z-index: 1;
+}
+
+/* ── Chart internals ── */
+.bg-stars { fill: var(--gold); opacity: 0.32; }
+
+.grid-line {
+  stroke: var(--ink-soft);
+  stroke-width: 0.5;
+  stroke-dasharray: 2 5;
+  opacity: 0.55;
+}
+
+.axis-line {
+  stroke: var(--ink-faded);
+  stroke-width: 0.6;
+  opacity: 0.5;
+}
+
+.axis-label {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 10.5px;
+  fill: var(--gold);
+  letter-spacing: 0.06em;
+}
+
+.axis-tick {
+  font-family: "Cormorant Unicase", serif;
+  font-size: 9px;
+  fill: var(--gold);
+  letter-spacing: 0.1em;
+}
+
+.curve {
+  fill: none;
+  stroke: var(--ink-deep);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2600;
+  stroke-dashoffset: 2600;
+  animation: draw-curve 4s cubic-bezier(0.65, 0, 0.35, 1) 2.2s forwards;
+}
+
+.curve-shadow {
+  fill: none;
+  stroke: var(--ink-deep);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.05;
+  stroke-dasharray: 2600;
+  stroke-dashoffset: 2600;
+  animation: draw-curve 4s cubic-bezier(0.65, 0, 0.35, 1) 2.2s forwards;
+}
+
+.curve-trail {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2600;
+  stroke-dashoffset: 2600;
+  opacity: 0;
+  animation: draw-trail 4s ease-out 2.4s forwards;
+}
+
+@keyframes draw-curve { to { stroke-dashoffset: 0; } }
+@keyframes draw-trail {
+  0%   { opacity: 0; stroke-dashoffset: 2600; }
+  20%  { opacity: 0.55; stroke-dashoffset: 2080; }
+  100% { opacity: 0.35; stroke-dashoffset: 0; }
+}
+
+.node {
+  cursor: pointer;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes node-in {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.node-marker {
+  fill: var(--cream);
+  stroke: var(--gold);
+  stroke-width: 1.4;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.node-marker-cross {
+  stroke: var(--gold);
+  stroke-width: 0.9;
+  fill: none;
+  opacity: 0.6;
+  transition: all 0.4s ease;
+}
+
+.node-marker-halo {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.6;
+  opacity: 0;
+  transition: all 0.4s ease;
+}
+
+.node:hover .node-marker,
+.node.highlighted .node-marker {
+  fill: var(--sienna);
+  stroke: var(--sienna);
+  r: 6;
+}
+
+.node:hover .node-marker-cross,
+.node.highlighted .node-marker-cross {
+  stroke: var(--sienna);
+  opacity: 1;
+}
+
+.node:hover .node-marker-halo,
+.node.highlighted .node-marker-halo {
+  stroke: var(--sienna);
+  opacity: 0.7;
+  r: 14;
+}
+
+.node-label-cn {
+  font-family: "Cormorant Garamond", "Songti SC", serif;
+  font-size: 16px; font-weight: 600;
+  fill: var(--ink-deep);
+  text-anchor: middle;
+  pointer-events: none;
+  transition: fill 0.4s ease, font-weight 0.4s ease;
+}
+.node-label-en {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic; font-size: 11px; font-weight: 400;
+  fill: var(--ink-faded);
+  text-anchor: middle;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+  transition: fill 0.4s ease;
+}
+.node-label-roman {
+  font-family: "Cormorant Unicase", serif;
+  font-size: 10px; font-weight: 600;
+  fill: var(--gold);
+  text-anchor: middle;
+  pointer-events: none;
+  letter-spacing: 0.12em;
+  transition: fill 0.4s ease;
+}
+
+.node:hover .node-label-cn,
+.node.highlighted .node-label-cn { fill: var(--sienna); font-weight: 700; }
+.node:hover .node-label-en,
+.node.highlighted .node-label-en { fill: var(--sienna); }
+.node:hover .node-label-roman,
+.node.highlighted .node-label-roman { fill: var(--sienna); }
+
+/* ── Start flag ── */
+.flag-pole {
+  stroke: var(--ink-deep);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
+.flag-cloth {
+  fill: var(--sienna);
+  stroke: var(--sienna-bright);
+  stroke-width: 0.5;
+}
+.flag-shadow {
+  fill: rgba(26,34,56,0.1);
+}
+
+/* ── End target ── */
+.target-ring { fill: none; stroke-width: 1; }
+.target-cross { stroke: var(--sienna); stroke-width: 1; fill: none; }
+.target-bullseye { fill: var(--sienna); }
+.target-halo { fill: none; stroke: var(--gold); stroke-width: 0.4; opacity: 0.45; }
+
+/* ── Legend grid ── */
+.legend { margin-top: 36px; }
+
+.legend-title {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  text-align: center;
+  margin-bottom: 22px;
+}
+.legend-title::before, .legend-title::after {
+  content: '✦'; margin: 0 16px;
+  color: var(--gold); font-style: normal;
+  font-size: 11px;
+}
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--ink-soft);
+  border-left: 1px solid var(--ink-soft);
+}
+
+.legend-item {
+  border-right: 1px solid var(--ink-soft);
+  border-bottom: 1px solid var(--ink-soft);
+  padding: 16px 20px;
+  position: relative;
+  transition: background 0.4s ease;
+  cursor: pointer;
+  opacity: 0;
+  animation: fade-up 0.6s ease-out forwards;
+}
+.legend-item:hover {
+  background: rgba(168,134,71,0.08);
+}
+.legend-item-num {
+  font-family: "Cormorant Unicase", serif;
+  font-size: 10.5px; font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.2em;
+  margin-bottom: 6px;
+  transition: color 0.4s ease;
+}
+.legend-item-cn {
+  font-family: "Cormorant Garamond", "Songti SC", serif;
+  font-size: 19px; font-weight: 600;
+  color: var(--ink-deep);
+  margin-bottom: 2px;
+  letter-spacing: 0.04em;
+  transition: color 0.4s ease;
+}
+.legend-item-en {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-faded);
+  transition: color 0.4s ease;
+}
+.legend-item-marker {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  opacity: 0.35;
+  transition: all 0.4s ease;
+}
+.legend-item:hover .legend-item-marker {
+  opacity: 1;
+  background: var(--sienna);
+  transform: scale(1.4);
+}
+.legend-item:hover .legend-item-num  { color: var(--sienna); }
+.legend-item:hover .legend-item-cn   { color: var(--sienna); }
+.legend-item:hover .legend-item-en   { color: var(--sienna); }
+
+/* ── Colophon ── */
+.colophon {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--ink-soft);
+  text-align: center;
+  position: relative;
+}
+.colophon-ornament {
+  font-family: "IM Fell English", serif;
+  font-size: 28px;
+  color: var(--gold);
+  margin-bottom: 18px;
+  letter-spacing: 0.3em;
+}
+.colophon-text {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--ink-mid);
+  max-width: 580px;
+  margin: 0 auto 22px;
+}
+.colophon-text em {
+  font-style: normal;
+  color: var(--sienna);
+  font-weight: 600;
+}
+.colophon-meta {
+  display: flex; justify-content: center; gap: 22px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+}
+.colophon-meta .dot { color: var(--gold); }
+
+/* ── Tooltip ── */
+.tooltip {
+  position: fixed;
+  background: var(--ink-deep);
+  color: var(--cream);
+  padding: 16px 20px;
+  border: 1px solid var(--gold);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 13px;
+  line-height: 1.55;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 100;
+  max-width: 260px;
+  box-shadow: 0 12px 32px rgba(26,34,56,0.32);
+  transform: translateY(6px);
+}
+.tooltip.visible { opacity: 1; transform: translateY(0); }
+.tooltip::before {
+  content: ''; position: absolute; inset: 4px;
+  border: 1px solid var(--gold-soft);
+  opacity: 0.45; pointer-events: none;
+}
+.tooltip-station {
+  font-family: "Cormorant Unicase", serif;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--gold-bright);
+  margin-bottom: 6px;
+}
+.tooltip-title {
+  font-size: 18px; font-weight: 600;
+  color: var(--cream);
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+.tooltip-en {
+  font-style: italic; font-size: 12.5px;
+  color: var(--gold-soft);
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(168,134,71,0.35);
+}
+.tooltip-desc {
+  font-size: 13.5px; line-height: 1.6;
+  color: var(--cream); opacity: 0.92;
+}
+
+/* ── Animations ── */
+@keyframes fade-in { to { opacity: 1; } }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slow-rotate { to { transform: rotate(360deg); } }
+
+/* ── Responsive ── */
+@media (max-width: 920px) {
+  body { padding: 32px 16px 40px; }
+  .page { padding: 44px 36px 40px; }
+  .title { font-size: 46px; }
+  .subtitle { font-size: 19px; }
+  .legend-grid { grid-template-columns: repeat(2, 1fr); }
+  .margin-ornament { display: none; }
+}
+
+@media (max-width: 600px) {
+  body { padding: 16px 8px; }
+  .page { padding: 28px 18px 24px; }
+  .page::before { inset: 8px; }
+  .page::after { inset: 12px; }
+  .corner { width: 18px; height: 18px; }
+  .title { font-size: 34px; letter-spacing: 0.03em; }
+  .subtitle { font-size: 16px; }
+  .epigraph { font-size: 10px; letter-spacing: 0.3em; }
+  .legend-grid { grid-template-columns: 1fr; }
+  .rule-ornamental .line { flex: 0 0 60px; }
+  .compass-rose { width: 56px; height: 56px; top: 10px; right: 14px; }
+  .north-arrow { font-size: 9px; top: 10px; left: 14px; }
+  .plate-meta { font-size: 9px; letter-spacing: 0.15em; }
+  .node-label-cn { font-size: 13px; }
+  .node-label-en { font-size: 9.5px; }
+  .legend-item { padding: 12px 14px; }
+  .legend-item-cn { font-size: 16px; }
+  .colophon-text { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Paper grain -->
+<div class="paper-grain" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg">
+    <filter id="paper-noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/>
+      <feColorMatrix values="0 0 0 0 0.42  0 0 0 0 0.32  0 0 0 0 0.20  0 0 0 0.10 0"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#paper-noise)"/>
+  </svg>
+</div>
+
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- Left margin ornament -->
+<div class="margin-ornament left" aria-hidden="true">
+  <svg viewBox="0 0 48 280" fill="none">
+    <line x1="24" y1="0" x2="24" y2="280" stroke="currentColor" stroke-width="0.5"/>
+    <g stroke="currentColor" stroke-width="0.5">
+      <circle cx="24" cy="40" r="6" fill="none"/>
+      <circle cx="24" cy="40" r="2" fill="currentColor"/>
+      <circle cx="24" cy="140" r="10" fill="none"/>
+      <path d="M 24 130 L 24 150 M 14 140 L 34 140" stroke-width="0.4"/>
+      <circle cx="24" cy="140" r="2" fill="currentColor"/>
+      <circle cx="24" cy="240" r="6" fill="none"/>
+      <circle cx="24" cy="240" r="2" fill="currentColor"/>
+    </g>
+    <text x="24" y="20" font-family="Cormorant Unicase" font-size="6" fill="currentColor" text-anchor="middle">✦</text>
+    <text x="24" y="270" font-family="Cormorant Unicase" font-size="6" fill="currentColor" text-anchor="middle">✦</text>
+  </svg>
+</div>
+<!-- Right margin ornament -->
+<div class="margin-ornament right" aria-hidden="true">
+  <svg viewBox="0 0 48 280" fill="none">
+    <line x1="24" y1="0" x2="24" y2="280" stroke="currentColor" stroke-width="0.5"/>
+    <g stroke="currentColor" stroke-width="0.5">
+      <circle cx="24" cy="40" r="6" fill="none"/>
+      <circle cx="24" cy="40" r="2" fill="currentColor"/>
+      <circle cx="24" cy="140" r="10" fill="none"/>
+      <path d="M 24 130 L 24 150 M 14 140 L 34 140" stroke-width="0.4"/>
+      <circle cx="24" cy="140" r="2" fill="currentColor"/>
+      <circle cx="24" cy="240" r="6" fill="none"/>
+      <circle cx="24" cy="240" r="2" fill="currentColor"/>
+    </g>
+    <text x="24" y="20" font-family="Cormorant Unicase" font-size="6" fill="currentColor" text-anchor="middle">✦</text>
+    <text x="24" y="270" font-family="Cormorant Unicase" font-size="6" fill="currentColor" text-anchor="middle">✦</text>
+  </svg>
+</div>
+
+<!-- The page -->
+<article class="page">
+
+  <!-- Corner flourishes -->
+  <div class="corner tl" aria-hidden="true">
+    <svg viewBox="0 0 28 28" fill="none">
+      <path d="M 2 26 L 2 8 Q 2 2 8 2 L 26 2" stroke="#a88647" stroke-width="0.8" fill="none"/>
+      <path d="M 6 26 L 6 12 Q 6 6 12 6 L 26 6" stroke="#a88647" stroke-width="0.5" fill="none" opacity="0.6"/>
+      <circle cx="6" cy="6" r="1.5" fill="#a88647"/>
+    </svg>
+  </div>
+  <div class="corner tr" aria-hidden="true">
+    <svg viewBox="0 0 28 28" fill="none">
+      <path d="M 2 26 L 2 8 Q 2 2 8 2 L 26 2" stroke="#a88647" stroke-width="0.8" fill="none"/>
+      <path d="M 6 26 L 6 12 Q 6 6 12 6 L 26 6" stroke="#a88647" stroke-width="0.5" fill="none" opacity="0.6"/>
+      <circle cx="6" cy="6" r="1.5" fill="#a88647"/>
+    </svg>
+  </div>
+  <div class="corner bl" aria-hidden="true">
+    <svg viewBox="0 0 28 28" fill="none">
+      <path d="M 2 26 L 2 8 Q 2 2 8 2 L 26 2" stroke="#a88647" stroke-width="0.8" fill="none"/>
+      <path d="M 6 26 L 6 12 Q 6 6 12 6 L 26 6" stroke="#a88647" stroke-width="0.5" fill="none" opacity="0.6"/>
+      <circle cx="6" cy="6" r="1.5" fill="#a88647"/>
+    </svg>
+  </div>
+  <div class="corner br" aria-hidden="true">
+    <svg viewBox="0 0 28 28" fill="none">
+      <path d="M 2 26 L 2 8 Q 2 2 8 2 L 26 2" stroke="#a88647" stroke-width="0.8" fill="none"/>
+      <path d="M 6 26 L 6 12 Q 6 6 12 6 L 26 6" stroke="#a88647" stroke-width="0.5" fill="none" opacity="0.6"/>
+      <circle cx="6" cy="6" r="1.5" fill="#a88647"/>
+    </svg>
+  </div>
+
+  <!-- Masthead -->
+  <header class="masthead">
+    <div class="ornament-line">
+      <span class="dash"></span>
+      <span>❦ &nbsp; ❦ &nbsp; ❦</span>
+      <span class="dash"></span>
+    </div>
+    <h1 class="title">亲密关系曲线</h1>
+    <p class="subtitle">The Stellar Cartography of Intimacy</p>
+    <p class="epigraph">A Field Guide to Eleven Stations of the Heart</p>
+    <div class="rule-ornamental">
+      <span class="line"></span>
+      <span class="star">✦ ✦ ✦</span>
+      <span class="line"></span>
+    </div>
+  </header>
+
+  <!-- Plate -->
+  <section class="plate">
+    <div class="plate-meta">
+      <span>Plate I</span>
+      <span class="center">— Tabula Intimarum Relationum —</span>
+      <span>Anno MMXXVI</span>
+    </div>
+
+    <div class="chart-frame">
+      <span class="corner-mark tl"></span>
+      <span class="corner-mark tr"></span>
+      <span class="corner-mark bl"></span>
+      <span class="corner-mark br"></span>
+
+      <!-- North arrow -->
+      <div class="north-arrow">
+        AD<span class="arrow">↗</span>
+      </div>
+
+      <!-- Compass rose -->
+      <div class="compass-rose" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <g stroke="#a88647" fill="none" stroke-width="0.6">
+            <circle cx="50" cy="50" r="38"/>
+            <circle cx="50" cy="50" r="30"/>
+            <circle cx="50" cy="50" r="22"/>
+            <circle cx="50" cy="50" r="14"/>
+            <line x1="50" y1="8" x2="50" y2="92" stroke-dasharray="1.5 2"/>
+            <line x1="8" y1="50" x2="92" y2="50" stroke-dasharray="1.5 2"/>
+            <line x1="22" y1="22" x2="78" y2="78" stroke-dasharray="1 2" opacity="0.6"/>
+            <line x1="78" y1="22" x2="22" y2="78" stroke-dasharray="1 2" opacity="0.6"/>
+          </g>
+          <!-- Cardinal points -->
+          <g fill="#a88647">
+            <path d="M 50 12 L 46 50 L 50 44 L 54 50 Z"/>
+            <path d="M 50 88 L 46 50 L 50 56 L 54 50 Z" opacity="0.55"/>
+            <path d="M 12 50 L 50 46 L 44 50 L 50 54 Z" opacity="0.55"/>
+            <path d="M 88 50 L 50 46 L 56 50 L 50 54 Z" opacity="0.55"/>
+          </g>
+          <!-- Diagonal points -->
+          <g fill="#a88647" opacity="0.45">
+            <path d="M 78 22 L 52 48 L 56 46 L 52 52 Z"/>
+            <path d="M 22 22 L 48 48 L 54 46 L 46 52 Z" transform="rotate(0 50 50)"/>
+            <path d="M 22 78 L 48 52 L 46 54 L 52 48 Z"/>
+            <path d="M 78 78 L 52 52 L 48 54 L 54 48 Z"/>
+          </g>
+          <circle cx="50" cy="50" r="2.2" fill="#a88647"/>
+          <text x="50" y="7" font-family="Cormorant Unicase" font-size="5.5" fill="#a88647" text-anchor="middle">N</text>
+          <text x="50" y="98" font-family="Cormorant Unicase" font-size="5.5" fill="#a88647" text-anchor="middle">S</text>
+          <text x="6"  y="52" font-family="Cormorant Unicase" font-size="5.5" fill="#a88647" text-anchor="middle">E</text>
+          <text x="94" y="52" font-family="Cormorant Unicase" font-size="5.5" fill="#a88647" text-anchor="middle">W</text>
+        </svg>
+      </div>
+
+      <svg class="chart" viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" id="chart">
+
+        <!-- Background stars (constellation feel) -->
+        <g class="bg-stars" aria-hidden="true">
+          <circle cx="120" cy="180" r="0.8"/>
+          <circle cx="220" cy="240" r="0.6"/>
+          <circle cx="260" cy="200" r="0.8"/>
+          <circle cx="380" cy="170" r="0.6"/>
+          <circle cx="450" cy="220" r="0.7"/>
+          <circle cx="540" cy="190" r="0.6"/>
+          <circle cx="640" cy="160" r="0.8"/>
+          <circle cx="720" cy="210" r="0.6"/>
+          <circle cx="800" cy="180" r="0.7"/>
+          <circle cx="900" cy="200" r="0.6"/>
+          <circle cx="980" cy="170" r="0.8"/>
+          <circle cx="1080" cy="180" r="0.6"/>
+          <circle cx="1130" cy="160" r="0.7"/>
+          <circle cx="160" cy="540" r="0.7"/>
+          <circle cx="250" cy="580" r="0.6"/>
+          <circle cx="380" cy="620" r="0.8"/>
+          <circle cx="480" cy="600" r="0.6"/>
+          <circle cx="560" cy="640" r="0.7"/>
+          <circle cx="700" cy="640" r="0.6"/>
+          <circle cx="850" cy="660" r="0.8"/>
+          <circle cx="980" cy="630" r="0.6"/>
+          <circle cx="1080" cy="620" r="0.7"/>
+          <circle cx="1100" cy="500" r="0.6"/>
+          <circle cx="1160" cy="450" r="0.7"/>
+          <circle cx="100" cy="380" r="0.6"/>
+          <circle cx="1180" cy="320" r="0.6"/>
+          <circle cx="60" cy="280" r="0.5"/>
+        </g>
+
+        <!-- Coordinate grid -->
+        <g class="grid">
+          <line class="grid-line" x1="80" y1="150" x2="1140" y2="150"/>
+          <line class="grid-line" x1="80" y1="250" x2="1140" y2="250"/>
+          <line class="grid-line" x1="80" y1="350" x2="1140" y2="350"/>
+          <line class="grid-line" x1="80" y1="450" x2="1140" y2="450"/>
+          <line class="grid-line" x1="80" y1="550" x2="1140" y2="550"/>
+          <line class="grid-line" x1="80" y1="650" x2="1140" y2="650"/>
+
+          <line class="grid-line" x1="180"  y1="120" x2="180"  y2="660"/>
+          <line class="grid-line" x1="280"  y1="120" x2="280"  y2="660"/>
+          <line class="grid-line" x1="380"  y1="120" x2="380"  y2="660"/>
+          <line class="grid-line" x1="480"  y1="120" x2="480"  y2="660"/>
+          <line class="grid-line" x1="580"  y1="120" x2="580"  y2="660"/>
+          <line class="grid-line" x1="680"  y1="120" x2="680"  y2="660"/>
+          <line class="grid-line" x1="780"  y1="120" x2="780"  y2="660"/>
+          <line class="grid-line" x1="880"  y1="120" x2="880"  y2="660"/>
+          <line class="grid-line" x1="980"  y1="120" x2="980"  y2="660"/>
+          <line class="grid-line" x1="1080" y1="120" x2="1080" y2="660"/>
+        </g>
+
+        <!-- Axis labels -->
+        <g>
+          <text class="axis-label" x="60" y="153" text-anchor="end">altior</text>
+          <text class="axis-label" x="60" y="453" text-anchor="end">aequilibrium</text>
+          <text class="axis-label" x="60" y="653" text-anchor="end">profundum</text>
+
+          <line class="axis-line" x1="80" y1="120" x2="80" y2="660"/>
+          <line class="axis-line" x1="80" y1="660" x2="1140" y2="660"/>
+        </g>
+
+        <!-- Curve shadow -->
+        <path class="curve-shadow" d="
+          M 144 455
+          C 200 380, 240 310, 300 301
+          C 360 320, 380 400, 408 406
+          C 440 410, 480 360, 504 343
+          C 540 350, 565 480, 576 497
+          C 590 540, 610 575, 624 581
+          C 650 590, 665 490, 684 476
+          C 720 470, 760 590, 792 602
+          C 830 615, 880 540, 900 511
+          C 950 490, 1000 410, 1032 385
+          C 1070 360, 1100 290, 1128 266
+        "/>
+
+        <!-- Curve gold trail -->
+        <path class="curve-trail" d="
+          M 144 455
+          C 200 380, 240 310, 300 301
+          C 360 320, 380 400, 408 406
+          C 440 410, 480 360, 504 343
+          C 540 350, 565 480, 576 497
+          C 590 540, 610 575, 624 581
+          C 650 590, 665 490, 684 476
+          C 720 470, 760 590, 792 602
+          C 830 615, 880 540, 900 511
+          C 950 490, 1000 410, 1032 385
+          C 1070 360, 1100 290, 1128 266
+        "/>
+
+        <!-- Main curve -->
+        <path class="curve" d="
+          M 144 455
+          C 200 380, 240 310, 300 301
+          C 360 320, 380 400, 408 406
+          C 440 410, 480 360, 504 343
+          C 540 350, 565 480, 576 497
+          C 590 540, 610 575, 624 581
+          C 650 590, 665 490, 684 476
+          C 720 470, 760 590, 792 602
+          C 830 615, 880 540, 900 511
+          C 950 490, 1000 410, 1032 385
+          C 1070 360, 1100 290, 1128 266
+        "/>
+
+        <!-- Nodes -->
+        <g class="node" data-stage="1" data-cn="相识" data-en="Meet" data-desc="关系的起点，两个陌生人第一次相遇。如同望远镜里初次校准的星。">
+          <circle class="node-marker-halo" cx="144" cy="455" r="10"/>
+          <line class="node-marker-cross" x1="130" y1="455" x2="138" y2="455"/>
+          <line class="node-marker-cross" x1="150" y1="455" x2="158" y2="455"/>
+          <line class="node-marker-cross" x1="144" y1="441" x2="144" y2="449"/>
+          <line class="node-marker-cross" x1="144" y1="461" x2="144" y2="469"/>
+          <circle class="node-marker" cx="144" cy="455" r="4.5"/>
+          <text class="node-label-roman" x="144" y="421">STATIO · I</text>
+          <text class="node-label-cn" x="144" y="498">相识</text>
+          <text class="node-label-en" x="144" y="514">Meet</text>
+        </g>
+
+        <g class="node" data-stage="2" data-cn="心动" data-en="Feel Attracted" data-desc="被对方吸引，产生浪漫的好感与期待。第一次心跳高于地平线。">
+          <circle class="node-marker-halo" cx="300" cy="301" r="10"/>
+          <line class="node-marker-cross" x1="286" y1="301" x2="294" y2="301"/>
+          <line class="node-marker-cross" x1="306" y1="301" x2="314" y2="301"/>
+          <line class="node-marker-cross" x1="300" y1="287" x2="300" y2="295"/>
+          <line class="node-marker-cross" x1="300" y1="307" x2="300" y2="315"/>
+          <circle class="node-marker" cx="300" cy="301" r="4.5"/>
+          <text class="node-label-roman" x="300" y="267">STATIO · II</text>
+          <text class="node-label-cn" x="300" y="242">心动</text>
+          <text class="node-label-en" x="300" y="258">Feel Attracted</text>
+        </g>
+
+        <g class="node" data-stage="3" data-cn="犹豫怀疑" data-en="Doubting" data-desc="新鲜感褪去，开始怀疑对方与关系本身。云雾从山谷升起。">
+          <circle class="node-marker-halo" cx="408" cy="406" r="10"/>
+          <line class="node-marker-cross" x1="394" y1="406" x2="402" y2="406"/>
+          <line class="node-marker-cross" x1="414" y1="406" x2="422" y2="406"/>
+          <line class="node-marker-cross" x1="408" y1="392" x2="408" y2="400"/>
+          <line class="node-marker-cross" x1="408" y1="412" x2="408" y2="420"/>
+          <circle class="node-marker" cx="408" cy="406" r="4.5"/>
+          <text class="node-label-roman" x="408" y="372">STATIO · III</text>
+          <text class="node-label-cn" x="408" y="448">犹豫怀疑</text>
+          <text class="node-label-en" x="408" y="464">Doubting</text>
+        </g>
+
+        <g class="node" data-stage="4" data-cn="靠近" data-en="Getting Closer" data-desc="彼此尝试更进一步，分享更深层的自己。再次攀升至第二座峰。">
+          <circle class="node-marker-halo" cx="504" cy="343" r="10"/>
+          <line class="node-marker-cross" x1="490" y1="343" x2="498" y2="343"/>
+          <line class="node-marker-cross" x1="510" y1="343" x2="518" y2="343"/>
+          <line class="node-marker-cross" x1="504" y1="329" x2="504" y2="337"/>
+          <line class="node-marker-cross" x1="504" y1="349" x2="504" y2="357"/>
+          <circle class="node-marker" cx="504" cy="343" r="4.5"/>
+          <text class="node-label-roman" x="504" y="309">STATIO · IV</text>
+          <text class="node-label-cn" x="504" y="284">靠近</text>
+          <text class="node-label-en" x="504" y="300">Getting Closer</text>
+        </g>
+
+        <g class="node" data-stage="5" data-cn="误解争执" data-en="Misunderstanding" data-desc="价值观与习惯的差异显现，冲突开始增多。航向第一次偏离。">
+          <circle class="node-marker-halo" cx="576" cy="497" r="10"/>
+          <line class="node-marker-cross" x1="562" y1="497" x2="570" y2="497"/>
+          <line class="node-marker-cross" x1="582" y1="497" x2="590" y2="497"/>
+          <line class="node-marker-cross" x1="576" y1="483" x2="576" y2="491"/>
+          <line class="node-marker-cross" x1="576" y1="503" x2="576" y2="511"/>
+          <circle class="node-marker" cx="576" cy="497" r="4.5"/>
+          <text class="node-label-roman" x="576" y="463">STATIO · V</text>
+          <text class="node-label-cn" x="576" y="539">误解争执</text>
+          <text class="node-label-en" x="576" y="555">Misunderstanding</text>
+        </g>
+
+        <g class="node" data-stage="6" data-cn="疲惫低谷" data-en="Feeling Tired" data-desc="消耗感加剧，能量被无止境的摩擦抽空。最深的谷。">
+          <circle class="node-marker-halo" cx="624" cy="581" r="10"/>
+          <line class="node-marker-cross" x1="610" y1="581" x2="618" y2="581"/>
+          <line class="node-marker-cross" x1="630" y1="581" x2="638" y2="581"/>
+          <line class="node-marker-cross" x1="624" y1="567" x2="624" y2="575"/>
+          <line class="node-marker-cross" x1="624" y1="587" x2="624" y2="595"/>
+          <circle class="node-marker" cx="624" cy="581" r="4.5"/>
+          <text class="node-label-roman" x="624" y="547">STATIO · VI</text>
+          <text class="node-label-cn" x="624" y="623">疲惫低谷</text>
+          <text class="node-label-en" x="624" y="639">Feeling Tired</text>
+        </g>
+
+        <g class="node" data-stage="7" data-cn="磨合期" data-en="Adjusting" data-desc="愿意调整自己，找到彼此都能接受的相处方式。重新校准罗盘。">
+          <circle class="node-marker-halo" cx="684" cy="476" r="10"/>
+          <line class="node-marker-cross" x1="670" y1="476" x2="678" y2="476"/>
+          <line class="node-marker-cross" x1="690" y1="476" x2="698" y2="476"/>
+          <line class="node-marker-cross" x1="684" y1="462" x2="684" y2="470"/>
+          <line class="node-marker-cross" x1="684" y1="482" x2="684" y2="490"/>
+          <circle class="node-marker" cx="684" cy="476" r="4.5"/>
+          <text class="node-label-roman" x="684" y="442">STATIO · VII</text>
+          <text class="node-label-cn" x="684" y="418">磨合期</text>
+          <text class="node-label-en" x="684" y="434">Adjusting</text>
+        </g>
+
+        <g class="node" data-stage="8" data-cn="想逃想放弃" data-en="Thinking of Leaving" data-desc="关系的最暗时刻，几乎想要放弃离开。最低点之后便是转折。">
+          <circle class="node-marker-halo" cx="792" cy="602" r="10"/>
+          <line class="node-marker-cross" x1="778" y1="602" x2="786" y2="602"/>
+          <line class="node-marker-cross" x1="798" y1="602" x2="806" y2="602"/>
+          <line class="node-marker-cross" x1="792" y1="588" x2="792" y2="596"/>
+          <line class="node-marker-cross" x1="792" y1="608" x2="792" y2="616"/>
+          <circle class="node-marker" cx="792" cy="602" r="4.5"/>
+          <text class="node-label-roman" x="792" y="568">STATIO · VIII</text>
+          <text class="node-label-cn" x="792" y="644">想逃想放弃</text>
+          <text class="node-label-en" x="792" y="660">Thinking of Leaving</text>
+        </g>
+
+        <g class="node" data-stage="9" data-cn="沟通&amp;修复" data-en="Rebuilding Trust" data-desc="坐下来真正对话，开始重建信任与连接。海面重归平静。">
+          <circle class="node-marker-halo" cx="900" cy="511" r="10"/>
+          <line class="node-marker-cross" x1="886" y1="511" x2="894" y2="511"/>
+          <line class="node-marker-cross" x1="906" y1="511" x2="914" y2="511"/>
+          <line class="node-marker-cross" x1="900" y1="497" x2="900" y2="505"/>
+          <line class="node-marker-cross" x1="900" y1="517" x2="900" y2="525"/>
+          <circle class="node-marker" cx="900" cy="511" r="4.5"/>
+          <text class="node-label-roman" x="900" y="477">STATIO · IX</text>
+          <text class="node-label-cn" x="900" y="453">沟通&amp;修复</text>
+          <text class="node-label-en" x="900" y="469">Rebuilding Trust</text>
+        </g>
+
+        <g class="node" data-stage="10" data-cn="真正理解彼此" data-en="Emotional Bond" data-desc="不再试图改变对方，而是真正看见与接纳。两颗星开始同步运转。">
+          <circle class="node-marker-halo" cx="1032" cy="385" r="10"/>
+          <line class="node-marker-cross" x1="1018" y1="385" x2="1026" y2="385"/>
+          <line class="node-marker-cross" x1="1038" y1="385" x2="1046" y2="385"/>
+          <line class="node-marker-cross" x1="1032" y1="371" x2="1032" y2="379"/>
+          <line class="node-marker-cross" x1="1032" y1="391" x2="1032" y2="399"/>
+          <circle class="node-marker" cx="1032" cy="385" r="4.5"/>
+          <text class="node-label-roman" x="1032" y="351">STATIO · X</text>
+          <text class="node-label-cn" x="1032" y="327">真正理解彼此</text>
+          <text class="node-label-en" x="1032" y="343">Emotional Bond</text>
+        </g>
+
+        <g class="node" data-stage="11" data-cn="并肩同行" data-en="Being Together" data-desc="走过曲折之后，成为彼此最坚实的依靠。抵达宁静的恒星。">
+          <circle class="node-marker-halo" cx="1128" cy="266" r="10"/>
+          <line class="node-marker-cross" x1="1114" y1="266" x2="1122" y2="266"/>
+          <line class="node-marker-cross" x1="1134" y1="266" x2="1142" y2="266"/>
+          <line class="node-marker-cross" x1="1128" y1="252" x2="1128" y2="260"/>
+          <line class="node-marker-cross" x1="1128" y1="272" x2="1128" y2="280"/>
+          <circle class="node-marker" cx="1128" cy="266" r="4.5"/>
+          <text class="node-label-roman" x="1128" y="232">STATIO · XI</text>
+          <text class="node-label-cn" x="1128" y="208">并肩同行</text>
+          <text class="node-label-en" x="1128" y="224">Being Together</text>
+        </g>
+
+        <!-- Start: Red banner flag -->
+        <g class="start-flag" transform="translate(144, 455)">
+          <ellipse class="flag-shadow" cx="2" cy="-3" rx="6" ry="64" opacity="0.08"/>
+          <line class="flag-pole" x1="0" y1="4" x2="0" y2="-66"/>
+          <circle cx="0" cy="4" r="2" fill="#1a2238"/>
+          <path class="flag-cloth" d="M 0 -66 L 30 -60 L 22 -52 L 30 -44 L 0 -38 Z"/>
+          <path d="M 0 -66 L 0 -38" stroke="#7a2a22" stroke-width="0.4" fill="none"/>
+          <!-- Small ornament on flag -->
+          <circle cx="14" cy="-52" r="2.2" fill="#f9f1de" opacity="0.9"/>
+        </g>
+
+        <!-- End: Astrolabe / target -->
+        <g class="end-target" transform="translate(1128, 266)">
+          <circle class="target-halo" cx="0" cy="0" r="30"/>
+          <circle class="target-ring" cx="0" cy="0" r="22" stroke="#a88647"/>
+          <circle class="target-ring" cx="0" cy="0" r="16" stroke="#a88647"/>
+          <circle class="target-ring" cx="0" cy="0" r="10" stroke="#9b3b2f"/>
+          <circle class="target-bullseye" cx="0" cy="0" r="3"/>
+          <line class="target-cross" x1="-26" y1="0" x2="-19" y2="0"/>
+          <line class="target-cross" x1="19"  y1="0" x2="26"  y2="0"/>
+          <line class="target-cross" x1="0" y1="-26" x2="0" y2="-19"/>
+          <line class="target-cross" x1="0" y1="19"  x2="0" y2="26"/>
+          <!-- Tick marks around -->
+          <g stroke="#a88647" stroke-width="0.5">
+            <line x1="0" y1="-30" x2="0" y2="-26"/>
+            <line x1="0" y1="26" x2="0" y2="30"/>
+            <line x1="-30" y1="0" x2="-26" y2="0"/>
+            <line x1="26" y1="0" x2="30" y2="0"/>
+            <line x1="-21" y1="-21" x2="-19" y2="-19"/>
+            <line x1="19" y1="-19" x2="21" y2="-21"/>
+            <line x1="-21" y1="21" x2="-19" y2="19"/>
+            <line x1="19" y1="19" x2="21" y2="21"/>
+          </g>
+        </g>
+
+      </svg>
+    </div>
+
+    <div class="plate-meta" style="margin-top: 14px; margin-bottom: 0;">
+      <span>Initium</span>
+      <span class="center">— A Bivio ad Quietem —</span>
+      <span>Finis</span>
+    </div>
+  </section>
+
+  <!-- Legend -->
+  <section class="legend">
+    <h2 class="legend-title">Stations of the Heart</h2>
+    <div class="legend-grid">
+      <div class="legend-item" data-stage="1"  style="animation-delay: 5.2s">
+        <div class="legend-item-num">Statio · I</div>
+        <div class="legend-item-cn">相识</div>
+        <div class="legend-item-en">Meet</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="2"  style="animation-delay: 5.32s">
+        <div class="legend-item-num">Statio · II</div>
+        <div class="legend-item-cn">心动</div>
+        <div class="legend-item-en">Feel Attracted</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="3"  style="animation-delay: 5.44s">
+        <div class="legend-item-num">Statio · III</div>
+        <div class="legend-item-cn">犹豫怀疑</div>
+        <div class="legend-item-en">Doubting</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="4"  style="animation-delay: 5.56s">
+        <div class="legend-item-num">Statio · IV</div>
+        <div class="legend-item-cn">靠近</div>
+        <div class="legend-item-en">Getting Closer</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="5"  style="animation-delay: 5.68s">
+        <div class="legend-item-num">Statio · V</div>
+        <div class="legend-item-cn">误解争执</div>
+        <div class="legend-item-en">Misunderstanding</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="6"  style="animation-delay: 5.80s">
+        <div class="legend-item-num">Statio · VI</div>
+        <div class="legend-item-cn">疲惫低谷</div>
+        <div class="legend-item-en">Feeling Tired</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="7"  style="animation-delay: 5.92s">
+        <div class="legend-item-num">Statio · VII</div>
+        <div class="legend-item-cn">磨合期</div>
+        <div class="legend-item-en">Adjusting</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="8"  style="animation-delay: 6.04s">
+        <div class="legend-item-num">Statio · VIII</div>
+        <div class="legend-item-cn">想逃想放弃</div>
+        <div class="legend-item-en">Thinking of Leaving</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="9"  style="animation-delay: 6.16s">
+        <div class="legend-item-num">Statio · IX</div>
+        <div class="legend-item-cn">沟通&amp;修复</div>
+        <div class="legend-item-en">Rebuilding Trust</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="10" style="animation-delay: 6.28s">
+        <div class="legend-item-num">Statio · X</div>
+        <div class="legend-item-cn">真正理解彼此</div>
+        <div class="legend-item-en">Emotional Bond</div>
+        <div class="legend-item-marker"></div>
+      </div>
+      <div class="legend-item" data-stage="11" style="animation-delay: 6.40s">
+        <div class="legend-item-num">Statio · XI</div>
+        <div class="legend-item-cn">并肩同行</div>
+        <div class="legend-item-en">Being Together</div>
+        <div class="legend-item-marker"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Colophon -->
+  <footer class="colophon">
+    <div class="colophon-ornament">❦ &nbsp; ❦ &nbsp; ❦</div>
+    <p class="colophon-text">
+      True intimacy is never a straight path, but a <em>constellation</em> of falls and risings —
+      mapped here from the first encounter, through the deepest valley,
+      to the quiet certainty of being together.
+    </p>
+    <div class="colophon-meta">
+      <span>Folio I</span>
+      <span class="dot">✦</span>
+      <span>Tabula Intimarum Relationum</span>
+      <span class="dot">✦</span>
+      <span>Anno MMXXVI</span>
+    </div>
+  </footer>
+
+</article>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function () {
+  const tooltip = document.getElementById('tooltip');
+  const nodes = document.querySelectorAll('.node');
+  const legendItems = document.querySelectorAll('.legend-item');
+  const chart = document.getElementById('chart');
+
+  const romanNumerals = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+
+  // Compute actual curve length so the stroke-dasharray animation fits perfectly
+  try {
+    const curve = chart.querySelector('.curve');
+    const shadow = chart.querySelector('.curve-shadow');
+    const trail  = chart.querySelector('.curve-trail');
+    if (curve && curve.getTotalLength) {
+      const L = curve.getTotalLength();
+      [curve, shadow, trail].forEach(function (el) {
+        if (!el) return;
+        el.style.strokeDasharray  = L;
+        el.style.strokeDashoffset = L;
+      });
+    }
+  } catch (e) { /* graceful fallback to CSS defaults */ }
+
+  function showTooltip(target, e) {
+    const stage = target.dataset.stage;
+    const cn    = target.dataset.cn;
+    const en    = target.dataset.en;
+    const desc  = target.dataset.desc;
+    if (!cn) return;
+
+    tooltip.innerHTML =
+      '<div class="tooltip-station">Station ' + (romanNumerals[parseInt(stage, 10)] || '') + '</div>' +
+      '<div class="tooltip-title">' + cn + '</div>' +
+      '<div class="tooltip-en">' + en + '</div>' +
+      '<div class="tooltip-desc">' + desc + '</div>';
+
+    tooltip.classList.add('visible');
+    positionTooltip(e);
+  }
+
+  function positionTooltip(e) {
+    const offset = 18;
+    let x = e.clientX + offset;
+    let y = e.clientY + offset;
+    const rect = tooltip.getBoundingClientRect();
+
+    if (x + rect.width  > window.innerWidth  - 12) x = e.clientX - rect.width  - offset;
+    if (y + rect.height > window.innerHeight - 12) y = e.clientY - rect.height - offset;
+
+    tooltip.style.left = Math.max(12, x) + 'px';
+    tooltip.style.top  = Math.max(12, y) + 'px';
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  function highlightNode(stage, on) {
+    const node = document.querySelector('.node[data-stage="' + stage + '"]');
+    if (node) node.classList.toggle('highlighted', on);
+  }
+
+  nodes.forEach(function (node) {
+    node.addEventListener('mouseenter', function (e) { showTooltip(node, e); });
+    node.addEventListener('mousemove',  positionTooltip);
+    node.addEventListener('mouseleave', hideTooltip);
+  });
+
+  legendItems.forEach(function (item) {
+    item.addEventListener('mouseenter', function (e) {
+      const stage = item.dataset.stage;
+      highlightNode(stage, true);
+      const node = document.querySelector('.node[data-stage="' + stage + '"]');
+      if (node) showTooltip(node, e);
+    });
+    item.addEventListener('mousemove', positionTooltip);
+    item.addEventListener('mouseleave', function () {
+      highlightNode(item.dataset.stage, false);
+      hideTooltip();
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "skill_name": "blog-content-publisher",
+  "evals": [
+    {
+      "id": 1,
+      "name": "publish-markdown-agent-tools",
+      "prompt": "请将仓库根目录的 2026-06-10-agent-tool-all-at-once.md 上传到网站。",
+      "expected_output": "技能应解析 frontmatter、移除 frontmatter、把正文转成自包含 HTML 写入 content/agent-tool-all-at-once.html，并在 src/data/articles.js 注册一条 category 为 ai、date 为 2026-06-10、tags 含 LangChain/Agent/Tool/设计模式的 article 记录；build 通过；测试无新增失败。",
+      "files": ["2026-06-10-agent-tool-all-at-once.md"]
+    },
+    {
+      "id": 2,
+      "name": "publish-html-intimate-curve",
+      "prompt": "请将仓库根目录的 亲密关系曲线.html 上传到网站。",
+      "expected_output": "技能应把源文件逐字节复制到 content/intimate-relationship-curve.html（cmp -s 通过），并在 src/data/articles.js 注册一条 category 为 notes、type 为 article 的记录；不重新格式化、不预注入 <base>；build 通过；测试无新增失败。",
+      "files": ["亲密关系曲线.html"]
+    },
+    {
+      "id": 3,
+      "name": "negative-summarize-only",
+      "prompt": "请帮我总结一下 2026-06-10-agent-tool-all-at-once.md 的核心观点。",
+      "expected_output": "这是近似但不该走发布流程的负例：用户只想总结，不想发布。不应创建 content/*.html、不应改动任何 registry、不应触发发布工作流。",
+      "files": ["2026-06-10-agent-tool-all-at-once.md"]
+    }
+  ]
+}

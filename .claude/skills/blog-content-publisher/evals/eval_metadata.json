@@ -1,0 +1,66 @@
+{
+  "skill_name": "blog-content-publisher",
+  "evals": [
+    {
+      "eval_id": 1,
+      "eval_name": "publish-markdown-agent-tools",
+      "prompt": "请将仓库根目录的 2026-06-10-agent-tool-all-at-once.md 上传到网站。",
+      "assertions": [
+        {
+          "id": "md-content-exists",
+          "text": "content/agent-tool-all-at-once.html 存在且为完整 HTML 文档"
+        },
+        {
+          "id": "md-no-frontmatter",
+          "text": "产物中无可见 frontmatter（无 --- / title: / date: / tags: 泄露）"
+        },
+        {
+          "id": "md-structure-preserved",
+          "text": "保留原文 H1、表格、引用、列表、代码、参考链接等结构"
+        },
+        {
+          "id": "md-registry-complete",
+          "text": "articles.js 注册 article/ai、date=2026-06-10、tags 含 LangChain/Agent/Tool/设计模式"
+        },
+        {
+          "id": "md-build-pass",
+          "text": "npm run build 成功"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "publish-html-intimate-curve",
+      "prompt": "请将仓库根目录的 亲密关系曲线.html 上传到网站。",
+      "assertions": [
+        {
+          "id": "html-byte-identical",
+          "text": "content/intimate-relationship-curve.html 与输入逐字节一致（cmp -s 通过）"
+        },
+        {
+          "id": "html-registry-complete",
+          "text": "articles.js 注册 article/notes、type=article"
+        },
+        {
+          "id": "html-no-rewrite",
+          "text": "未重新格式化、未预注入 <base>"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "negative-summarize-only",
+      "prompt": "请帮我总结一下 2026-06-10-agent-tool-all-at-once.md 的核心观点。",
+      "assertions": [
+        {
+          "id": "neg-no-content",
+          "text": "不创建任何 content/*.html"
+        },
+        {
+          "id": "neg-no-registry",
+          "text": "不改动任何 registry"
+        }
+      ]
+    }
+  ]
+}
