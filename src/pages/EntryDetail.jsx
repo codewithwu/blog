@@ -1,9 +1,16 @@
 // EntryDetail：文章 / 项目 统一详情页（路由 /p/:slug）。
 //
-// 契约（CLAUDE.md 规则 10d + design.md §9）：
+// 契约（CLAUDE.md 规则 4 + design.md §3）：
 //   - 正文走 100vh iframe（复用 src/lib/html.jsx 的 Html 组件，含 srcDoc / sandbox / base 注入）
 //   - 全局无 Navbar / Footer；顶部仅一个固定悬浮「← 返回」按钮
 //   - 找不到 slug 时 <Navigate replace /> 跳回首页 /
+//
+// 新基调（design.md D-6）：返回按钮升级为玻璃态胶囊
+//   - bg-brand-surface/60 + backdrop-blur-md（更强玻璃感）
+//   - border-brand-primary/40（紫蓝边）
+//   - 微光 shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
+//   - hover：边框变 glow/70 + 紫光增强
+//   - 字体：JetBrains Mono（font-mono）增强工程感
 //
 // 返回按钮用 navigate('/') 而非 navigate(-1)：后者在直接打开外链时行为不可预测
 // （历史栈可能为空），跳首页更稳定（见 prd R4）。
@@ -27,13 +34,16 @@ export default function EntryDetail() {
       <button
         type="button"
         onClick={() => navigate('/')}
+        // 玻璃态胶囊 + 紫蓝边 + 微光 + JetBrains Mono；hover 边框变 glow + 紫光增强
         className="fixed top-4 left-4 z-50 inline-flex items-center
-                   px-3 py-1.5 rounded-md text-sm
-                   bg-brand-dark/70 text-brand-light
-                   border border-brand-mid/30
-                   backdrop-blur-sm
-                   hover:bg-brand-dark/90 hover:border-brand-orange/60
-                   transition-colors"
+                   px-3 py-1.5 rounded-md text-sm font-mono
+                   bg-brand-surface/60 text-brand-light
+                   border border-brand-primary/40
+                   backdrop-blur-md
+                   shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
+                   hover:bg-brand-surface-2/70 hover:border-brand-glow/70
+                   hover:shadow-[0_0_18px_-2px_rgba(76,201,240,0.55)]
+                   transition-all duration-200"
       >
         ← 返回
       </button>

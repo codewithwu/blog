@@ -1,22 +1,28 @@
-/* 全局样式：Tailwind 指令 + Anthropic 品牌字体 + 关键帧 */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Lora:wght@400;500;600&display=swap');
+/* 全局样式：Tailwind 指令 + 深海夜空字体与装饰层 */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /* 标题用 Poppins，正文用 Lora。系统无对应字体时回退到 Arial/Georgia */
-  h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', Arial, sans-serif; }
+  /* 标题使用 Fraunces 展示衬线，正文使用 Plex Sans；fallback 走 Georgia / system-ui */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fraunces', Georgia, serif;
+  }
   body {
-    font-family: 'Lora', Georgia, serif;
-    background-color: #141413;
-    color: #faf9f5;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background-color: #0a0e1f;
+    color: #f8fafc;
     min-height: 100vh;
+  }
+  /* JetBrains Mono 用作数字 / 标签 / 时间戳 */
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 }
 
-/* Hero tagline 淡入：靠 Hero.jsx 里 key={count} 触发重挂载来重播（见 design.md §7） */
+/* Hero tagline 淡入：靠 Hero.jsx 里 key={count} 触发重挂载来重播 */
 @keyframes heroFade {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -26,3 +32,50 @@
   animation: heroFade 600ms ease-out;
 }
 
+/* 极光漂移：Hero 用 30s，404 fullscreen 用 60s；都通过 alternate 形成呼吸感 */
+@keyframes aurora-drift {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to   { transform: translate3d(4%, 3%, 0) scale(1.08); }
+}
+
+.animate-aurora-drift {
+  animation: aurora-drift 30s ease-in-out infinite alternate;
+}
+
+.animate-aurora-drift-slow {
+  animation: aurora-drift 60s ease-in-out infinite alternate;
+}
+
+/* 整站噪点：SVG turbulence，opacity 4%，fixed 让它不随滚动重绘。
+   mix-blend-mode: overlay 让深色底上呈弱亮噪点；pointer-events: none 不阻塞交互。
+   选择 data URL 形式而非外部资源，避免增加 HTTP 请求与依赖。 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+/* 把 #root 抬到噪点之上，避免内容被噪点纹理干扰 */
+body > #root {
+  position: relative;
+  z-index: 1;
+}
+
+/* 尊重 prefers-reduced-motion：禁用所有装饰动画 + hover 发光位移（PRD AC-9 / D-4） */
+@media (prefers-reduced-motion: reduce) {
+  .animate-heroFade,
+  .animate-aurora-drift,
+  .animate-aurora-drift-slow {
+    animation: none !important;
+  }
+  /* hover 发光是 transition 而非 keyframe，需要显式复位 */
+  .group:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}

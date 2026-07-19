@@ -39,34 +39,43 @@ export default function EntryCard({ entry }) {
 
 视觉修改必须同时遵循项目 `brand-guidelines`、`tailwind.config.js` 和 `src/index.css`。
 
-### 颜色 token
+### 颜色 token（"深海 + 紫极光"基调，2026-07-19 升级）
 
 | Tailwind token | 色值 | 用途 |
 |---|---|---|
-| `brand-dark` | `#141413` | 页面深色背景 |
-| `brand-surface` | `#1c1b1a` | 卡片、引用和次级表面 |
-| `brand-light` | `#faf9f5` | 主文字 |
-| `brand-mid` | `#b0aea5` | 次要文字、低对比边框 |
-| `brand-gray` | `#e8e6dc` | 浅色辅助背景 |
-| `brand-orange` | `#d97757` | 主强调、active、主要操作 |
-| `brand-blue` | `#6a9bcc` | 链接、次级强调 |
-| `brand-green` | `#788c5d` | 第三强调、状态/标签 |
+| `brand-dark` | `#0a0e1f` | body 紫蓝近黑背景 |
+| `brand-surface` | `#14193a` | 卡片、按钮底色（玻璃态配 /85 /60 透明度） |
+| `brand-surface-2` | `#1e2348` | hover 状态、次级表面 |
+| `brand-border` | `#2a3158` | 卡片边框、按钮边框 |
+| `brand-primary` | `#5b8def` | 电光蓝，主强调（hover 文字、focus ring） |
+| `brand-accent` | `#a78bfa` | 极光紫，副强调（chip、tagline、404 装饰） |
+| `brand-glow` | `#4cc9f0` | 电光青蓝，hover 发光 / focus 发亮 |
+| `brand-light` | `#f8fafc` | 主文字 |
+| `brand-mid` | `#94a3b8` | 次级文字（excerpt、meta） |
+| `brand-dim` | `#64748b` | 三级文字、占位 |
 
-主站 JSX 使用 `brand-*` 类，不在同一个组件里散落同义 hex。调整品牌色时以 `tailwind.config.js` 为单一入口，并检查 `src/index.css` 是否存在对应硬编码。
+历史 token `brand-orange` / `brand-green` / `brand-gray` 已删除（本次升级）；不要在新代码里复活它们。
 
-### 字体
+主站 JSX 使用 `brand-*` 类，不在同一个组件里散落同义 hex。box-shadow / text-shadow 里的 `rgba(...)` 是 Tailwind 无法表达的发光值，属合理内联。调整品牌色时以 `tailwind.config.js` 为单一入口，并检查 `src/index.css` 是否存在对应硬编码。
 
-- 标题：Poppins，回退 Arial。
-- 正文：Lora，回退 Georgia。
-- 字体在 `src/index.css` 全局导入和设置；组件通常不重复指定 font-family。
+### 字体（"深海 + 夜空"基调，2026-07-19 升级）
+
+- **标题 / 显示**：`Fraunces`（可变衬线，italic + opsz:144 用于 Hero 站名与 404 数字），回退 `Georgia, serif`。
+- **正文**：`IBM Plex Sans`，回退 `system-ui, sans-serif`。
+- **数字 / 标签 / 时间戳**：`JetBrains Mono`，由 `.font-mono` 工具类启用，回退 `ui-monospace, monospace`。
+- 字体在 `src/index.css` 顶部 `@import` Google Fonts（含 ital/opsz/wght 轴），并通过 `@layer base` 设置 `h1–h6` / `body` / `.font-mono`；组件通常不重复指定 font-family。
+- 中文 fallback：默认走系统字体；如需补 `Noto Serif SC` / `Noto Sans SC` 也可（Google Fonts 可用，PRD 标为可选）。
 
 ### 组件视觉语法
 
 现有组件重复使用：
 
-- `rounded-xl bg-brand-surface border border-brand-mid/20` 作为卡片基底。
-- `hover:-translate-y-1 hover:shadow-lg` + accent border 作为可点击卡片反馈。
-- `transition-all duration-300` 或 `transition-colors`，不添加夸张/长时动画。
+- `rounded-xl bg-brand-surface/85 backdrop-blur-sm border border-brand-border/60` 作为卡片基底（玻璃态）。
+- `hover:-translate-y-0.5 hover:border-brand-primary/50` + `hover:shadow-[0_0_0_1px_rgba(91,141,239,0.4),0_8px_32px_-8px_rgba(167,139,250,0.35)]` 作为可点击卡片反馈（双层紫青发光）。
+- `focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark focus-visible:shadow-[0_0_12px_rgba(76,201,240,0.45)]` 作为键盘 focus 蓝色发光环。
+- `transition-all duration-[250ms] ease-out` 不添加夸张/长时动画。
+- 装饰背景层：`src/components/AuroraBackdrop.jsx` 提供 `intensity: 'hero' | 'fullscreen'`，Hero 内嵌 `'hero'`，NotFound 用 `'fullscreen'`；body::before 噪点（SVG turbulence, opacity 0.04, mix-blend-mode overlay）由 `src/index.css` 全局生效。
+- 装饰动画：`@keyframes aurora-drift`（30s / 60s 两个版本通过 `animate-aurora-drift` / `animate-aurora-drift-slow` 工具类启用）。`@media (prefers-reduced-motion: reduce)` 必须禁用这些 animation、`.group:hover` 的 transform 与 box-shadow。
 - 页面 grid 从移动单列逐级到 `md`/`lg` 多列，例如项目 `md:grid-cols-2 lg:grid-cols-3`。
 - 标题层级保持 `h1` 页面标题、`h2` 分组、`h3` 卡片标题。
 
@@ -116,12 +125,13 @@ export default function EntryCard({ entry }) {
 ## 反模式
 
 - 在主站组件中新增未注册的颜色体系或直接复制文章 iframe 的内联 CSS。
-- 在 iframe 作者 HTML 中假设 `brand-*` Tailwind 类会生效。
+- 在 iframe 作者 HTML 中假设 `brand-*` Tailwind 类会生效（iframe 视口不继承主站 Tailwind 编译产物）。
 - 混用图标库、用字符串 emoji 替代 Lucide 图标。
 - 用数组 index 作动态列表 key。
 - 只有 mouse click，没有 keyboard/focus 状态。
 - 把 data 查找、Markdown 解析或 document wrapping 塞进展示组件。
 - 为减少两三行 JSX 而创建难以命名、只使用一次的“万能组件”。
+- 新增装饰层 / 关键帧动画时不写 `prefers-reduced-motion` 复位（破坏可访问性）。
 
 ## 验证
 
