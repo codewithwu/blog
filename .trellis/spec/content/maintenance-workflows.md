@@ -41,7 +41,7 @@
 
 1. 根据正文从固定六类中选择/确认 category。
 2. 把 Markdown 转换成自带品牌样式的完整 HTML。
-3. 写入 `articles/<category>/<slug>.html`。
+3. 写入 `content/<slug>.html`（分类仅记 metadata，不建立子目录）。
 4. 在 `src/data/articles.js` 添加带分类子目录的 `.html?raw` import。
 5. 添加完整 metadata，特别是必填 `category`。
 6. **保留**原 `articles-draft/<slug>.md`，用于后续编辑/再版。
@@ -54,7 +54,7 @@
 
 以 `src/data/articles.js` 为起点定位：
 
-- 实际 import 变量和 `articles/<category>/<slug>.html?raw` 路径。
+- 实际 import 变量和 `../../content/<slug>.html?raw` 路径。
 - `slug` 对应 metadata 和 `category`。
 - 实际 HTML 文件。
 
@@ -68,7 +68,7 @@
 
 1. 验证 HTML 形态、标题层级、相对图片、外链和自带样式。
 2. 推断并让用户确认 `title / excerpt / tags / links / cover / date`（项目 metadata 在瀑布流重构后字段统一为 Entry 形状）。
-3. 把 draft 移到 `projects/<slug>.html`，不做文章品牌模板转换。
+3. 把 draft 移到 `content/<slug>.html`，不做文章品牌模板转换。
 4. 在 `src/data/projects.js` 添加 `.html?raw` import 与完整 metadata，必须包含 `type: 'project'`、`category: null`、`links: { github?, demo? }`。
 5. 检查 `/p/:slug` iframe 与瀑布流卡片。
 

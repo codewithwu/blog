@@ -2,8 +2,9 @@
 
 本目录覆盖项目根目录的作者内容与发布 registry：
 
-- `articles-draft/` 与 `articles/<category>/`
-- `projects-draft/` 与 `projects/`
+- `articles-draft/`（草稿，仍按文章形态分目录维护）
+- `projects-draft/`（草稿，仍按项目形态分目录维护）
+- `content/`（已发布，扁平结构；文章与项目共目录，不分子目录）
 - 对应 `src/data/*` 注册入口
 
 > 瀑布流重构（2026-07）后：技能 / 工具 / 关于三个页签及其 `content/*.md` 源、`src/lib/content.js`
@@ -33,9 +34,9 @@
 
 | 内容 | 单一来源 | 不应直接改 |
 |---|---|---|
-| 已发布文章正文 | `articles/<category>/<slug>.html` | detail page JSX |
+| 已发布文章正文 | `content/<slug>.html`（分类仅在 metadata，不映射目录） | detail page JSX |
 | 文章分类名/顺序 | `src/data/categories.js` | card/page 中硬编码中文名 |
-| 已发布项目正文 | `projects/<slug>.html` | detail page JSX |
+| 已发布项目正文 | `content/<slug>.html` | detail page JSX |
 | 文章发布 registry | `src/data/articles.js` | — |
 | 项目发布 registry | `src/data/projects.js` | — |
 | 统一内容查询 | `src/lib/entries.js`（`listEntries` / `findEntryBySlug` / `entryCount`） | 页面直接 import data |

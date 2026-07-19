@@ -87,21 +87,21 @@ Claude 收到后按下面 6 步执行。**不要**跳过第 2 步的一次确认
 
 ### 4. 落盘
 
-- 文章：`articles/<category>/<slug>.html`（**必须**带分类子目录）。
-- 项目：`projects/<slug>.html`。
+- 文章：`content/<slug>.html`（分类只在 metadata，不再分子目录）。
+- 项目：`content/<slug>.html`。
 
 ### 5. 在对应 registry 加 `?raw` import + metadata
 
 - 文章 → `src/data/articles.js`：
   ```js
-  import xxx from '../../articles/<category>/<slug>.html?raw'; // 路径必须带子目录
+  import xxx from '../../content/<slug>.html?raw';
   // 数组里加一条：
   { slug, title, excerpt, date, type: 'article', category: '<category>',
     tags: [...], cover: null, links: null, content: xxx }
   ```
 - 项目 → `src/data/projects.js`：
   ```js
-  import xxx from '../../projects/<slug>.html?raw';
+  import xxx from '../../content/<slug>.html?raw';
   { slug, title, excerpt, date: '1970-01-01', type: 'project', category: null,
     tags: [...], cover: null, links: { github: '...', demo: null }, content: xxx }
   ```

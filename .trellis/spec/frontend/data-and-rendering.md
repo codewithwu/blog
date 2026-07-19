@@ -23,12 +23,16 @@
 ## Entry 合同（文章 + 项目统一）
 
 ```text
-articles/<category>/<slug>.html     projects/<slug>.html
+content/<slug>.html
   → src/data/articles.js              → src/data/projects.js
     → src/lib/entries.js（统一查询层）
       → Home / EntryCard
       → EntryDetail（统一详情页 /p/:slug）
 ```
+
+作者内容源统一扁平放在 `content/<slug>.html`；`src/data/articles.js` 与
+`src/data/projects.js` 仍分文件维护 registry（按 `type` 区分），但二者读的是同
+一棵目录树。
 
 ### Entry 字段
 
@@ -58,7 +62,7 @@ articles/<category>/<slug>.html     projects/<slug>.html
 ## 文章合同细节
 
 ```text
-articles/<category>/<slug>.html
+content/<slug>.html
   → src/data/articles.js
     → src/lib/entries.js（统一查询）
       → Home / EntryCard / EntryDetail
@@ -66,12 +70,12 @@ articles/<category>/<slug>.html
 
 - 文章 category 必须是 `src/data/categories.js` 声明的六个固定 slug 之一；中文显示名与顺序只在 `categories.js` 维护，不要在 EntryCard / Home / EntryDetail 中复制。
 - 文章 `type` 必须是 `'article'`；`category` 不能为 `null`；`links` 必须为 `null`。
-- 文章 raw import 路径必须带分类子目录，例如 `../../articles/ai/slug.html?raw`。
+- 文章 raw import 路径：`../../content/<slug>.html?raw`（分类仅在 metadata 体现，不再映射目录）。
 
 ## 项目合同细节
 
 ```text
-projects/<slug>.html
+content/<slug>.html
   → src/data/projects.js
     → src/lib/entries.js（统一查询）
       → Home / EntryCard / EntryDetail
@@ -135,7 +139,7 @@ projects/<slug>.html
 
 ### 信任模型
 
-`Html` 只用于仓库作者控制的 `articles/` 与 `projects/` HTML，不做事后消毒。不要将它复用于外部用户上传或远程抓取的 HTML。若输入信任边界改变，必须重新设计 sanitization、sandbox 和内容安全策略，不能只复用当前组件。
+`Html` 只用于仓库作者控制的 `content/<slug>.html` HTML，不做事后消毒。不要将它复用于外部用户上传或远程抓取的 HTML。若输入信任边界改变，必须重新设计 sanitization、sandbox 和内容安全策略，不能只复用当前组件。
 
 ## 列表层与详情层的样式边界
 

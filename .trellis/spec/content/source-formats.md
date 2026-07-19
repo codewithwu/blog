@@ -13,7 +13,7 @@
 已发布文章必须位于：
 
 ```text
-articles/<category>/<slug>.html
+content/<slug>.html
 ```
 
 `<category>` 只能是 `src/data/categories.js` 声明的六个固定 slug：
@@ -47,7 +47,7 @@ articles/<category>/<slug>.html
 `src/data/articles.js` 必须同时包含：
 
 ```js
-import example from '../../articles/ai/example.html?raw';
+import example from '../../content/<slug>.html?raw';
 
 {
   slug: 'example',
@@ -70,7 +70,7 @@ import example from '../../articles/ai/example.html?raw';
 已发布项目位于：
 
 ```text
-projects/<slug>.html
+content/<slug>.html
 ```
 
 同样支持完整文档或 fragment，统一走 `Html` iframe。项目详情允许自己的视觉标识；项目列表卡仍使用主站品牌样式。
@@ -78,7 +78,7 @@ projects/<slug>.html
 `src/data/projects.js` 的注册形状（瀑布流重构后统一为 Entry 字段）：
 
 ```js
-import exampleProject from '../../projects/example-project.html?raw';
+import exampleProject from '../../content/<slug>.html?raw';
 
 {
   slug: 'example-project',
@@ -104,7 +104,7 @@ import exampleProject from '../../projects/example-project.html?raw';
 
 ## 反模式
 
-- 发布 `.md` 到 `articles/` 或把项目正文放进 data 字符串。
+- 发布到 `content/<slug>.html`（articles-draft / projects-draft 仍按各自约定维护）；或把项目正文放进 data 字符串。
 - 在固定六类之外创建文章目录。
 - import 路径、metadata category 与实际文件目录不一致。
 - 只修改 registry，不保留对应 HTML；或只加 HTML，不注册。

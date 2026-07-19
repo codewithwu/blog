@@ -30,7 +30,7 @@ index.html
 | `src/data/*.js` | 静态 metadata、分类声明、`?raw` 内容注册 | 页面 JSX、重复 parser |
 | `src/lib/*.js(x)` | 纯查询、排序、parser、HTML 文档包装 | 路由布局和硬编码页面内容 |
 | `src/hooks/*.js` | 可复用 React Hook | 普通纯函数 |
-| `articles/`、`projects/`、`content/` | 作者内容源 | React 组件 |
+| `content/` | 作者内容源 | React 组件 |
 
 项目规模很小，不按 feature 再建深层目录。新增文件应放进以上现有职责，而不是为单个函数创建抽象层。
 
@@ -100,7 +100,7 @@ const isFullBleedDetail = /^\/p\/[^/]+/.test(location.pathname);
 
 - 含 JSX 的文件使用 `.jsx`；纯 JavaScript 使用 `.js`。
 - 本地 import 显式写 `.js`/`.jsx` 后缀，匹配现有 ESM 风格。
-- HTML/Markdown 作为字符串导入时使用 `?raw`，例如 `../../articles/ai/example.html?raw` 或 `../../projects/example-project.html?raw`。
+- HTML/Markdown 作为字符串导入时使用 `?raw`，例如 `../../content/<slug>.html?raw`（文章与项目统一该路径；分类不进目录）。
 - 图片路径使用相对路径；`public/` 静态资源也要考虑 Vite `base`。
 - 组件文件和导出使用 PascalCase；Hook 以 `use` 开头；数据/lib 文件使用小写职责名。
 
