@@ -165,3 +165,37 @@ Session 后段：清理 + push。CLAUDE.md 重写为当前架构（+146/-84）�
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: 内容架构收敛：扁平 content/ 统一目录
+
+**Date**: 2026-07-19
+**Task**: 内容架构收敛：扁平 content/ 统一目录
+**Branch**: `main`
+
+### Summary
+
+将 articles/ + projects/ 目录结构合并为统一的扁平 content/<slug>.html。删除 3 个旧内容（1 文章 + 2 项目）；src/data/articles.js 与 src/data/projects.js 改为空数组；Hero.jsx 去掉'开始记录'四字；CLAUDE.md 规则 3/4/5 同步新约定；6 个 spec 文件镜像新约定；URL 重定向层保留。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `438f459` | (see git log) |
+| `6779b88` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
