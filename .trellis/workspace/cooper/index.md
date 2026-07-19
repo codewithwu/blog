@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-07-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~234 | Active |
+| `journal-1.md` | ~267 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-07-19 | trellis-spec-bootstrap: 刷新 content 规范漂移 | `285ca67` | `main` |
 | 5 | 2026-07-19 | Blog content publisher skill + two test entries | `ec8a107` | `main` |
 | 4 | 2026-07-19 | 内容架构收敛：扁平 content/ 统一目录 | `438f459`, `6779b88` | `main` |
 | 3 | 2026-07-19 | Frontend blue redesign (deep ocean + purple aurora) + post-refactor cleanup | `e07d1de`, `719c809` | `main` |

@@ -232,3 +232,36 @@ Created project-local blog-content-publisher skill (SKILL.md + brand markdown→
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: trellis-spec-bootstrap: 刷新 content 规范漂移
+
+**Date**: 2026-07-19
+**Task**: trellis-spec-bootstrap: 刷新 content 规范漂移
+**Branch**: `main`
+
+### Summary
+
+基于真实代码库刷新 .trellis/spec/content/ 三处漂移：source-formats 模板品牌色/字体对齐当前「深海+紫极光」；index/maintenance-workflows 移除已不存在的 articles-draft/projects-draft 草稿目录引用。测试基线 1fail/23 pass 与 testing spec 一致，build 成功，索引 9/9 匹配。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `285ca67` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
