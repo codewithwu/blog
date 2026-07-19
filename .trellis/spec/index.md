@@ -8,8 +8,8 @@
 
 | 边界 | 负责内容 | 入口 |
 |---|---|---|
-| Frontend | React 启动与路由、组件、品牌样式、静态数据消费、iframe 详情渲染、测试与构建 | [frontend/index.md](./frontend/index.md) |
-| Content | 文章/项目 HTML、技能/工具/关于 Markdown、数据注册、草稿发布与本地维护技能 | [content/index.md](./content/index.md) |
+| Frontend | React 启动与路由、组件、品牌样式、静态数据消费、瀑布流与 iframe 详情渲染、测试与构建 | [frontend/index.md](./frontend/index.md) |
+| Content | 文章/项目 HTML、数据注册、草稿发布、AI 命令上传与本地维护技能 | [content/index.md](./content/index.md) |
 
 项目没有后端、数据库、API/service 层、全局状态库、TypeScript 类型层或多包工作区，不要为这些不存在的层添加规范。
 
@@ -31,7 +31,8 @@
 - 改 React 组件、Tailwind、交互、图标或可访问性：读 [frontend/component-and-style-guidelines.md](./frontend/component-and-style-guidelines.md)。
 - 改 data/lib、文章或项目详情渲染：读 [frontend/data-and-rendering.md](./frontend/data-and-rendering.md)。
 - 写测试、判断验证范围或报告失败：读 [frontend/testing-and-quality.md](./frontend/testing-and-quality.md)。
-- 手工编辑文章、项目或三个 Markdown 页签：读 [content/source-formats.md](./content/source-formats.md)。
+- 手工编辑文章或项目源文件：读 [content/source-formats.md](./content/source-formats.md)。
+- 通过「把 m.md 整理后上传到网站」类命令执行 AI 上传：读 [content/ai-upload-flow.md](./content/ai-upload-flow.md)。
 - 发布/删除内容、合并草稿或修改项目本地 skill：读 [content/maintenance-workflows.md](./content/maintenance-workflows.md)。
 
 ## 全局不变量
@@ -41,7 +42,8 @@
 - 图片资源使用相对路径。
 - 图标统一使用 `lucide-react`。
 - 非显然逻辑使用清晰的中文注释，尤其是浏览器行为、数据合同和跨文件同步。
-- 文章与项目详情统一为全屏 iframe；主站 Tailwind 不会进入 iframe。
+- 文章与项目详情统一为全屏 iframe（路由 `/p/:slug`）；主站 Tailwind 不会进入 iframe。
+- 瀑布流首页 (`/`) 渲染 `Hero` + `EntryCard` 列表；不再有全局 Navbar / Footer。
 - 修改用户已有文件前先读目标；删除、覆盖和发布类操作按对应维护流程确认并验证。
 
 ## 规范自身的完成检查

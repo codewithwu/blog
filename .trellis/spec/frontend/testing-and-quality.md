@@ -19,12 +19,11 @@
 
 | 文件 | 应覆盖的合同 |
 |---|---|
-| `tests/articles.test.js` | 排序、分类过滤、slug 查找、六类固定集合、文章 category 完整性 |
-| `tests/projects.test.js` | registry 顺序/拷贝和 slug 查找 |
-| `tests/content.test.js` | skills/tools/about parser 的有效、无效、fallback 输入及真实内容集成 |
+| `tests/entries.test.js` | `listEntries` 合并与 date 降序、`findEntryBySlug` 命中/未命中、`entryCount`、Entry 字段完整性 |
+| `tests/registry.test.js` | 生产 registry 的字段完整性、文章 category 合法性、articles 与 projects 之间 slug 唯一性 |
 | `tests/html.test.jsx` | 完整文档/fragment 包装、base 注入、iframe class/title/sandbox |
-| `tests/article-detail.test.jsx` | 有效文章详情、返回链接、全屏 iframe、找不到时 redirect |
-| `tests/project-detail.test.jsx` | 有效项目详情、返回链接、全屏 iframe、找不到时 redirect |
+| `tests/home.test.jsx` | `Home` 渲染 Hero、entry 计数、瀑布流 columns classes 与 EntryCard 列表 |
+| `tests/entry-detail.test.jsx` | 有效 entry 渲染全屏 iframe、悬浮返回按钮、找不到 slug 时 redirect |
 
 新增测试应放进最接近合同的现有文件。只有出现新的独立模块时才新建测试文件。
 
@@ -44,7 +43,7 @@
 
 ### Registry 隔离
 
-需要稳定 fixture 时用 `vi.mock` 提供测试 registry，如 `tests/article-detail.test.jsx`。mock 必须在动态 import 被测页面前声明，且字段形状完整匹配生产 metadata。
+需要稳定 fixture 时用 `vi.mock` 提供测试 registry，如 `tests/entry-detail.test.jsx`。mock 必须在动态 import 被测页面前声明，且字段形状完整匹配生产 metadata。
 
 不要依赖已经删除的 `_sample` 或历史文章 slug。若测试故意使用生产 registry，选择当前真实条目并在内容变更任务中同步更新。
 
@@ -52,9 +51,10 @@
 
 使用 `MemoryRouter initialEntries` 和最小 route 表：
 
-- 有效 slug/category 渲染目标 DOM。
-- 无效 slug 使用 `<Navigate replace>` 后渲染列表 route fixture。
-- 查询 DOM 合同，如 iframe、返回链接 href、class 和文字，不测试 React Router 内部实现。
+- 有效 slug 渲染目标 DOM（Home 的瀑布流或 EntryDetail 的 iframe）。
+- 无效 slug 使用 `<Navigate replace>` 后渲染对应 fallback route fixture。
+- 旧路由 `/articles`、`/projects`、`/skills`、`/tools`、`/about` 重定向到 `/`；`/articles/:slug` 与 `/projects/:slug` 重定向到 `/p/:slug`。
+- 查询 DOM 合同，如 iframe、返回按钮 href、class 和文字，不测试 React Router 内部实现。
 
 ### Iframe
 
@@ -67,27 +67,28 @@
 - 不包含 `allow-same-origin`。
 - class 和 title 符合合同。
 
+`tests/html.test.jsx > renders an iframe for a full HTML document` 当前因直接断言 `srcDoc === doc` 而失败，是已知基线漂移；任何修复必须按本规范"fragment 已包装 + base 已注入"两条分别断言。
+
 ## 改动到验证范围的映射
 
 | 改动 | 最低验证 |
 |---|---|
-| 路由/AppShell/Navbar | 相关 Router 测试 + 全量 `npm test` + build |
+| 路由/App.jsx | Router 测试（Home / EntryDetail / 重定向）+ 全量 `npm test` + build |
 | 组件交互/可访问性 | Testing Library DOM/键盘断言 + build + 手工响应式检查 |
-| `src/lib/articles.js` / `projects.js` | 对应 util 测试 + 全量 test |
-| `src/lib/content.js` 或 `content/*.md` | parser fixture + 真实内容断言 + build |
-| `src/lib/html.jsx` / detail pages | html + article/project detail tests + build |
-| `src/data/articles.js` / `projects.js` 或 HTML 源 | registry 完整性检查 + test + build |
+| `src/lib/entries.js` | `tests/entries.test.js` + 全量 test |
+| `src/lib/html.jsx` / `EntryDetail` | `tests/html.test.jsx` + `tests/entry-detail.test.jsx` + build |
+| `src/data/articles.js` / `projects.js` 或 HTML 源 | `tests/registry.test.js` 完整性检查 + test + build |
 | Tailwind/Vite/deploy | build；部署行为改变时审查 workflow 与 base |
 | `.trellis/spec/` | 文件/链接/占位扫描 + test/build 基线比较 |
 
 ## 当前基线（2026-07-19）
 
-在本规范 bootstrap 前：
+瀑布流重构后的基线：
 
-- `npm run build` 成功，但 Vite 报主 JavaScript chunk 超过 500 kB 的 warning。
-- `npm test` 有 11 个失败，来自测试与当前数据/实现漂移：文章测试仍假设 registry 为空，项目测试仍找 `_sample`，About 真实联系人数断言过时，Html 完整文档断言忽略 base 注入，ProjectDetail fixture/sandbox 断言过时。
+- `npm run build` 成功；JS bundle 从重构前 1098 kB 降到 352 kB；Vite chunk-size warning 已消失。
+- `npm test` 有 1 个失败：`tests/html.test.jsx > renders an iframe for a full HTML document`，断言期望原始文档（不含 `<base>` 注入），与 `src/lib/html.jsx` 的实际行为（注入 `<base href=”about:srcdoc”>` 修复锚点）不符。这是基线漂移，**不是本任务新增**——它在 spec bootstrap 前的 11 个失败里就是其中之一，其他 10 个失败在重构中被随之删除的旧 test 文件承担。
 
-因此当前任务的质量判断必须比较“是否新增失败”，不能把既有 11 个失败归因于只改规范的 diff；同时也不能宣称测试通过。后续修复这些测试时应更新或移除本节。
+因此后续任务的质量判断必须比较”是否新增失败”，不能把既有 1 个失败归因于本任务；同时也不能宣称测试全绿。修复这条测试时应更新断言或移除本节。
 
 ## Build 质量
 
@@ -101,7 +102,7 @@
 
 - 变更是否放在正确层：page/component/data/lib/content。
 - 是否复用现有 query/parser/Html/usePageTitle，而非复制逻辑。
-- 路由、Navbar 和 page 是否按合同同步。
+- 路由、Hero / EntryCard / EntryDetail 是否按合同同步。
 - metadata、raw import 和源文件是否成套。
 - iframe sandbox/base/title/fullscreen 是否保持。
 - icon 是否来自 lucide-react；样式是否使用品牌 token。

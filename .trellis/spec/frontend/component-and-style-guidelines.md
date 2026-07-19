@@ -4,23 +4,25 @@
 
 新增或修改 `src/components/`、`src/pages/` 的展示结构、Tailwind 类、交互、图标、响应式布局和可访问性时遵循本规范。文章/项目 iframe 内部样式不属于主站组件层，见 [Data and Rendering](./data-and-rendering.md)。
 
+> 瀑布流重构（2026-07）后：`Skills.jsx` / `Tools.jsx` / `About.jsx` 与对应 `SkillBar` / `ToolCard` / `TimelineItem` 组件已下线。`Navbar` / `Footer` / `PageTransition` 也已移除（首页改为 Hero + 瀑布流，详情页改为固定悬浮「← 返回」按钮）。本规范不再覆盖它们。
+
 ## 组件形状
 
 项目统一使用函数组件和 ESM 默认导出：
 
 ```jsx
-export default function ToolCard({ tool }) {
-  const Icon = Icons[tool.icon] || Icons.Wrench;
-  return <div>{/* presentation */}</div>;
+export default function EntryCard({ entry }) {
+  // 用 entry.type / entry.category / entry.tags 决定视觉分支
+  return <article>{/* presentation */}</article>;
 }
 ```
 
-证据：`src/components/ToolCard.jsx`、`src/components/SkillBar.jsx`、`src/pages/Tools.jsx`。
+证据：`src/components/EntryCard.jsx`、`src/components/Hero.jsx`、`src/pages/Home.jsx`、`src/pages/EntryDetail.jsx`。
 
 - 在函数签名中解构简单 props；复杂派生值在 JSX 前计算。
-- 页面负责组合 data/lib 结果；卡片负责单条展示，不在卡片里查询全局 registry，除非该组件确实拥有显示名映射职责（如 `ArticleCard` 读取分类显示名）。
-- 列表渲染使用稳定领域键：文章/项目用 `slug`，分类用 `category`，条目用唯一 `name`。不要用数组 index 掩盖重复数据。
-- 条件内容用清晰的提前返回或短路渲染；找不到路由实体时由详情页 `<Navigate replace>` 处理。
+- 页面负责组合 `src/lib/entries.js` 结果；卡片负责单条展示，不在卡片里查询全局 registry，除非该组件确实拥有显示名映射职责（如 `EntryCard` 读取分类显示名）。
+- 列表渲染使用稳定领域键：entry 用 `slug`。不要用数组 index 掩盖重复数据。
+- 条件内容用清晰的提前返回或短路渲染；找不到路由实体时由 `EntryDetail` 用 `<Navigate replace>` 处理。
 
 ## 复用与组合
 
@@ -29,7 +31,7 @@ export default function ToolCard({ tool }) {
 - 文章和项目详情共同使用 `src/lib/html.jsx`，因此 iframe 行为只能在 `Html` 中修改。
 - 各路由页面共同使用 `usePageTitle`。
 - 重复的卡片/条目视觉放在 `src/components/`；页面只负责 grid 和 section。
-- 相似但合同不同的 ArticleCard/ProjectCard 不强行合并：前者有嵌套分类链接和键盘导航，后者有外链与可选 content。
+- 瀑布流首页用 `EntryCard` 同时承载文章与项目；两者合同差异（type 徽章 / category chip / links 图标）由卡片内部根据 `entry.type` 与 `entry.category` 分支处理。
 
 新增工具函数前先搜索 `src/lib/`；新增视觉单元前先搜索 `src/components/`。只有重复出现或具有独立行为合同的结构才提取。
 
@@ -74,7 +76,7 @@ export default function ToolCard({ tool }) {
 
 - 统一从 `lucide-react` 引入，不混用 FontAwesome、emoji 图标包或自绘 icon component。
 - 固定图标使用命名 import，例如 `Github`, `ExternalLink`, `Mail`。
-- 工具数据的 icon 是字符串；`ToolCard` 使用 `Icons[tool.icon] || Icons.Wrench` 动态解析。新增 icon 名应先确认 lucide-react 实际导出并保持 PascalCase。
+- 工具数据的 icon 是字符串；`EntryCard` 不依赖字符串 icon 解析，所有图标直接用 lucide 命名 import 写在卡片里。
 - 图标尺寸通常由组件显式设置（如 `size={16}`/`size={20}`），不要依赖不透明的全局 CSS。
 
 ## 交互与可访问性
@@ -84,19 +86,19 @@ export default function ToolCard({ tool }) {
 - 导航和内部跳转用 `Link`/`NavLink`，active 状态使用 `aria-current`。
 - 外部链接使用 `target="_blank" rel="noreferrer"`。
 - iframe 必须有由 metadata 提供的可读 `title`。
-- 自定义可点击容器必须同时支持键盘和焦点视觉。`ArticleCard.jsx` 使用 `role="link"`、`tabIndex={0}`、Enter 处理和 `focus-visible` ring。
-- 原生 `<a>`/`<button>` 能表达语义时优先使用原生元素。若容器内还需要嵌套 Link（ArticleCard 的分类 chip），才采用经过测试的自定义容器模式。
-- 点击嵌套外链时要阻止触发外层卡片导航；当前 `ProjectCard` 使用 `stopPropagation`，修改其结构时要用交互测试验证。
+- 自定义可点击容器必须同时支持键盘和焦点视觉。`EntryCard` 使用 `role="link"`、`tabIndex={0}`、Enter 处理和 `focus-visible` ring。
+- 原生 `<a>`/`<button>` 能表达语义时优先使用原生元素。若容器内还需要嵌套 Link（如 `EntryCard` 的 category chip 或 github/demo 按钮），才采用经过测试的自定义容器模式。
+- 点击嵌套外链时要阻止触发外层卡片导航；当前 `EntryCard` 的 github/demo 按钮使用 `stopPropagation`，修改其结构时要用交互测试验证。
 - 文字与背景使用现有高对比 token；次要文字 `brand-mid` 不用于关键操作。
 
 ## 数据容错显示
 
 组件仅在现有合同明确要求时 fallback：
 
-- Tool icon 未识别 → `Wrench`。
-- Skill level 未识别 → “进阶”的绿色样式（parser 通常已先归一化）。
-- Article category 显示名未找到 → 回退 slug，但数据完整性测试应防止这种状态。
-- Project 没有 `content` → 静态卡，不链接到不存在的详情。
+- Entry `cover` 为 null → 用 brand-* 渐变占位 + 标题首字母。
+- Entry 没有 `tags` → 渲染空 chip 区。
+- Entry 的 `category` 显示名未找到 → 回退 slug，但数据完整性测试应防止这种状态。
+- Project `links` 为 null → 不渲染外链按钮区。
 
 不要用大量 optional chaining 静默吞掉必填 metadata；必填字段缺失应在内容注册/测试阶段暴露。
 

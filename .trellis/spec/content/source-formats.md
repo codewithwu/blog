@@ -2,7 +2,9 @@
 
 ## 适用范围
 
-手工创建、编辑或审查文章、项目、技能、工具和关于内容时遵循本规范。通过本地 skill 执行批量/草稿流程时，还要读取 [Maintenance Workflows](./maintenance-workflows.md)。
+手工创建、编辑或审查文章与项目内容时遵循本规范。AI 命令驱动上传（"把某个 .md 整理后上传到网站"）走 [AI Upload Flow](./ai-upload-flow.md)；批量/草稿合并与 registry 同步走 [Maintenance Workflows](./maintenance-workflows.md)。
+
+> 瀑布流重构（2026-07）后：技能 / 工具 / 关于三个独立页签已永久下线，对应的 `content/*.md` 源、`src/lib/content.js` parser、以及 `parseSkills` / `parseTools` / `parseAbout` 已不存在。本规范不再覆盖它们。若要在文章或项目里复述同类信息，按文章 / 项目合同走。
 
 ## 文章源文件
 
@@ -25,7 +27,7 @@ articles/<category>/<slug>.html
 | `notes` | 随笔与思考 | 读书、生活、反思 |
 | `resources` | 资源整理 | 书单、工具、学习路线与清单 |
 
-不能发明第七类。中文显示名与顺序只改 `src/data/categories.js`。文章 slug 在所有分类间全局唯一，因为详情路由只有 `/articles/:slug`。
+不能发明第七类。中文显示名与顺序只改 `src/data/categories.js`。文章 slug 在所有分类间全局唯一，详情路由统一为 `/p/:slug`（瀑布流重构后）。
 
 ### HTML 形态
 
@@ -56,10 +58,12 @@ import example from '../../articles/ai/example.html?raw';
   cover: null,
   content: example,
   category: 'ai',
+  type: 'article',   // 瀑布流重构后必填，用于与项目区分
+  links: null,        // 文章无外链占位
 }
 ```
 
-必填字段是 `slug / title / excerpt / date / tags / cover / content / category`。import 路径分类、metadata category 和实际目录必须一致。slug 与文件名一致；import 变量只需是有效且不冲突的 JavaScript 标识符，不要在删除/修复时凭 slug 重新猜变量名。
+必填字段是 `slug / title / excerpt / date / tags / cover / content / category / type / links`。import 路径分类、metadata category 和实际目录必须一致。slug 与文件名一致；import 变量只需是有效且不冲突的 JavaScript 标识符，不要在删除/修复时凭 slug 重新猜变量名。
 
 ## 项目源文件
 
@@ -71,105 +75,26 @@ projects/<slug>.html
 
 同样支持完整文档或 fragment，统一走 `Html` iframe。项目详情允许自己的视觉标识；项目列表卡仍使用主站品牌样式。
 
-`src/data/projects.js` 的注册形状：
+`src/data/projects.js` 的注册形状（瀑布流重构后统一为 Entry 字段）：
 
 ```js
 import exampleProject from '../../projects/example-project.html?raw';
 
 {
   slug: 'example-project',
-  name: 'Example Project',
-  description: '列表描述',
-  techStack: ['React', 'Vite'],
-  githubUrl: 'https://github.com/...',
-  demoUrl: null,
+  title: 'Example Project',                  // 原 name 改名
+  excerpt: '列表描述',                        // 原 description 改名
+  date: '1970-01-01',                        // 项目若无显式日期，用 1970-01-01 占位
+  tags: ['React', 'Vite'],                   // 原 techStack 改名
   cover: null,
+  links: { github: 'https://github.com/...', demo: null },  // 替代 githubUrl/demoUrl
   content: exampleProject,
+  type: 'project',                           // 必填，与文章区分
+  category: null,                            // 项目不参与文章分类
 }
 ```
 
-字段 `slug / name / description / techStack / githubUrl / demoUrl / cover / content` 必须齐全。数组顺序就是项目列表顺序。`ProjectCard` 当前无条件渲染 GitHub 链接，因此普通项目应提供有效 `githubUrl`；若产品要允许缺失，先修改组件合同和测试。
-
-## 技能页 Markdown
-
-单一来源：`content/技能.md`。格式：
-
-```markdown
-## 前端
-- React: 精通
-- TypeScript: 熟练
-```
-
-- `## ` 开始一个 category。
-- category 之后的 `- name: level` 形成条目。
-- level 只能是 `进阶 / 熟练 / 精通`。
-- 未知 level 会被 parser 静默归一为 `进阶`；维护流程应在写入前阻止/确认，而不是依赖 fallback。
-- 没有冒号的条目会被忽略。
-- 同组重名会导致 React key 重复，应在源文件中去重。
-
-修改内容不要编辑 `src/data/skills.js`；它只是 raw import + `parseSkills` wrapper。
-
-## 工具页 Markdown
-
-单一来源：`content/工具.md`。推荐格式：
-
-```markdown
-## 编辑器
-- VS Code (Code2): 日常主力编辑器
-```
-
-parser 支持：
-
-- `## category`。
-- `- name (icon): desc`。
-- icon 或 desc 可省略；没有 icon/未知 icon 时卡片回退为 Lucide `Wrench`。
-- `:` 只按第一个分隔，工具名本身不应包含冒号。
-- icon 是 `lucide-react` 的大小写敏感 PascalCase export；写入前验证。
-- parser 不支持 URL、tags、level 等额外字段。要扩展必须同步 `parseTools`、`ToolCard`/`Tools` 和测试。
-
-修改内容不要编辑 `src/data/tools.js`。
-
-## 关于页 Markdown
-
-单一来源：`content/关于.md`。
-
-### Preamble
-
-首个 `##` 之前：
-
-- 第一条非空行 → `tagline`。
-- 后续非空行 → `intro`，以换行连接。
-
-### 联系方式
-
-```markdown
-## 联系方式
-- GitHub: https://github.com/codewithwu
-- 邮箱: codewithwu@gmail.com
-```
-
-按第一个冒号拆 label/href。只有精确 label `GitHub` 和 `邮箱` 会映射现有 Lucide 图标；其他 label 仍可显示文字链接，但无 icon。新增图标映射时同步 `parseAbout` 与 `About.jsx`。
-
-### 经历
-
-```markdown
-## 经历
-- **2023.06 – 今** Agent 核心工程师 @ 某 AI 机器人公司
-  描述内容。
-```
-
-header 必须匹配 `- **year** title @ subtitle`，`@` 两侧保留空格。随后带缩进且不以 `-` 开头的行组成 desc。格式不匹配的 header 会被忽略。
-
-### 座右铭
-
-```markdown
-## 座右铭
-> "Engineers don't write code. They dissolve problems."
-```
-
-非空行会去掉可选 `>` 并以空格连接。其他未知 `##` section 当前 parser 不消费；不要添加后假设页面会自动显示。
-
-关于页正文不能硬编码进 `src/pages/About.jsx`。当前显示名“极客熊猫”和 avatar 文字“极客”确实仍是页面结构的一部分；若要内容化，需先设计 parser 合同。
+字段 `slug / title / excerpt / date / tags / cover / links / content / type / category` 必须齐全。`src/lib/entries.js` 会按 `date` 降序再排，与声明顺序解耦。`EntryCard` 仅当 `links.github` 存在时渲染 GitHub 图标，`demo` 同理。
 
 ## 图片与资源
 
@@ -183,9 +108,10 @@ header 必须匹配 `- **year** title @ subtitle`，`@` 两侧保留空格。随
 - 在固定六类之外创建文章目录。
 - import 路径、metadata category 与实际文件目录不一致。
 - 只修改 registry，不保留对应 HTML；或只加 HTML，不注册。
-- 在 `src/data/skills.js`、`src/data/tools.js`、`About.jsx` 硬编码个人内容。
 - 在 iframe HTML 中使用 `brand-*` 类却不提供 Tailwind/CSS。
-- 增加 parser 不支持的 Markdown section/字段却不改 parser 和页面。
+- 重新引入 `content/{技能,工具,关于}.md` 或对应 parser / page 组件——它们已在瀑布流重构中永久下线。
+- 把项目硬塞进文章分类（`category` 在项目上必须为 `null`）。
+- 项目 metadata 漏掉 `type` / `links` / 改名后的 `title` / `excerpt` / `tags`。
 
 ## 验证
 
@@ -199,6 +125,6 @@ npm run build
 - 源文件存在且路径与 registry 一致。
 - raw import 以 `.html?raw` 或 `.md?raw` 结尾。
 - 文章 category 属于 `categorySlugSet`。
-- slug 无重复。
-- Markdown 经 parser 后条目/section 没有被静默丢弃。
+- slug 无重复（articles 与 projects 之间）。
+- 项目 `type === 'project'` 且 `category === null`。
 - iframe 内图片、锚点和外链在真实页面可用。

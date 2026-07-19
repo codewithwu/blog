@@ -13,10 +13,10 @@ index.html
   → src/main.jsx
     → <HelmetProvider><App /></HelmetProvider>
       → src/App.jsx <HashRouter>
-        → AppShell
-          → Navbar（非详情路由）
-          → main / PageTransition / Routes
-          → Footer
+        → Routes（瀑布流重构后无全局 Navbar / Footer）
+          → / → Home（瀑布流 + Hero）
+          → /p/:slug → EntryDetail（全屏 iframe + 固定「← 返回」按钮）
+          → 旧路由 Navigate replace 重定向
 ```
 
 证据：`src/main.jsx`、`src/App.jsx`。
@@ -42,41 +42,40 @@ index.html
 
 ### 当前路由表
 
-路由集中在 `src/App.jsx`：
+路由集中在 `src/App.jsx`，瀑布流重构后路由表收敛为：
 
-- `/` → replace 到 `/articles`
-- `/articles` 与 `/articles/category/:category` → `Articles`
-- `/articles/:slug` → `ArticleDetail`
-- `/projects` 与 `/projects/:slug`
-- `/skills`、`/tools`、`/about`
+- `/` → `Home`（瀑布流首页，含 Hero）
+- `/p/:slug` → `EntryDetail`（统一详情，100vh iframe）
+- `/articles`、`/projects`、`/articles/category/:category`、`/skills`、`/tools`、`/about` → `Navigate replace to="/"`
+- `/articles/:slug`、`/projects/:slug` → `Navigate replace to="/p/:slug"`
 - `*` → `NotFound`
 
-当前声明顺序把文章分类路由放在 slug 详情路由之前，便于阅读。更关键的是 `AppShell` 的详情判断必须显式排除 `/articles/category/...`：
+详情判断改为：
 
 ```js
-const isArticleDetail = /^\/articles\/(?!category\/)[^/]+/.test(location.pathname);
+const isFullBleedDetail = /^\/p\/[^/]+/.test(location.pathname);
 ```
 
-若改变文章路由形状，要同时检查这个正则，否则分类页可能被误当作全屏详情页。
+`AppShell` 已被弱化为 Routes 直接包裹（瀑布流首页与 404 走带边距容器，详情走裸容器），不再渲染全局 Navbar / Footer。
 
 ## 新增路由的同步合同
 
-新增顶级导航页面必须同步三处：
+瀑布流重构后没有全局 Navbar，新增顶级页面只需同步：
 
 1. `src/App.jsx` 增加 `<Route>` 与 page import。
-2. `src/components/Navbar.jsx` 的 `links` 数组增加入口。
-3. 新建对应 `src/pages/<Name>.jsx`。
+2. 新建对应 `src/pages/<Name>.jsx`。
+3. 如需 hero / 卡片 / 详情入口，在 `src/components/Hero.jsx` / `EntryCard.jsx` / `EntryDetail.jsx` 中相应位置加入，不要为单个新页面再创建全局导航组件。
 
-同时为页面调用 `usePageTitle`，并按路由行为增加测试。隐藏页面或参数化子路由如果不应出现在 Navbar，应在设计中明确说明，而不是机械添加导航项。
+同时为页面调用 `usePageTitle`，并按路由行为增加测试。
 
 ## 全屏详情布局
 
-`/articles/:slug` 与 `/projects/:slug` 是 full-bleed 路由：
+`/p/:slug` 是 full-bleed 路由：
 
-- `AppShell` 不渲染 Navbar。
+- `App` 不再渲染 Navbar / Footer。
 - `<main>` 不使用 `max-w-5xl mx-auto px-6 py-8` 容器。
-- 详情 page 只组合固定左上返回链接与 `Html` iframe。
-- slug 不存在时用 `<Navigate replace>` 回到对应列表。
+- 详情 page 只组合固定左上「← 返回」按钮与 `Html` iframe。
+- slug 不存在时用 `<Navigate replace to="/">` 回到瀑布流首页。
 
 若新增另一种全屏详情路由，应扩展同一个 `isFullBleedDetail` 判定，而不是在页面里用负 margin 绕过主布局。
 
@@ -101,7 +100,7 @@ const isArticleDetail = /^\/articles\/(?!category\/)[^/]+/.test(location.pathnam
 
 - 含 JSX 的文件使用 `.jsx`；纯 JavaScript 使用 `.js`。
 - 本地 import 显式写 `.js`/`.jsx` 后缀，匹配现有 ESM 风格。
-- HTML/Markdown 作为字符串导入时使用 `?raw`，例如 `../../content/技能.md?raw`。
+- HTML/Markdown 作为字符串导入时使用 `?raw`，例如 `../../articles/ai/example.html?raw` 或 `../../projects/example-project.html?raw`。
 - 图片路径使用相对路径；`public/` 静态资源也要考虑 Vite `base`。
 - 组件文件和导出使用 PascalCase；Hook 以 `use` 开头；数据/lib 文件使用小写职责名。
 
@@ -114,13 +113,13 @@ const isArticleDetail = /^\/articles\/(?!category\/)[^/]+/.test(location.pathnam
 - parser 会忽略或回退的输入。
 - 多文件必须同步的 registry 合同。
 
-不要给显然的 `map` 或简单 className 逐行写注释；保持与 `src/App.jsx`、`src/lib/html.jsx`、`src/lib/content.js` 相同的密度。
+不要给显然的 `map` 或简单 className 逐行写注释；保持与 `src/App.jsx`、`src/lib/html.jsx`、`src/lib/entries.js` 相同的密度。
 
 ## 反模式
 
 - 用 `BrowserRouter` 替换 `HashRouter` 却不提供 GitHub Pages 404 fallback。
-- 新增 page 但漏掉 Route 或 Navbar 同步。
-- 在 full-bleed detail 内重新渲染全局标题栏、metadata header 或 Navbar。
+- 新增 page 但漏掉 `src/App.jsx` 的 `<Route>` 同步。
+- 在 full-bleed detail（`/p/:slug`）内重新渲染全局标题栏或 metadata header。
 - 为静态内容引入 fetch、缓存层或全局 store。
 - 在 `.js` 文件中写 JSX，或漏掉 raw import 的 `?raw`。
 - 在组件中直接修改 `document.title`，绕开 `usePageTitle`。
@@ -132,4 +131,4 @@ npm test
 npm run build
 ```
 
-路由改动还应使用 `MemoryRouter`/`Routes` 覆盖有效参数和找不到参数的 redirect；详情布局改动需检查 Navbar 显隐、主容器和 iframe 全屏合同。
+路由改动还应使用 `MemoryRouter`/`Routes` 覆盖有效参数和找不到参数的 redirect；详情布局改动需检查主容器与 iframe 全屏合同（瀑布流重构后已无全局 Navbar / Footer 显隐逻辑）。

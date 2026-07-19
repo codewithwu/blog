@@ -16,13 +16,13 @@
   }
 }
 
-/* 页面切换淡入淡出动画 */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Hero tagline 淡入：靠 Hero.jsx 里 key={count} 触发重挂载来重播（见 design.md §7） */
+@keyframes heroFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 300ms ease-out;
+.animate-heroFade {
+  animation: heroFade 600ms ease-out;
 }
 

@@ -2,9 +2,11 @@
 
 ## 适用范围
 
-发布或删除文章/项目、把 `content-draft/` 合并到 live 内容、修改项目本地 `.claude/skills/`、修复源文件与 registry 不一致时遵循本规范。
+发布或删除文章 / 项目、把 `content-draft/` 合并到 live 内容、修复源文件与 registry 不一致时遵循本规范。AI 命令驱动的单条上传走 [AI Upload Flow](./ai-upload-flow.md)，本规范主要覆盖批量维护与 registry 治理。
 
-本仓库把八个已跟踪本地 skill 作为正式维护入口：
+> 瀑布流重构（2026-07）后：技能 / 工具 / 关于三个独立页签已永久下线，对应的 `update-skills` / `update-tools` / `update-about` skill 与 `content-draft/` 里相关草稿不再使用。删除这些内容、parser 和 page 后，registry 也只剩 `src/data/articles.js` 与 `src/data/projects.js` 两个发布入口。
+
+历史 skill 矩阵（仅供回溯 `SKILL.md` 漂移时核对，不再是运行时入口）：
 
 | Skill | 负责边界 |
 |---|---|
@@ -13,9 +15,6 @@
 | `delete-article` | 删除文章 HTML + import + metadata |
 | `create-project` | HTML 草稿 → live HTML + 项目 registry |
 | `delete-project` | 删除项目 HTML + import + metadata |
-| `update-skills` | 合并技能草稿到 `content/技能.md` |
-| `update-tools` | 合并工具草稿到 `content/工具.md` |
-| `update-about` | 按 section 合并关于草稿到 `content/关于.md` |
 
 这些 skill 是项目约定，但 `SKILL.md` 仍可能滞后。运行时事实必须按根规范的证据优先级核对，不能把 skill 文案当成高于源码的真相。
 
@@ -23,7 +22,7 @@
 
 所有发布、删除和草稿 merge 遵循同一安全骨架：
 
-1. **解析目标**：明确是文章/项目/技能/工具/关于，是 draft 还是 live，slug/文件名是什么。
+1. **解析目标**：明确是文章还是项目，是 draft 还是 live，slug/文件名是什么。
 2. **读取权威状态**：先读 registry 或 live source，再检查文件系统；记录实际 import 变量、metadata 与路径。
 3. **格式检查**：按 [Source Formats](./source-formats.md) 验证字段、分类、parser shape、HTML 资源和图标。
 4. **完整预览**：列出将创建、移动、覆盖或删除的每个文件与 registry 记录，以及推断 metadata。
@@ -49,7 +48,7 @@
 
 发布前全局检查 slug 是否已存在于任何 category；slug 跨分类仍必须唯一。用户明确指定 category 时尊重其意图，但仍校验属于固定集合。
 
-正常发布不改 `Articles.jsx`、`ArticleCard.jsx`、`CategoryFilter.jsx`、`ArticleDetail.jsx` 或 `src/lib/articles.js`。
+正常发布不改 `src/pages/Home.jsx`、`src/pages/EntryDetail.jsx`、`src/components/EntryCard.jsx` 或 `src/lib/entries.js`，只动源 HTML 与 registry。
 
 ## 文章删除
 
@@ -68,54 +67,18 @@
 正常流程：
 
 1. 验证 HTML 形态、标题层级、相对图片、外链和自带样式。
-2. 推断并让用户确认 `name / description / techStack / githubUrl / demoUrl / cover`。
+2. 推断并让用户确认 `title / excerpt / tags / links / cover / date`（项目 metadata 在瀑布流重构后字段统一为 Entry 形状）。
 3. 把 draft 移到 `projects/<slug>.html`，不做文章品牌模板转换。
-4. 在 `src/data/projects.js` 添加 `.html?raw` import 与完整 metadata。
-5. 检查 project detail iframe 和列表卡。
+4. 在 `src/data/projects.js` 添加 `.html?raw` import 与完整 metadata，必须包含 `type: 'project'`、`category: null`、`links: { github?, demo? }`。
+5. 检查 `/p/:slug` iframe 与瀑布流卡片。
 
 当前 `Html` 对完整文档和 fragment 都使用 iframe；不要沿用旧说明中“fragment 走 `dangerouslySetInnerHTML`”的分支。当前也没有 `ProjectHeader.jsx`；详情页只有浮动返回链接和 iframe。
 
-正常发布不改 `Projects.jsx`、`ProjectCard.jsx`、`ProjectDetail.jsx` 或 `src/lib/projects.js`，除非用户要求改变所有项目的运行时合同。
+正常发布不改 `src/pages/Home.jsx`、`src/pages/EntryDetail.jsx`、`src/components/EntryCard.jsx` 或 `src/lib/entries.js`，只动源 HTML 与 registry。
 
 ## 项目删除
 
 确认 live HTML、registry import 和 metadata 三处都存在并相互匹配，再展示删除计划并确认。删除后搜索 slug/文件名/import 变量残留并运行 build。不要根据 camelCase 规则猜 import 变量；读取文件中的实际名字。
-
-## Skills / Tools / About 草稿合并
-
-### 何时使用 draft workflow
-
-只有请求明确引用 `content-draft/<name>.md` 时才使用 `update-*` merge。单条小改直接编辑对应 live source：
-
-- `content/技能.md`
-- `content/工具.md`
-- `content/关于.md`
-
-不要为了改一行创建无意义草稿或改 wrapper data 文件。
-
-### Skills
-
-默认按 category/item additive merge：
-
-- draft 新 category 追加。
-- 同 category 同名 skill 以 draft level 更新。
-- draft 未提及的现有项保留；“未出现”不代表删除。
-- level 必须是 `进阶 / 熟练 / 精通`。
-
-merge 后删除被应用的 draft；删除或 hard replace 语义必须单独突出确认。
-
-### Tools
-
-同样按 category/item additive merge；同名工具以 draft icon/desc 更新，未提及项保留。写入前验证 Lucide icon export 和大小写。未知 icon 虽会 fallback 到 `Wrench`，但维护流程不能把明显 typo 静默发布。
-
-### About
-
-按 section replace，而不是逐 item additive merge：
-
-- draft 提及的 preamble/联系方式/经历/座右铭整体替换 live section。
-- 未提及 section 保留。
-- draft 缺少旧联系方式或经历意味着删除，预览时必须明确列出。
-- 未知 section 会被 parser 忽略；如要支持，先设计并确认 parser + page 变更。
 
 ## 修改本地 Skill 时的规则
 
@@ -129,7 +92,7 @@ merge 后删除被应用的 draft；删除或 hard replace 语义必须单独突
 6. 更新内容合同后同步 create/delete 两个方向以及 README/CLAUDE 相关说明。
 7. 不把宿主工具名称写进通用运行时规范；只在该项目已经标准化的 skill 边界内描述。
 
-已知漂移示例：`create-project/SKILL.md` 曾引用 fragment DOM 注入和 `ProjectHeader.jsx`，与当前源码不符；delete 文案也可能残留“文章仍是 Markdown”。修 skill 时应以 `src/lib/html.jsx`、详情 page 和 `CLAUDE.md` 的 HTML 规则为准。
+已知漂移示例：`create-project/SKILL.md` 曾引用 fragment DOM 注入和 `ProjectHeader.jsx`，与当前源码不符；delete 文案也可能残留“文章仍是 Markdown”。修 skill 时应以 `src/lib/html.jsx`、`src/pages/EntryDetail.jsx` 和 `CLAUDE.md` 的 HTML 规则为准。任何提到 `update-skills` / `update-tools` / `update-about` 或 `content/{技能,工具,关于}.md` 的 `SKILL.md` 都应改写或下线。
 
 ## 失败与部分状态
 
@@ -153,9 +116,9 @@ merge 后删除被应用的 draft；删除或 hard replace 语义必须单独突
 
 ### Markdown 内容
 
-- [ ] parser 可识别所有目标 section/item。
-- [ ] 技能 level 合法，工具 icon 存在。
-- [ ] About section replace 中的删除已明确确认。
+- [ ] 文章与项目的 metadata 字段齐全且符合 [Source Formats](./source-formats.md)。
+- [ ] 文章 category 在固定六类之内；项目 `category === null` 且 `type === 'project'`。
+- [ ] slug 在 articles 与 projects 之间全局唯一。
 - [ ] 已应用 draft 的保留/删除语义与用户确认一致。
 
 ### 项目命令
@@ -169,11 +132,11 @@ npm run build
 
 ## 反模式
 
-- 只改 HTML/Markdown 或只改 registry，留下另一侧不一致。
+- 只改 HTML 或只改 registry，留下另一侧不一致。
 - 正常内容发布时给页面添加按 slug 的硬编码分支。
 - 把文章 category 从目录名猜出后忽略 metadata/import 的冲突。
 - 删除 live 内容时顺便删除独立 draft，未单独确认。
-- draft merge 把“未提及”静默解释为删除。
-- 因 parser/组件有 fallback 就发布明显非法 level/icon。
+- 项目 metadata 漏写 `type: 'project'` 或把 `category` 写成文章分类。
+- 重新引入技能 / 工具 / 关于的 `content/*.md` 源或对应 parser（瀑布流重构已永久下线它们）。
 - 复制过时 `SKILL.md` 中不存在的组件、旧 renderer 或旧 sandbox 行为。
 - 失败后继续批处理或用仓库级 reset 回退用户改动。

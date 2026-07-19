@@ -2,7 +2,9 @@
 
 ## 适用范围
 
-修改 `src/data/`、`src/lib/`、列表/详情页的数据消费、内容 parser、文章分类或 `Html` iframe 时遵循本规范。作者源文件的具体格式见 [../content/source-formats.md](../content/source-formats.md)。
+修改 `src/data/`、`src/lib/`、列表/详情页的数据消费、内容 parser、文章分类或 `Html` iframe 时遵循本规范。作者源文件的具体格式见 [../content/source-formats.md](../content/source-formats.md)；AI 命令驱动的内容上传走 [../content/ai-upload-flow.md](../content/ai-upload-flow.md)。
+
+> 瀑布流重构（2026-07）后：技能 / 工具 / 关于的 `parseSkills` / `parseTools` / `parseAbout` 与对应页面 / `src/data/skills.js` / `src/data/tools.js` / `src/lib/content.js` 全部下线。本文不再覆盖它们。
 
 ## 总体数据流
 
@@ -11,94 +13,83 @@
 ```text
 作者源文件
   → src/data 注册或直接 raw import
-    → src/lib 查询 / 解析 / 文档包装
+    → src/lib 统一查询（articles + projects → Entry）
       → src/pages 页面组合
         → src/components 展示
 ```
 
 不要把这条同步链路改成 fetch 或异步缓存，除非产品明确要引入外部内容服务。
 
-## 文章合同
+## Entry 合同（文章 + 项目统一）
+
+```text
+articles/<category>/<slug>.html     projects/<slug>.html
+  → src/data/articles.js              → src/data/projects.js
+    → src/lib/entries.js（统一查询层）
+      → Home / EntryCard
+      → EntryDetail（统一详情页 /p/:slug）
+```
+
+### Entry 字段
+
+| 字段 | 文章必填 | 项目必填 | 用途 |
+|---|---|---|---|
+| `slug` | ✓ | ✓ | `/p/:slug` 查找键；articles 与 projects 之间全局唯一 |
+| `title` | ✓ | ✓ | 卡片标题、页面标题、iframe title（原项目字段 `name` 已改） |
+| `excerpt` | ✓ | ✓ | 列表摘要（原项目字段 `description` 已改） |
+| `date` | ✓ | ✓ | `listEntries` 按新到旧排序；项目无日期回退 `'1970-01-01'` |
+| `tags` | ✓ | ✓ | 卡片标签数组（原项目字段 `techStack` 已改） |
+| `cover` | ✓ | ✓ | 当前可为 `null`；不能省略字段 |
+| `content` | ✓ | ✓ | `.html?raw` import 变量 |
+| `type` | ✓ (`'article'`) | ✓ (`'project'`) | 区分卡片视觉与图标 |
+| `category` | ✓（固定六类之一） | `null` | 仅文章参与分类筛选 / chip |
+| `links` | `null` | `{ github?, demo? } \| null` | 仅项目渲染 GitHub / Demo 图标 |
+
+### lib 接口
+
+`src/lib/entries.js` 暴露三个纯函数：
+
+- `listEntries()`：合并 articles + projects，按 `date` 降序返回 `Entry[]`。
+- `findEntryBySlug(slug)`：在 articles 与 projects 中查找，单条匹配返回 `Entry | null`。
+- `entryCount()`：`listEntries().length` 的便捷封装。
+
+页面只调用 lib 层；不要在 page 或 card 里直接 import `src/data/*`。
+
+## 文章合同细节
 
 ```text
 articles/<category>/<slug>.html
   → src/data/articles.js
-  → src/lib/articles.js
-  → Articles / ArticleCard / ArticleDetail
+    → src/lib/entries.js（统一查询）
+      → Home / EntryCard / EntryDetail
 ```
 
-### Registry metadata
+- 文章 category 必须是 `src/data/categories.js` 声明的六个固定 slug 之一；中文显示名与顺序只在 `categories.js` 维护，不要在 EntryCard / Home / EntryDetail 中复制。
+- 文章 `type` 必须是 `'article'`；`category` 不能为 `null`；`links` 必须为 `null`。
+- 文章 raw import 路径必须带分类子目录，例如 `../../articles/ai/slug.html?raw`。
 
-每条文章必须包含：
-
-| 字段 | 运行时用途 |
-|---|---|
-| `slug` | `/articles/:slug` 查找键；全局唯一 |
-| `title` | 卡片标题、页面标题、iframe title |
-| `excerpt` | 列表摘要 |
-| `date` | `listArticles` 按新到旧排序，格式应为 `YYYY-MM-DD` |
-| `tags` | 卡片标签数组 |
-| `cover` | 当前可为 `null`；不能省略既定字段 |
-| `content` | `.html?raw` import 变量 |
-| `category` | 分类筛选、badge、目录映射；必填 |
-
-证据：`src/data/articles.js`、`src/lib/articles.js`、`src/components/ArticleCard.jsx`。
-
-`src/data/categories.js` 是分类 slug、中文显示名和顺序的单一来源。固定顺序为 `ai / python / engineering / product / notes / resources`；不要在 ArticleCard、CategoryFilter 或页面标题中复制中文名。`listCategories()` 只返回当前有文章的分类并附加 `count`，保持声明顺序。
-
-正常新增/删除文章只改源 HTML 与 registry；`Articles.jsx`、`ArticleCard.jsx`、`CategoryFilter.jsx` 和查询函数不应增加按文章硬编码分支。
-
-## 项目合同
+## 项目合同细节
 
 ```text
 projects/<slug>.html
   → src/data/projects.js
-    ├→ Projects / ProjectCard（当前列表页直接消费 registry）
-    └→ src/lib/projects.js → ProjectDetail
+    → src/lib/entries.js（统一查询）
+      → Home / EntryCard / EntryDetail
 ```
 
-每条项目必须包含：`slug / name / description / techStack / githubUrl / demoUrl / cover / content`。
+- 项目 `type` 必须是 `'project'`；`category` 必须为 `null`。
+- 项目原字段 `name` / `description` / `techStack` / `githubUrl` / `demoUrl` 已统一为 `title` / `excerpt` / `tags` / `links.{github,demo}`；不要在 data 文件里保留旧字段。
+- 项目 `date` 若作者未提供，写 `'1970-01-01'`（仅用于排序，UI 不显示）。
+- 数组顺序不再决定展示顺序；`listEntries` 按 `date` 降序再排。
+- `EntryCard` 仅当 `links.github` / `links.demo` 存在时渲染对应图标。
 
-- `listProjects()` 返回 registry 的浅拷贝，不排序；展示顺序由 `src/data/projects.js` 数组顺序决定。
-- `findProjectBySlug()` 返回匹配项或 `undefined`。
-- `ProjectCard` 只有在 `content` 存在时才链接详情；`demoUrl` 是可选显示项。
-- metadata 中的 `name` 同时用于页面标题和 iframe title。
-
-正常注册后，`Projects.jsx` 和卡片/详情组件不需要按项目修改。
-
-## Skills / Tools / About 数据
-
-### Skills
-
-`src/data/skills.js` 只做：
-
-```text
-content/技能.md?raw → parseSkills → export
-```
-
-`parseSkills` 返回 `[{ category, items: [{ name, level }] }]`，允许等级只有 `进阶 / 熟练 / 精通`；未知值归一为 `进阶`。内容修改只能落在 `content/技能.md`，不要把数组硬编码回 data 文件。
-
-### Tools
-
-`src/data/tools.js` 只做 `content/工具.md?raw → parseTools → export`。parser 返回 `name` 和可选 `icon`/`desc`；`ToolCard` 按字符串解析 Lucide icon，未知/缺失 icon 回退 `Wrench`。
-
-### About
-
-`About.jsx` 直接 raw import `content/关于.md` 并调用 `parseAbout`。返回形状是：
-
-```js
-{ tagline, intro, contacts, timeline, motto }
-```
-
-parser 的 section 和正则是数据合同。扩展 Markdown 形状时必须同时改 parser、页面/组件和对应 `tests/content.test.js`，不能只写一个页面永远读不到的新 section。
+正常注册后，`Home.jsx` / `EntryCard.jsx` / `EntryDetail.jsx` 不需要按文章 / 项目硬编码分支。
 
 ## 查询与 parser 规则
 
-- `src/lib/articles.js`、`src/lib/projects.js` 的函数保持纯函数接口，方便直接单测。
-- `src/lib/content.js` 是纯字符串 parser，不依赖 gray-matter 或运行时 DOM。
-- parser 对未知输入存在“忽略”或 fallback 行为；新增格式前先决定是严格报错、忽略还是扩展返回形状，并把决定写进测试。
-- 页面消费 parser 输出，不应二次解析原始 Markdown。
-- data module 负责注册，lib 负责行为；页面不直接重写排序/过滤规则。当前 `Projects.jsx` 直接读 projects registry 是现有例外，新行为优先通过 `src/lib/projects.js` 保持可测。
+- `src/lib/entries.js` 是纯函数接口，便于直接单测。
+- data module 负责注册，lib 负责行为；页面不直接重写排序/过滤规则。
+- 当前 `Home.jsx` 通过 `listEntries()` 拿到全量瀑布流；筛选按需后续扩展，不要在 EntryCard 内做全局查询。
 
 ## 统一 HTML iframe 合同
 
@@ -140,7 +131,7 @@ parser 的 section 和正则是数据合同。扩展 Markdown 形状时必须同
 - `allow-forms`：允许表单。
 - 不加入 `allow-same-origin`，避免提升作者文档访问宿主 origin 能力。
 
-改 sandbox 是安全/兼容合同变更，必须更新 `tests/html.test.jsx` 及两类详情页测试，并明确说明能力变化。
+改 sandbox 是安全/兼容合同变更，必须更新 `tests/html.test.jsx` 与详情页测试，并明确说明能力变化。
 
 ### 信任模型
 
@@ -148,27 +139,28 @@ parser 的 section 和正则是数据合同。扩展 Markdown 形状时必须同
 
 ## 列表层与详情层的样式边界
 
-- Articles/Projects 卡片属于主站导航层，使用编译后的 Tailwind `brand-*` 类。
+- 瀑布流首页的 `EntryCard` 属于主站导航层，使用编译后的 Tailwind `brand-*` 类。
 - iframe 是独立 viewport，不继承 `src/index.css` 或 Tailwind bundle。
 - 作者 HTML 内的 `text-brand-light` 等类不会生效；需要内联 `<style>`、自己的 stylesheet 或具体 CSS 值。
-- React 的 detail page 不再渲染 metadata header；标题、日期、技术栈等正文展示由作者 HTML 自己负责。
+- 详情页（`EntryDetail`）不渲染 metadata header；标题、日期、技术栈等正文展示由作者 HTML 自己负责。
 
 ## 反模式
 
 - 在页面中手工复制 registry 数据或分类中文名。
 - 新文章/项目只加文件，没有 raw import 或 metadata。
 - 在 data 文件中解析 Markdown，或在多个页面各自实现 parser。
-- 为 fragment 恢复宿主 DOM 注入，使作者 CSS/脚本污染主站。
+- 项目 metadata 漏写 `type: 'project'` 或保留旧字段 `name` / `description` / `techStack` / `githubUrl` / `demoUrl`。
 - 给 sandbox 加 `allow-same-origin` 却不分析权限组合。
 - 对仓库外不可信 HTML 使用当前 `Html`。
-- 期待 iframe 继承主站字体/Tailwind，或在 React 侧事后“清洗”作者 HTML。
+- 期待 iframe 继承主站字体/Tailwind，或在 React 侧事后"清洗"作者 HTML。
+- 重新引入 `parseSkills` / `parseTools` / `parseAbout` 或对应的 `content/{技能,工具,关于}.md` 源。
 
 ## 验证
 
-- 查询/排序/分类：`tests/articles.test.js`、`tests/projects.test.js`。
-- Markdown parser：`tests/content.test.js`，同时覆盖小 fixture 与真实 `content/*.md`。
-- 文档包装/base/sandbox/title/class：`tests/html.test.jsx`。
-- 详情路由：`tests/article-detail.test.jsx`、`tests/project-detail.test.jsx`。
+- `tests/entries.test.js`、`tests/registry.test.js`：合并、排序、查找、字段完整性。
+- `tests/html.test.jsx`：完整文档/fragment 包装、base 注入、iframe class/title/sandbox。
+- `tests/entry-detail.test.jsx`：iframe + 返回按钮 + 不存在 slug 时 redirect。
+- `tests/home.test.jsx`：瀑布流 + Hero + entry 计数渲染。
 
 ```bash
 npm test
