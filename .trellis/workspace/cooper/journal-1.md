@@ -129,3 +129,39 @@ Replaced generic Trellis templates with source-backed frontend and content speci
 - 本地 `npm run dev` 视觉验收 4 个 URL（/、/p/sirchmunk-deep-dive、/p/articles、/p/claude-task-monitor、404）
 - 若要发布：`git push`（HEAD 比 origin/main 多 3 commits：feat + archive + journal）
 - 后续可选 polish：Noto Serif SC / Noto Sans SC 引入作为中文 fallback；prefers-color-scheme 扩展；404 时间戳改为动态构建时间
+
+
+## Session 3: Frontend blue redesign (deep ocean + purple aurora) + post-refactor cleanup
+
+**Date**: 2026-07-19
+**Task**: Frontend blue redesign (deep ocean + purple aurora) + post-refactor cleanup
+**Branch**: `main`
+
+### Summary
+
+把极客熊猫博客从暖色极简（橙主导）切换为'深邃海洋 / 夜空'基调（电光蓝 + 紫极光 + 青蓝 glow）。8 个业务文件改动：tailwind.config.js 替换 10 个 brand token（删 orange/green/gray）；src/index.css 引入 Fraunces / IBM Plex Sans / JetBrains Mono + aurora-drift 关键帧 + body 噪点 + prefers-reduced-motion 全覆盖；新增 src/components/AuroraBackdrop.jsx（hero / fullscreen 两个 mode）；Hero 站名 Fraunces italic opsz:144 + 紫光；EntryCard 13 处 token 替换 + 玻璃态底色 + hover 紫青发光 + focus 蓝色环；EntryDetail 返回按钮升级玻璃态胶囊；NotFound 巨大 404 紫蓝青渐变 + 全屏极光 + 罗盘坐标文案。trellis-check PASS；npm run build 通过（19.39 KB CSS / 355.20 KB JS）；npm test 维持 23/24 基线（1 个 html.test.jsx 已知失败非本任务引入）。无新依赖；spec 同步更新。
+
+Session 后段：清理 + push。CLAUDE.md 重写为当前架构（+146/-84）；删除 26 个旧 superpowers / drafts / spec 文档（被 .trellis/ 取代）。全部 4 commits 已推送 origin/main。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e07d1de` | (see git log) |
+| `719c809` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
