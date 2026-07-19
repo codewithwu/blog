@@ -199,3 +199,36 @@ Session 后段：清理 + push。CLAUDE.md 重写为当前架构（+146/-84）�
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Blog content publisher skill + two test entries
+
+**Date**: 2026-07-19
+**Task**: Blog content publisher skill + two test entries
+**Branch**: `main`
+
+### Summary
+
+Created project-local blog-content-publisher skill (SKILL.md + brand markdown→HTML template + evals). Published two root fixtures as live articles: MD→article/ai (converted, frontmatter stripped), HTML→article/notes (byte-identical copy). Registered both in src/data/articles.js via ?raw. Verified: registry tests pass, build succeeds, npm test shows zero new failures against baseline. Commit ec8a107.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ec8a107` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
