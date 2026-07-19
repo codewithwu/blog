@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
+- **Total Sessions**: 7
 - **Last Active**: 2026-07-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~267 | Active |
+| `journal-1.md` | ~301 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-07-19 | Publish 'Claude Code 调教指南' + remove orphan 亲密关系曲线.html | `c7d2d07`, `1cdf113` | `main` |
 | 6 | 2026-07-19 | trellis-spec-bootstrap: 刷新 content 规范漂移 | `285ca67` | `main` |
 | 5 | 2026-07-19 | Blog content publisher skill + two test entries | `ec8a107` | `main` |
 | 4 | 2026-07-19 | 内容架构收敛：扁平 content/ 统一目录 | `438f459`, `6779b88` | `main` |

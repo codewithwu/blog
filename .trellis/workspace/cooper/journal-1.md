@@ -265,3 +265,37 @@ Created project-local blog-content-publisher skill (SKILL.md + brand markdown→
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Publish 'Claude Code 调教指南' + remove orphan 亲密关系曲线.html
+
+**Date**: 2026-07-19
+**Task**: Publish 'Claude Code 调教指南' + remove orphan 亲密关系曲线.html
+**Branch**: `main`
+
+### Summary
+
+按 blog-content-publisher skill 完成 ai 分类新文章发布：源文件 content/claude-code-taming-guide.html 基于 references/markdown-template.html 骨架把 Markdown 转成完整 HTML 文档（含标题/段落/blockquote/有序与无序列表/表格/hr/inline code，标签全部开合平衡）；在 src/data/articles.js 加 ?raw import + 完整 metadata（type: article / category: ai / links: null / cover: null）。验证：npm test 23 通过 / 1 失败（与基线漂移一致，非本任务引入）；npm run build 通过（1533 modules）。同时把用户主动删除的仓库根目录孤立文件 亲密关系曲线.html（HEAD 中存在但未被任何 ?raw import 引用）作为独立 chore 提交清理。两个 commit：1cdf113 清理孤儿、c7d2d07 发布文章。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c7d2d07` | (see git log) |
+| `1cdf113` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
