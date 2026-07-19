@@ -17,7 +17,7 @@ const LAST_UPDATED = '2026-07-19'; // 静态时间戳：避免 hydration mismatc
 // tagline 候选：按 entry 数量档位切换，制造"随站点成长"的趣味点
 function pickTagline(count) {
   if (count <= 0) return '欢迎';
-  if (count <= 3) return '开始记录';
+  if (count <= 3) return '';
   if (count <= 10) return '持续记录 AI 与工程心得';
   return '保持好奇，持续输出';
 }

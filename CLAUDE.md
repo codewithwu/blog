@@ -38,17 +38,14 @@ Entry 字段形状：
 新增 Entry 必须**同时完成下列三步**：
 
 (a) **源文件位置**：
-- 文章：`.html` 放入 `articles/<category>/<slug>.html`（`<category>` 必须是规则 5 的 6 个固定 slug 之一）
-- 项目：`.html` 放入 `projects/<slug>.html`（项目根目录）
+- 全部统一：`.html` 放入 `content/<slug>.html`（`slug` 全局唯一，文章与项目共目录，不分子目录）
 
 HTML **可以是完整文档**（含 `<!doctype>` / `<html>` / `<head>` / `<body>` 包装、内联 `<style>` / `<script>`、自定义字体与 CSS 变量），**也可以是 HTML 片段**（单个根元素）。`src/lib/html.jsx` 的 `Html` 组件会自动把片段包成最小文档。
 
 (b) **`?raw` 导入**：在 `src/data/articles.js` 或 `src/data/projects.js` 顶部加：
 
 ```js
-import xxx from '../../articles/<category>/<slug>.html?raw';
-// 或
-import xxx from '../../projects/<slug>.html?raw';
+import xxx from '../../content/<slug>.html?raw';
 ```
 
 (c) **metadata 记录**：在对应数组 push 一条：
@@ -78,7 +75,7 @@ import xxx from '../../projects/<slug>.html?raw';
 
 - 数据源：`listEntries()`（按 `date` 降序合并 articles + projects；项目 `date: '1970-01-01'` 自然沉底）
 - 卡片：`src/components/EntryCard.jsx`（走主站 `brand-*` 类，保持导航层风格统一；**不嵌入 iframe**）
-- **无分类筛选 chip**——分类信息仅作为 metadata 与 `articles/<category>/` 目录命名，不影响 UI 排序
+- **无分类筛选 chip**——分类信息仅作为 metadata，不影响 UI 排序；目录层扁平放在 `content/` 不再分组
 
 **旧路由 302 跳转**（`App.jsx` 用 `<Navigate replace />` 实现，保留外链可用）：
 
@@ -99,7 +96,7 @@ import xxx from '../../projects/<slug>.html?raw';
 约束：
 
 - **6 个 slug 是固定的**——不允许新增
-- 每新增一篇文章：(a) 把 `.html` 放入 `articles/<category>/`；(b) `import` 路径写明子目录；(c) metadata 必填 `category: '<category>'` 字段（缺这个字段列表页 / 详情页都不正常）
+- 每新增一篇文章：(a) 把 `.html` 放入 `content/<slug>.html`（见规则 3）；(b) `import` 路径用 `../../content/<slug>.html?raw`；(c) metadata 必填 `category: '<category>'` 字段（缺这个字段列表页 / 详情页都不正常）
 - 中文显示名 / 展示顺序的单一来源是 `src/data/categories.js`；改显示名 / 调顺序 = 改这一处（不是 `articles.js`）
 
 ### 6. 品牌约定
