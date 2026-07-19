@@ -2,9 +2,9 @@
 
 ## 适用范围
 
-发布或删除文章 / 项目、把 `content-draft/` 合并到 live 内容、修复源文件与 registry 不一致时遵循本规范。AI 命令驱动的单条上传走 [AI Upload Flow](./ai-upload-flow.md)，本规范主要覆盖批量维护与 registry 治理。
+发布或删除文章 / 项目、把本地草稿或作者源合并到 live 内容、修复源文件与 registry 不一致时遵循本规范。AI 命令驱动的单条上传走 [AI Upload Flow](./ai-upload-flow.md)，本规范主要覆盖批量维护与 registry 治理。
 
-> 瀑布流重构（2026-07）后：技能 / 工具 / 关于三个独立页签已永久下线，对应的 `update-skills` / `update-tools` / `update-about` skill 与 `content-draft/` 里相关草稿不再使用。删除这些内容、parser 和 page 后，registry 也只剩 `src/data/articles.js` 与 `src/data/projects.js` 两个发布入口。
+> 瀑布流重构（2026-07）后：技能 / 工具 / 关于三个独立页签已永久下线，对应的 `update-skills` / `update-tools` / `update-about` skill 不再使用；`articles-draft/`、`projects-draft/` 等草稿目录也已清空，无本地草稿落地路径。删除这些内容、parser 和 page 后，registry 也只剩 `src/data/articles.js` 与 `src/data/projects.js` 两个发布入口；文章 / 项目新增统一走「作者把任意路径的 HTML 整理后写入 `content/<slug>.html` + registry」的方式（详见 ai-upload-flow）。
 
 历史 skill 矩阵（仅供回溯 `SKILL.md` 漂移时核对，不再是运行时入口）：
 
@@ -35,18 +35,18 @@
 
 ## 文章发布
 
-输入：`articles-draft/<slug>.md`。
+> 当前不存在 `articles-draft/` 草稿目录草稿源；作者源来自任意本地路径（如 AI 命令提供的临时刻片，见 ai-upload-flow）。
 
 输出与同步点：
 
 1. 根据正文从固定六类中选择/确认 category。
-2. 把 Markdown 转换成自带品牌样式的完整 HTML。
+2. 把来源内容整理成自带品牌样式的完整 HTML（来源可以是 Markdown 或原生 HTML，按实际输入统一转成完整 HTML；iframe 不继承主站样式，必须自备 CSS）。
 3. 写入 `content/<slug>.html`（分类仅记 metadata，不建立子目录）。
-4. 在 `src/data/articles.js` 添加带分类子目录的 `.html?raw` import。
-5. 添加完整 metadata，特别是必填 `category`。
-6. **保留**原 `articles-draft/<slug>.md`，用于后续编辑/再版。
+4. 在 `src/data/articles.js` 添加 `../../content/<slug>.html?raw` import。
+5. 添加完整 metadata，特别是必填 `category` / `type: 'article'` / `links: null`。
+6. 保留作者原始源作为后续再版依据（路径由作者决定，不强制落 `articles-draft/`）。
 
-发布前全局检查 slug 是否已存在于任何 category；slug 跨分类仍必须唯一。用户明确指定 category 时尊重其意图，但仍校验属于固定集合。
+发布前全局检查 slug 是否已存在于 articles 与 projects；跨 type 仍必须唯一。用户明确指定 category 时尊重其意图，但仍校验属于固定集合。
 
 正常发布不改 `src/pages/Home.jsx`、`src/pages/EntryDetail.jsx`、`src/components/EntryCard.jsx` 或 `src/lib/entries.js`，只动源 HTML 与 registry。
 
@@ -58,18 +58,18 @@
 - `slug` 对应 metadata 和 `category`。
 - 实际 HTML 文件。
 
-三者缺一或 category 不一致时停止并报告。确认后移除 import、metadata 和 live HTML。默认不删除 `articles-draft/<slug>.md`，因为 draft 是独立作者源。
+三者缺一或 category 不一致时停止并报告。确认后移除 import、metadata 和 live HTML。默认保留作者原始源（路径不固定，不强制落 `articles-draft/`），由作者决定是否删除。
 
 ## 项目发布
 
-输入：`projects-draft/<slug>.html`。
+> 当前不存在 `projects-draft/` 草稿目录；作者源来自任意本地路径。
 
 正常流程：
 
 1. 验证 HTML 形态、标题层级、相对图片、外链和自带样式。
 2. 推断并让用户确认 `title / excerpt / tags / links / cover / date`（项目 metadata 在瀑布流重构后字段统一为 Entry 形状）。
-3. 把 draft 移到 `content/<slug>.html`，不做文章品牌模板转换。
-4. 在 `src/data/projects.js` 添加 `.html?raw` import 与完整 metadata，必须包含 `type: 'project'`、`category: null`、`links: { github?, demo? }`。
+3. 把作者源落盘到 `content/<slug>.html`，不做文章品牌模板转换。
+4. 在 `src/data/projects.js` 添加 `../../content/<slug>.html?raw` import 与完整 metadata，必须包含 `type: 'project'`、`category: null`、`links: { github?, demo? }`。
 5. 检查 `/p/:slug` iframe 与瀑布流卡片。
 
 当前 `Html` 对完整文档和 fragment 都使用 iframe；不要沿用旧说明中“fragment 走 `dangerouslySetInnerHTML`”的分支。当前也没有 `ProjectHeader.jsx`；详情页只有浮动返回链接和 iframe。

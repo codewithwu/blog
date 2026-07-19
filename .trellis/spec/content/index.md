@@ -2,13 +2,12 @@
 
 本目录覆盖项目根目录的作者内容与发布 registry：
 
-- `articles-draft/`（草稿，仍按文章形态分目录维护）
-- `projects-draft/`（草稿，仍按项目形态分目录维护）
 - `content/`（已发布，扁平结构；文章与项目共目录，不分子目录）
 - 对应 `src/data/*` 注册入口
 
 > 瀑布流重构（2026-07）后：技能 / 工具 / 关于三个页签及其 `content/*.md` 源、`src/lib/content.js`
 > parser 已**永久下线**；文章与项目合并为统一 Entry，运行时统一由 `src/lib/entries.js` 消费。
+> `articles-draft/`、`projects-draft/` 等本地草稿目录已清空，作者源统一经 [AI Upload Flow](./ai-upload-flow.md) 写入 `content/<slug>.html`。
 
 ## 规范列表
 
@@ -22,7 +21,7 @@
 
 ## Pre-Maintenance Checklist
 
-1. 判断目标是草稿还是已发布内容；草稿目录不会自动出现在网站。
+1. 定位作者源的实际路径（当前无 `articles-draft/` / `projects-draft/` 草稿目录，作者源位于任意本地路径或临时刻片上）。
 2. 读取对应源文件和 registry，不要根据文件名猜 metadata 或 import 变量。
 3. 文章分类只允许 `src/data/categories.js` 中的六个固定 slug。
 4. HTML 将在隔离 iframe 中运行，确认自带样式、相对图片和外链行为；`brand-*` 类在 iframe 内不生效。

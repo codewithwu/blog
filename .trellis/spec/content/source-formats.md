@@ -40,7 +40,7 @@ content/<slug>.html
 - 外部链接建议 `target="_blank" rel="noreferrer"`，否则可能在 iframe 内替换正文。
 - 不要在作者 HTML 里依赖宿主 cookie、localStorage 或 DOM；sandbox 没有 `allow-same-origin`。
 
-由 `create-article` 生成的文章使用品牌模板；手写 HTML 可以自定义视觉，但必须自行保证可读、响应式和资源可用。
+手写 HTML 可以自定义视觉，但必须自行保证可读、响应式和资源可用。最小骨架模板写死的 CSS 变量值必须对齐当前 "深海 + 紫极光" 品牌（见 [../frontend/component-and-style-guidelines.md](../frontend/component-and-style-guidelines.md) 颜色 token 表），iframe 内 font-family 应自己 `@import` Google Fonts（推荐 Fraunces / IBM Plex Sans / JetBrains Mono）。
 
 ### 文章 registry
 
@@ -104,7 +104,7 @@ import exampleProject from '../../content/<slug>.html?raw';
 
 ## 反模式
 
-- 发布到 `content/<slug>.html`（articles-draft / projects-draft 仍按各自约定维护）；或把项目正文放进 data 字符串。
+- 未成套更新：只改源 HTML 不加 registry，或只加 registry 不补 raw import；草稿目录（`articles-draft` / `projects-draft`）已不复存在，不要在别处重建。
 - 在固定六类之外创建文章目录。
 - import 路径、metadata category 与实际文件目录不一致。
 - 只修改 registry，不保留对应 HTML；或只加 HTML，不注册。
