@@ -58,6 +58,19 @@ export default function EntryCard({ entry }) {
 
 主站 JSX 使用 `brand-*` 类，不在同一个组件里散落同义 hex。box-shadow / text-shadow 里的 `rgba(...)` 是 Tailwind 无法表达的发光值，属合理内联。调整品牌色时以 `tailwind.config.js` 为单一入口，并检查 `src/index.css` 是否存在对应硬编码。
 
+### 品牌色板变更审计清单（防止文档/内容漂移）
+
+2026-07 主站升级「深海 + 紫极光」后曾出现 `CLAUDE.md` 规则 6 与 `content/claude-code-taming-guide.html` 都还停留在旧暖色板的情况，因为只改了 `tailwind.config.js` 与 `src/index.css`，没同步更新文档与已发布内容。后续品牌变更必须**一次性**走完以下清单：
+
+1. 改 `tailwind.config.js` 的 `brand.*`（单一入口）。
+2. 同步 `src/index.css` 的 body 硬编码色值（注释里已标注例外原因）。
+3. 同步 `CLAUDE.md` 规则 6 的色板表与字体段（这是后续内容作者的唯一参照，漂移会直接污染新文章）。
+4. 审计已发布 `content/*.html`：grep 旧色 hex 与旧字体名（如 `#d97757` / `Poppins` / `Lora`），逐篇改版或加废弃标记。
+5. `grep -rE 'brand-orange|brand-green|brand-gray' src/` 应 0 命中（历史 token 已删除）。
+6. 跑 `npm test && npm run build`。
+
+历史经验：CLAUDE.md 与 live code 漂移时，错误方向几乎总是「CLAUDE.md 没跟上」而非「live code 没跟上」，因为 CLAUDE.md 是给人看的、容易被遗忘。改色板时把第 3 步当成必修项，不要「后续再补」。
+
 ### 字体（"深海 + 夜空"基调，2026-07-19 升级）
 
 - **标题 / 显示**：`Fraunces`（可变衬线，italic + opsz:144 用于 Hero 站名与 404 数字），回退 `Georgia, serif`。
