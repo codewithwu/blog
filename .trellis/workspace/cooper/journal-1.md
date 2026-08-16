@@ -299,3 +299,47 @@ Created project-local blog-content-publisher skill (SKILL.md + brand markdown→
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: 统一处理代码审查发现的问题
+
+**Date**: 2026-08-16
+**Task**: 统一处理代码审查发现的问题
+**Branch**: `main`
+
+### Summary
+
+/code-review @src/ 暴露 8 个 finding。根因是 CLAUDE.md 品牌色板与字体过时;衍生出已发布文章色板漂移、Hero tagline 消失、EntryDetail 标题闪烁。修复 5 文件 + 补 spec 审计清单,堵住文档/内容漂移路径。23/24 测试通过(1 个 html.test.jsx 失败为预先存在,JSDOM srcdoc 注入 <base> 导致),build 成功。
+
+### Main Changes
+
+- CLAUDE.md 规则 6 同步到当前冷色板与 Fraunces/Plex/JetBrains Mono,新增 iframe 内容作者自补样式约定
+- content/claude-code-taming-guide.html 改版到冷色板:7 个 CSS 变量映射 + @import 替换 Poppins/Lora + rgba(--mid) 更新
+- src/components/Hero.jsx 删除 pickTagline 空串分支(count<=3 不再返回 ''),tagline 回归修复
+- src/pages/EntryDetail.jsx usePageTitle 移到 early return 之后,标题闪烁修复
+- src/index.css body 硬编码色值上方加 FOUC 例外注释
+- .trellis/spec/frontend/component-and-style-guidelines.md 新增品牌色板变更审计清单(6 步),记录 CLAUDE.md 漂移教训
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e8c56fd` | (see git log) |
+| `cf65622` | (see git log) |
+
+### Testing
+
+- [OK] npm test: 23/24 通过(html.test.jsx 第 13 行 srcDoc 断言失败为预先存在,git stash 验证)
+- [OK] npm run build: 成功 1.20s,产物 dist/ 体积正常
+- [OK] grep 验证 content/*.html 无旧色 hex 残留,7 个新色命中
+- [OK] grep 验证字体名替换:0 Poppins/Lora,3 字体 (Fraunces/Plex/JetBrains) 命中
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 手动浏览器目视:首页 Hero tagline 渲染、/p/claude-code-taming-guide 冷色调、/p/不存在slug 标题栏不闪
+- 另起任务修 tests/html.test.jsx 第 13 行 srcDoc 断言(JSDOM 注入 <base>,改用 toContain 或剥离 base)
+- 3 个 commit 尚未 push(e8c56fd / cf65622 / b3d24a6),需要时 git push
