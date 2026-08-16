@@ -10,6 +10,10 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Fraunces', Georgia, serif;
   }
+  /* body 背景与文字色硬编码而非 @apply bg-brand-dark text-brand-light：
+     防止 Tailwind 编译前 body 无样式闪烁（FOUC）。值与 brand.dark/brand.light
+     一致，改色板需同步更新此处。CLAUDE.md 规则 6「单一来源 = tailwind.config.js」
+     的例外仅此一处。 */
   body {
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
     background-color: #0a0e1f;

@@ -101,9 +101,26 @@ import xxx from '../../content/<slug>.html?raw';
 
 ### 6. 品牌约定
 
-- 品牌色通过 `tailwind.config.js` 的 `theme.extend.colors.brand` 集中定义：`dark` `#141413` / `surface` `#1c1b1a` / `light` `#faf9f5` / `mid` `#b0aea5` / `gray` `#e8e6dc` / `orange` `#d97757` / `blue` `#6a9bcc` / `green` `#788c5d`
-- 改品牌色：改 `tailwind.config.js`；同时检查 `src/index.css` 里 `.hljs-*` 硬编码颜色
-- 字体：`src/index.css` 顶部 `@import` 引入 Google Fonts（已配 `Arial` / `Georgia` 兜底，国内访问不稳不阻塞渲染）；标题字体 Poppins、正文字体 Lora
+**色板**（「深海 + 紫极光」基调，2026-07-19 升级）通过 `tailwind.config.js` 的 `theme.extend.colors.brand` 集中定义：
+
+| Token | 色值 | 用途 |
+|---|---|---|
+| `brand-dark` | `#0a0e1f` | body 紫蓝近黑背景 |
+| `brand-surface` | `#14193a` | 卡片、按钮底色（玻璃态配 /60–/85 透明度） |
+| `brand-surface-2` | `#1e2348` | hover 状态、次级表面 |
+| `brand-border` | `#2a3158` | 卡片边框、按钮边框 |
+| `brand-primary` | `#5b8def` | 电光蓝，主强调（hover 文字、focus ring） |
+| `brand-accent` | `#a78bfa` | 极光紫，副强调（chip、tagline、404 装饰） |
+| `brand-glow` | `#4cc9f0` | 电光青蓝，hover 发光 / focus 发亮 |
+| `brand-light` | `#f8fafc` | 主文字 |
+| `brand-mid` | `#94a3b8` | 次级文字（excerpt、meta） |
+| `brand-dim` | `#64748b` | 三级文字、占位 |
+
+历史 token `brand-orange` / `brand-green` / `brand-gray` 已删除，禁止在新代码里复活。改品牌色 = 改 `tailwind.config.js`（单一入口），并同步检查 `src/index.css` 的 body 硬编码色值。
+
+**字体**（「深海 + 夜空」基调）：标题 / 显示 `Fraunces`（可变衬线，italic + opsz:144 用作 Hero 站名与 404 数字）；正文 `IBM Plex Sans`；数字 / 标签 / 时间戳 `JetBrains Mono`（`.font-mono` 工具类启用）。Fallback：Georgia / system-ui / ui-monospace。`@import` URL 在 `src/index.css` 顶部，含 ital/opsz/wght 轴，组件不重复指定 font-family。
+
+**iframe 内容约定**：详情页正文是隔离 100vh iframe（规则 4），**不继承**主站 Tailwind 编译产物与字体 `@import`。文章作者必须在 `content/<slug>.html` 内自补 `<style>` / `<link rel="stylesheet">` / `@import`，且字体 `@import` 复用主站同款 URL 以保证视觉一致。`brand-*` 类在 iframe 内不生效。
 
 ### 7. 测试与本地启动
 

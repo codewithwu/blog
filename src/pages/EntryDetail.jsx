@@ -23,11 +23,15 @@ export default function EntryDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const entry = findEntryBySlug(slug);
-  usePageTitle(entry?.title || '未找到内容');
 
+  // 早返回必须在 usePageTitle 之前：否则无效 slug 会先把 document.title 改成
+  // 「未找到内容 · 极客熊猫」，再被 Home 的 usePageTitle 覆盖 — 标签栏闪烁。
+  // entry 已确定存在，下方 hook 直接用 entry.title（去掉 '|| 未找到内容' 兜底）。
   if (!entry) {
     return <Navigate to="/" replace />;
   }
+
+  usePageTitle(entry.title);
 
   return (
     <>
