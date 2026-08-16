@@ -3,7 +3,7 @@
 // （HelmetProvider 仍然在 main.jsx 中包裹 <App/>，为后续 meta / OG 标签预留空间）
 import { useEffect } from 'react';
 
-const SITE_NAME = '极客熊猫';
+const SITE_NAME = 'Cool Panda';
 
 export default function usePageTitle(title) {
   useEffect(() => {

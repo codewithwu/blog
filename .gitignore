@@ -23,3 +23,6 @@ Thumbs.db
 
 # 缓存
 .eslintcache
+
+# 本脚本（scripts/dev.sh）运行时留下的 PID 文件
+.dev-server.pid

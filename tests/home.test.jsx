@@ -52,7 +52,7 @@ function renderHome() {
 describe('Home 瀑布流首页', () => {
   it('渲染站名与 entry 总数', () => {
     const { getByText } = renderHome();
-    expect(getByText('极客熊猫')).not.toBeNull();
+    expect(getByText('Cool Panda')).not.toBeNull();
     expect(getByText(/2 篇内容/)).not.toBeNull();
   });
 

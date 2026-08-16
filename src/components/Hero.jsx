@@ -11,16 +11,16 @@
 import AuroraBackdrop from './AuroraBackdrop.jsx';
 import { entryCount } from '../lib/entries.js';
 
-const SITE_NAME = '极客熊猫';
+const SITE_NAME = 'Cool Panda';
 const LAST_UPDATED = '2026-07-19'; // 静态时间戳：避免 hydration mismatch 与时区问题
 
 // tagline 候选：按 entry 数量档位切换，制造"随站点成长"的趣味点。
 // 历史上有 `count <= 3` 返回空串的分支，但 entryCount=2（刚发新文章）时会
 // 让 Hero tagline 整段消失，视觉上是回归 — 已删除空串分支，count<=10 都显示
-// 「持续记录 AI 与工程心得」。
+// 「不定期更新」。
 function pickTagline(count) {
   if (count <= 0) return '欢迎';
-  if (count <= 10) return '持续记录 AI 与工程心得';
+  if (count <= 10) return '不定期更新';
   return '保持好奇，持续输出';
 }
 
@@ -44,7 +44,7 @@ export default function Hero() {
 
       {/* 副文案：Plex Sans + mid 色（继承 body font-family） */}
       <p className="mt-5 text-base text-brand-mid">
-        一个极简博客 · {count} 篇内容
+        熊猫博客 · {count} 篇内容
       </p>
 
       {/* 动态 tagline：JetBrains Mono + accent 紫 + 紫光文本，heroFade 600ms */}
