@@ -26,3 +26,7 @@ Thumbs.db
 
 # 本脚本（scripts/dev.sh）运行时留下的 PID 文件
 .dev-server.pid
+
+# Python 虚拟环境（OG 图片生成等一次性工具用）
+.venv
+__pycache__

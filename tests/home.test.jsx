@@ -1,8 +1,10 @@
-// Home 页面单测：渲染 Hero（站名 + entry 数）与瀑布流卡片。
-// 用 vi.mock 提供稳定 fixture registry。EntryCard 用 useNavigate，需要 Router 包裹。
+// Home 页面单测：渲染 Hero（站名 + entry 数）、SearchBar（搜索 + type 切换）、
+// 瀑布流卡片 + 过滤行为。
+//
+// 用 vi.mock 提供稳定 fixture registry；EntryCard 用 useNavigate，需 Router 包裹。
 // jsdom 无 IntersectionObserver，useReveal 会降级为立即可见，卡片正常出现在 DOM。
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../src/data/articles.js', () => ({
@@ -18,6 +20,18 @@ vi.mock('../src/data/articles.js', () => ({
       links: null,
       content: '<p>x</p>',
       category: 'ai',
+    },
+    {
+      slug: 'extra-article',
+      title: '亲密关系曲线',
+      excerpt: '关于亲密关系的随笔',
+      date: '2025-12-01',
+      type: 'article',
+      tags: ['随笔'],
+      cover: null,
+      links: null,
+      content: '<p>y</p>',
+      category: 'notes',
     },
   ],
 }));
@@ -53,18 +67,20 @@ describe('Home 瀑布流首页', () => {
   it('渲染站名与 entry 总数', () => {
     const { getByText } = renderHome();
     expect(getByText('Cool Panda')).not.toBeNull();
-    expect(getByText(/2 篇内容/)).not.toBeNull();
+    expect(getByText(/3 篇内容/)).not.toBeNull();
   });
 
   it('渲染所有 entry 卡片（文章 + 项目）', () => {
     const { getByText } = renderHome();
     expect(getByText('首页文章')).not.toBeNull();
     expect(getByText('首页项目')).not.toBeNull();
+    expect(getByText('亲密关系曲线')).not.toBeNull();
   });
 
   it('文章卡显示 category 中文名，项目卡显示 GitHub 外链', () => {
     const { getByText, container } = renderHome();
     expect(getByText('AI')).not.toBeNull(); // ai → 中文名 AI
+    expect(getByText('随笔与思考')).not.toBeNull(); // notes → 中文名
     const gh = container.querySelector('a[href="https://example.com"]');
     expect(gh).not.toBeNull();
   });
@@ -75,5 +91,110 @@ describe('Home 瀑布流首页', () => {
     expect(cols).not.toBeNull();
     expect(cols.className).toMatch(/sm:columns-2/);
     expect(cols.className).toMatch(/lg:columns-3/);
+  });
+
+  it('渲染 SearchBar：搜索框 + 三段 type 切换', () => {
+    const { container } = renderHome();
+    // 搜索框 input 存在 + aria-label 正确
+    const input = container.querySelector('input[type="search"]');
+    expect(input).not.toBeNull();
+    expect(input.getAttribute('aria-label')).toBe('搜索内容');
+    // segmented control：全部 / 文章 / 项目 三段
+    const group = container.querySelector('[role="group"][aria-label="按类型筛选"]');
+    expect(group).not.toBeNull();
+    const buttons = group.querySelectorAll('button');
+    expect(buttons.length).toBe(3);
+    expect(buttons[0].textContent).toBe('全部');
+    expect(buttons[1].textContent).toBe('文章');
+    expect(buttons[2].textContent).toBe('项目');
+    // 默认选中「全部」（aria-pressed=true）
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('false');
+    expect(buttons[2].getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('Home 搜索过滤（与分类正交）', () => {
+  it('type 切到「文章」只剩文章卡片（隐藏项目）', () => {
+    const { getByText, queryByText, container } = renderHome();
+    const group = container.querySelector('[role="group"][aria-label="按类型筛选"]');
+    const articleBtn = group.querySelectorAll('button')[1];
+    fireEvent.click(articleBtn);
+    expect(getByText('首页文章')).not.toBeNull();
+    expect(getByText('亲密关系曲线')).not.toBeNull();
+    // 项目被过滤
+    expect(queryByText('首页项目')).toBeNull();
+    // 当前激活态切到「文章」
+    expect(articleBtn.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('type 切到「项目」只剩项目卡片（隐藏文章）', () => {
+    const { getByText, queryByText, container } = renderHome();
+    const group = container.querySelector('[role="group"][aria-label="按类型筛选"]');
+    const projectBtn = group.querySelectorAll('button')[2];
+    fireEvent.click(projectBtn);
+    expect(getByText('首页项目')).not.toBeNull();
+    expect(queryByText('首页文章')).toBeNull();
+    expect(queryByText('亲密关系曲线')).toBeNull();
+  });
+
+  it('搜索 query "亲密" 命中「亲密关系曲线」卡片', () => {
+    const { getByText, queryByText, container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    fireEvent.change(input, { target: { value: '亲密' } });
+    expect(getByText('亲密关系曲线')).not.toBeNull();
+    expect(queryByText('首页文章')).toBeNull();
+    expect(queryByText('首页项目')).toBeNull();
+  });
+
+  it('搜索不存在的字串显示空状态「没有匹配的内容」', () => {
+    const { container, getByText } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    fireEvent.change(input, { target: { value: 'xyz不存在' } });
+    expect(getByText('没有匹配的内容')).not.toBeNull();
+    // 瀑布流 columns 容器不应渲染（被空态取代）
+    expect(container.querySelector('.columns-1')).toBeNull();
+  });
+
+  it('query + type 同时生效（AND 关系）', () => {
+    const { getByText, queryByText, container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    const group = container.querySelector('[role="group"][aria-label="按类型筛选"]');
+    // 切到「文章」+ 输入「首页」→ 仅命中文章类含"首页"的条目（项目摘要含"项目摘要"不命中"首页"）
+    fireEvent.click(group.querySelectorAll('button')[1]); // 文章
+    fireEvent.change(input, { target: { value: '首页' } });
+    expect(getByText('首页文章')).not.toBeNull();
+    expect(queryByText('首页项目')).toBeNull();
+    expect(queryByText('亲密关系曲线')).toBeNull();
+  });
+
+  it('X 清除按钮在 query 非空时出现，点击清空并恢复全部卡片', () => {
+    const { container, queryByLabelText, getByText } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    fireEvent.change(input, { target: { value: 'xyz不存在' } });
+    // 清除按钮出现
+    const clearBtn = queryByLabelText('清除搜索');
+    expect(clearBtn).not.toBeNull();
+    fireEvent.click(clearBtn);
+    // query 清空后全部卡片恢复
+    expect(getByText('首页文章')).not.toBeNull();
+    expect(getByText('首页项目')).not.toBeNull();
+    expect(getByText('亲密关系曲线')).not.toBeNull();
+    // input value 已清空
+    expect(input.value).toBe('');
+  });
+
+  it('Esc 在搜索框聚焦时清空 query', () => {
+    const { container, getByText, queryByText } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    fireEvent.change(input, { target: { value: '亲密' } });
+    expect(getByText('亲密关系曲线')).not.toBeNull();
+    expect(queryByText('首页文章')).toBeNull();
+    // Esc → 清空 → 全部恢复
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(input.value).toBe('');
+    expect(getByText('首页文章')).not.toBeNull();
+    expect(getByText('首页项目')).not.toBeNull();
+    expect(getByText('亲密关系曲线')).not.toBeNull();
   });
 });

@@ -11,15 +11,53 @@
 //   - 整卡 role="link" + tabIndex=0 + Enter/Space 键盘可达（CLAUDE.md 规则 a11y）。
 //   - 项目 GitHub / Demo 用 <a> 嵌套，stopPropagation 避免连带触发整卡跳转。
 //   - 入场动效用 useReveal：进入视口时 opacity/translate 过渡一次。
-import { useCallback } from 'react';
+//   - P2-1 键盘快捷键子任务新增 `isFocused` prop：
+//     * 由 Home 路由根据 j/k 派发的 focusedIndex 计算并传入
+//     * 为 true 时叠加 `ring-2 ring-brand-glow`，强制 ring 视觉不依赖 :focus-visible
+//     * 原因：j/k 移动焦点时用户没碰鼠标，:focus-visible 在大多数浏览器不会触发；
+//       不强制环则用户根本看不到"焦点在哪张卡"
+//     * 与下方已有的 `focus-visible:ring-2 ring-brand-glow` 共存：
+//       Tab/鼠标聚焦时用 focus-visible 版（语义化），j/k 聚焦时用强制版（视觉保证）
+//   - P2-1 同时升级为 React.forwardRef：
+//     * Home 需要把每张卡 root div 的 DOM 引用存到 cardRefs.current[]
+//       用来 focus({ preventScroll: true })
+//     * forwardRef 把外部 ref 与 useReveal 内部 ref 用 useMergedRefs 合并到同一 div
+//     * 保持 useReveal 行为不变（IntersectionObserver 仍挂载到同一节点）
+//   - 移动端 hover 守卫（子任务 08-16-mobile-hover-guard）：
+//     * 触屏设备（无 hover 能力的设备）tap 后会残留 hover 视觉态（iOS Safari 尤其严重）
+//       直到下次 tap 才清除，体验差且与系统原生行为不一致
+//     * 所有 hover 态均包在 `[@media(hover:hover)]:hover:*` arbitrary variant 下，
+//       仅在设备真有 hover 能力（鼠标 / 触控板 / 键盘 hover）时才生效
+//     * 键盘 focus 态不受影响：focus-visible:ring-* 仍按原语义工作，
+//       触屏用户看不到 hover 抬升，但键盘 / 鼠标用户仍能正常享受 hover 反馈
+//     * 不引入新依赖；纯 Tailwind 3.1+ arbitrary variants 语法
+import { forwardRef, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Wrench, Github, ExternalLink } from 'lucide-react';
 import { categories } from '../data/categories.js';
 import useReveal from '../hooks/useReveal.js';
 
-export default function EntryCard({ entry }) {
+// 合并多个 ref 到同一个 DOM 节点：
+//   - 内层 ref（useReveal）：用于 IntersectionObserver
+//   - 外层 ref（Home）：用于键盘快捷键 focus({ preventScroll: true })
+// 实现：把所有 ref 收集到数组，对每次渲染的节点都调用一遍。
+// callback ref 与 object ref 都兼容；callback ref 卸载时 el=null 也透传过去。
+function useMergedRefs(...refs) {
+  // 用 useCallback 稳定 ref callback 引用，避免 React 把它当新 ref 反复 attach
+  return useCallback((el) => {
+    refs.forEach((ref) => {
+      if (!ref) return;
+      if (typeof ref === 'function') ref(el);
+      else ref.current = el;
+    });
+  }, refs); // refs 是数组，依赖列表中展开即可保证任一变化时 callback 也更新
+}
+
+const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false }, externalRef) {
   const navigate = useNavigate();
-  const [ref, visible] = useReveal();
+  const [revealRef, visible] = useReveal();
+  // 合并 useReveal 的 ref 与外部传入的 ref，两者必须挂在同一 div 上
+  const mergedRef = useMergedRefs(revealRef, externalRef);
   const go = useCallback(() => navigate(`/p/${entry.slug}`), [navigate, entry.slug]);
 
   const isArticle = entry.type === 'article';
@@ -30,7 +68,7 @@ export default function EntryCard({ entry }) {
 
   return (
     <div
-      ref={ref}
+      ref={mergedRef}
       role="link"
       tabIndex={0}
       onClick={go}
@@ -43,12 +81,14 @@ export default function EntryCard({ entry }) {
       className={`group block overflow-hidden rounded-xl
                   bg-brand-surface/85 backdrop-blur-sm
                   border border-brand-border/60
-                  hover:-translate-y-0.5 hover:border-brand-primary/50
-                  hover:shadow-[0_0_0_1px_rgba(91,141,239,0.4),0_8px_32px_-8px_rgba(167,139,250,0.35)]
+                  [@media(hover:hover)]:-translate-y-0.5
+                  [@media(hover:hover)]:border-brand-primary/50
+                  [@media(hover:hover)]:shadow-[0_0_0_1px_rgba(91,141,239,0.4),0_8px_32px_-8px_rgba(167,139,250,0.35)]
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow
                   focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark
                   focus-visible:shadow-[0_0_12px_rgba(76,201,240,0.45)]
                   transition-all duration-[250ms] ease-out cursor-pointer
+                  ${isFocused ? 'ring-2 ring-brand-glow ring-offset-2 ring-offset-brand-dark shadow-[0_0_12px_rgba(76,201,240,0.45)]' : ''}
                   ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       // 入场过渡（400ms ease-out）与 hover 过渡（250ms）分工不同，
       // 这里显式覆写为入场时长，hover 由上面的 duration-[250ms] 负责
@@ -85,10 +125,11 @@ export default function EntryCard({ entry }) {
           )}
         </div>
 
-        {/* 标题：Fraunces（h3 全局字体），hover 转 glow + 紫光 */}
+        {/* 标题：Fraunces（h3 全局字体），hover 转 glow + 紫光
+            （hover 效果仅在真有 hover 能力的设备上触发，避免触屏 tap 后残留） */}
         <h3 className="mt-2 text-lg font-semibold text-brand-light
-                       group-hover:text-brand-glow transition-colors
-                       group-hover:drop-shadow-[0_0_8px_rgba(76,201,240,0.35)]">
+                       [@media(hover:hover)]:group-hover:text-brand-glow transition-colors
+                       [@media(hover:hover)]:group-hover:drop-shadow-[0_0_8px_rgba(76,201,240,0.35)]">
           {entry.title}
         </h3>
 
@@ -118,7 +159,8 @@ export default function EntryCard({ entry }) {
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-brand-primary hover:text-brand-glow transition-colors"
+                className="inline-flex items-center gap-1 text-brand-primary
+                           [@media(hover:hover)]:hover:text-brand-glow transition-colors"
               >
                 <Github size={16} /> GitHub
               </a>
@@ -129,7 +171,8 @@ export default function EntryCard({ entry }) {
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-brand-primary hover:text-brand-glow transition-colors"
+                className="inline-flex items-center gap-1 text-brand-primary
+                           [@media(hover:hover)]:hover:text-brand-glow transition-colors"
               >
                 <ExternalLink size={16} /> Demo
               </a>
@@ -139,4 +182,6 @@ export default function EntryCard({ entry }) {
       </div>
     </div>
   );
-}
+});
+
+export default EntryCard;

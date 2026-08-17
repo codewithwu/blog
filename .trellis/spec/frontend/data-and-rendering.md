@@ -137,6 +137,46 @@ content/<slug>.html
 
 改 sandbox 是安全/兼容合同变更，必须更新 `tests/html.test.jsx` 与详情页测试，并明确说明能力变化。
 
+### Iframe 加载态与 onLoad 可靠性
+
+SPA + `srcDoc` 模式下，iframe `onLoad` 事件可能不触发（不同浏览器对 srcDoc 解析完成的 firing 时机不一致；某些情况 onLoad 会沉默）。需要 shimmer 占位或类似视觉指示时，必须用 `requestAnimationFrame` fallback 兜底：
+
+```jsx
+function Html({ html, title }) {
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    // 兜底：mount 后下一帧强制隐藏 shimmer，即便 onLoad 没触发
+    const raf = requestAnimationFrame(() => setLoading(false));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <div className="relative w-full h-screen">
+      {loading && (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-brand-surface/40 backdrop-blur-sm
+                     animate-pulse pointer-events-none
+                     transition-opacity duration-300
+                     ${loading ? 'opacity-100' : 'opacity-0'}"
+        />
+      )}
+      <iframe
+        srcDoc={html}
+        title={title}
+        onLoad={() => setLoading(false)}
+        className="w-full h-screen border-0"
+        sandbox="allow-scripts allow-popups allow-forms"
+      />
+    </div>
+  );
+}
+```
+
+注意点：
+- shimmer 用 `opacity` 切换而非条件渲染，保证 `transition-opacity` 能触发（条件卸载会跳过 transition）；
+- `pointer-events-none` 让 shimmer 不挡 iframe 交互；
+- `onLoad` 与 rAF 谁先触发都安全——`setLoading(false)` 是幂等的。
+
 ### 信任模型
 
 `Html` 只用于仓库作者控制的 `content/<slug>.html` HTML，不做事后消毒。不要将它复用于外部用户上传或远程抓取的 HTML。若输入信任边界改变，必须重新设计 sanitization、sandbox 和内容安全策略，不能只复用当前组件。
@@ -147,6 +187,41 @@ content/<slug>.html
 - iframe 是独立 viewport，不继承 `src/index.css` 或 Tailwind bundle。
 - 作者 HTML 内的 `text-brand-light` 等类不会生效；需要内联 `<style>`、自己的 stylesheet 或具体 CSS 值。
 - 详情页（`EntryDetail`）不渲染 metadata header；标题、日期、技术栈等正文展示由作者 HTML 自己负责。
+
+## OG / Twitter Card meta 注入与已知限制
+
+详情页通过 `react-helmet-async` 在客户端渲染时往 `<head>` 注入 OG / Twitter Card meta，便于用户在浏览器里复制链接后由社交平台 unfurler 看到品牌卡：
+
+```jsx
+import { Helmet } from 'react-helmet-async';
+
+<Helmet>
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content={entry.title} />
+  <meta property="og:description" content={entry.excerpt ?? entry.title} />
+  <meta property="og:url" content={`${window.location.origin}${window.location.pathname}`} />
+  <meta property="og:image" content={`${window.location.origin}${import.meta.env.BASE_URL}og-default.png`} />
+  <meta property="og:site_name" content="Cool Panda" />
+  <meta name="twitter:card" content="summary_large_image" />
+  {/* ... */}
+</Helmet>
+```
+
+### 已知 SPA + Helmet 限制
+
+`Twitterbot` / `facebookexternalhit` 等社交爬虫大多**不执行 JavaScript**，只看服务端返回的静态 HTML。本项目部署到 GitHub Pages 是纯 SPA（`dist/index.html` 是空壳，meta 在 JS 跑完才注入），因此：
+
+- **直接分享裸 URL 给爬虫**：看不到 Helmet 注入的 OG meta，分享卡是默认空壳。
+- **用户从博客内点击分享按钮 / 复制链接后由支持 JS 的客户端预览**（如微信内置浏览器、Twitter 客户端）：可以看到注入后的 meta。
+- **爬虫支持 JS 执行的部分场景**（如某些 Slack / Discord 链接展开）：可以拿到。
+
+如果未来需要让搜索引擎 / 静态链接 unfurler 100% 看到 OG meta，必须引入 `vite-plugin-prerender` 在 build 期为每条 `/p/:slug` 生成静态 HTML。当前阶段（OG meta 已在客户端对真实用户生效）接受这一限制。
+
+### og:image 资源
+
+当前所有 entry `cover: null`，OG 图用单品牌图 `public/og-default.png`（1200×630 PNG，~80 KB，紫蓝青渐变 + Cool Panda serif italic）。生成脚本：`scripts/generate-og-image.py`（用 Pillow + 系统字体；用 `uv venv .venv` 隔离 Python 依赖，`.venv` 已 gitignore）。
+
+未来若某 entry 有 `cover`，加 `og:image = entry.cover` 分支；当前保持单图。
 
 ## 反模式
 

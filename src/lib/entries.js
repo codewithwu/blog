@@ -45,6 +45,50 @@ export function findEntryBySlug(slug) {
   return allEntries.find((e) => e.slug === slug);
 }
 
+// findNeighbors：返回指定 slug 的「上一篇 / 下一篇」邻居。
+//
+// 实现思路：复用 listEntries()（已经按 date 降序合并 articles + projects，
+// 项目 '1970-01-01' 自然沉底），再做 findIndex 取前后位置。
+//
+// 返回结构：
+//   {
+//     prev:    Entry | null,   // 上一篇 = 时间上更早（更老）。当 current 是最新的
+//                              // 时为 null（没有比它更早的邻居）。
+//     current: Entry,           // 当前条目（必传 slug 命中后才返回，所以一定存在）
+//     next:    Entry | null,   // 下一篇 = 时间上更新（较新）。当 current 是最老的
+//                              // 时为 null（没有比它更新的邻居；包括项目沉底情况）。
+//   }
+//
+// 语义说明（与 prd 验收一致）：
+//   - 「上一篇」= date 更早的 entry（时间上靠前/之前的）
+//   - 「下一篇」= date 更新的 entry（时间上靠后/之后的）
+//   - 在 desc 数组里：idx 越小越新，idx 越大越老
+//   - 所以「上一篇」= idx+1（更老），「下一篇」= idx-1（更新）
+//
+// 边界语义：
+//   - slug 不在 allEntries 里 → 返回 null（让调用方决定走 Navigate 回首页或兜底）
+//     这样调用方拿到 null 时知道当前 entry 不存在，应该先 early-return，
+//     避免在详情页「未找到」时还尝试渲染浮条。
+//   - 列表只有 1 个 entry → prev / next 都是 null（只有 current）
+//   - 列表 ≥ 2 个 → 至少有一个方向有邻居
+//   - 当前 entry 是最新的 → prev 指向第二新的（即 idx+1 = 更老的那个）
+//   - 当前 entry 是最老的（含项目沉底） → next 为 null
+//
+// 复杂度 O(n)（与 findEntryBySlug 同阶）；n < 100 时无需 memoize，
+// 详情页每次 route 切换只调用一次，开销可忽略。
+export function findNeighbors(slug) {
+  const list = listEntries();
+  const idx = list.findIndex((e) => e.slug === slug);
+  if (idx === -1) return null;
+  return {
+    // 上一篇 = 时间上更早 = desc 数组里靠后 = idx+1
+    prev: idx < list.length - 1 ? list[idx + 1] : null,
+    current: list[idx],
+    // 下一篇 = 时间上更新 = desc 数组里靠前 = idx-1
+    next: idx > 0 ? list[idx - 1] : null,
+  };
+}
+
 // entryCount：内容总数，供 Hero 展示。
 export function entryCount() {
   return allEntries.length;

@@ -113,6 +113,88 @@ export default function EntryCard({ entry }) {
 - 点击嵌套外链时要阻止触发外层卡片导航；当前 `EntryCard` 的 github/demo 按钮使用 `stopPropagation`，修改其结构时要用交互测试验证。
 - 文字与背景使用现有高对比 token；次要文字 `brand-mid` 不用于关键操作。
 
+### 触屏 hover 守卫（防止 hover 视觉残留）
+
+iOS Safari / 触屏浏览器对 `:hover` 的实现是"sticky"——tap 后 hover 状态会一直保留到下次 tap，用户松开手指后卡片/按钮仍处于"被按下"的高亮态，造成视觉残留。所有可交互元素的 `hover:*` 类必须用 Tailwind 的 `[@media(hover:hover)]:hover:*` arbitrary variant 守卫：
+
+```jsx
+// ❌ 错误：触屏 tap 后会残留高亮
+'hover:-translate-y-0.5 hover:border-brand-primary/50 hover:shadow-[...]'
+
+// ✅ 正确：只对有 hover 能力的设备（鼠标 / 触控板）生效
+'[@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:border-brand-primary/50 [@media(hover:hover)]:hover:shadow-[...]'
+```
+
+**仅 hover 守卫，`focus-visible:*` 不变**——键盘 focus 是核心 a11y，触屏 tap 不影响 focus-visible 命中，必须保持原样。
+
+当前已守卫：所有 `EntryCard` hover、详情页 / 404 返回按钮 hover、`SearchBar` 清除按钮 hover、`PrevNextNav` 前后翻按钮 hover。新增交互组件必须套用相同模式。
+
+### forwardRef + ref 合并（当父组件需要 .focus() 子元素时）
+
+如果父组件（如 Home 的 j/k 键盘焦点管理）需要调用子组件 DOM 节点的 `.focus()`，而子组件自身已经有内部 ref（如 `useReveal` 的 IntersectionObserver ref），需要把外部 ref 与内部 ref 合并。典型实现：
+
+```jsx
+import { forwardRef, useCallback, useRef } from 'react';
+
+function useMergedRefs(...refs) {
+  return useCallback((el) => {
+    refs.forEach((ref) => {
+      if (typeof ref === 'function') ref(el);
+      else if (ref && typeof ref === 'object') ref.current = el;
+    });
+  }, refs);
+}
+
+const EntryCard = forwardRef(function EntryCard({ isFocused, ...rest }, externalRef) {
+  const internalRef = useReveal(); // 返回 object ref 或 callback ref
+  const mergedRef = useMergedRefs(internalRef, externalRef);
+  // 用 mergedRef 给到 root <div>
+  return <div ref={mergedRef} ... />;
+});
+```
+
+父组件用法：
+
+```jsx
+const cardRefs = useRef([]);
+<EntryCard ref={(el) => { cardRefs.current[i] = el; }} isFocused={i === focusedIndex} />
+```
+
+修改 `EntryCard` 已有 forwardRef 签名时不要破坏内部 `useReveal` 行为。
+
+### useEffect 防 focus-steal（依赖含派生列表时）
+
+`useEffect` 依赖若包含派生数组（如 `filteredEntries = entries.filter(...)`），数组引用每次 render 都会重建（即使内容相同），导致 effect 重跑。如果 effect 内调用 `.focus()`，会抢走用户当前正在使用的焦点（例如在搜索框打字时焦点被劫到卡片）。
+
+**症状**：用户在搜索框输入第一个字符后，输入框失焦，无法继续输入（除非再次点击输入框）。
+
+**修复模式**：用 ref 跟踪上一次"实际应用过 DOM focus"的状态值，只在状态值真正变化时才调 `.focus()`：
+
+```jsx
+const [focusedIndex, setFocusedIndex] = useState(0);
+const lastFocusedRef = useRef(0);
+
+useEffect(() => {
+  if (filteredEntries.length === 0) return;
+  const clamped = Math.min(focusedIndex, filteredEntries.length - 1);
+  if (clamped !== focusedIndex) {
+    setFocusedIndex(clamped);
+    return; // 下次 render 再执行 focus()
+  }
+  // 关键守卫：focusedIndex 没变就不抢焦点
+  if (lastFocusedRef.current !== focusedIndex) {
+    lastFocusedRef.current = focusedIndex;
+    cardRefs.current[focusedIndex]?.focus({ preventScroll: true });
+  }
+}, [focusedIndex, filteredEntries]);
+```
+
+配套回归测试（参考 `tests/keyboard-shortcuts.test.jsx`）：`fireEvent.change(input, { target: { value: 'x' } })` 后断言 `document.activeElement === input`，锁定"输入不丢焦点"。
+
+### prefers-reduced-motion 复位
+
+新增动画 / transform / box-shadow 必须在 `@media (prefers-reduced-motion: reduce)` 下复位（已经在 `src/index.css` 全局生效），新增组件若引入新的关键帧或 transform 需要单独验证。
+
 ## 数据容错显示
 
 组件仅在现有合同明确要求时 fallback：

@@ -51,7 +51,7 @@ vi.mock('../src/data/projects.js', () => ({
   ],
 }));
 
-const { listEntries, findEntryBySlug, entryCount } = await import('../src/lib/entries.js');
+const { listEntries, findEntryBySlug, entryCount, findNeighbors } = await import('../src/lib/entries.js');
 
 describe('entries util', () => {
   it('listEntries 合并文章与项目', () => {
@@ -95,6 +95,39 @@ describe('entries util', () => {
         expect(categorySlugSet.has(e.category)).toBe(true);
       }
     }
+  });
+
+  // findNeighbors 语义：prev = 时间上更早（older），next = 时间上更新（newer）。
+  // fixture 顺序：listEntries() desc = [a-new(2026-06-15), a-old(2024-01-01), proj-1(1970)]
+  // - a-new 是最新的 → prev = a-old，next = null
+  // - a-old 在中间 → prev = proj-1，next = a-new
+  // - proj-1 是最老的（含 project 沉底）→ prev = null，next = a-old
+  it('findNeighbors 最新文章：prev = 更老的邻居，next = null', () => {
+    const n = findNeighbors('a-new');
+    expect(n).not.toBeNull();
+    expect(n.current.slug).toBe('a-new');
+    expect(n.prev.slug).toBe('a-old'); // 时间更早（2024 < 2026）
+    expect(n.next).toBeNull();          // 没有比 2026-06-15 更新的
+  });
+
+  it('findNeighbors 中间文章：双向都有邻居', () => {
+    const n = findNeighbors('a-old');
+    expect(n).not.toBeNull();
+    expect(n.current.slug).toBe('a-old');
+    expect(n.prev.slug).toBe('proj-1'); // 时间更早（1970 < 2024）
+    expect(n.next.slug).toBe('a-new');   // 时间更新（2026 > 2024）
+  });
+
+  it('findNeighbors 项目（最老，沉底）：prev = null，next = 更新的邻居', () => {
+    const n = findNeighbors('proj-1');
+    expect(n).not.toBeNull();
+    expect(n.current.slug).toBe('proj-1');
+    expect(n.prev).toBeNull();        // 没有比 1970-01-01 更老的
+    expect(n.next.slug).toBe('a-old'); // 时间更新（2024 > 1970）
+  });
+
+  it('findNeighbors miss 返回 null', () => {
+    expect(findNeighbors('not-real')).toBeNull();
   });
 });
 

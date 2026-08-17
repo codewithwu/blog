@@ -69,6 +69,46 @@
 
 `tests/html.test.jsx > renders an iframe for a full HTML document` 当前因直接断言 `srcDoc === doc` 而失败，是已知基线漂移；任何修复必须按本规范"fragment 已包装 + base 已注入"两条分别断言。
 
+### react-helmet-async（OG / Twitter Card meta 测试）
+
+测试需要用 `<Helmet>` 的页面（如 `EntryDetail`）必须满足两个条件，否则 `<Helmet>` 会 throw `Cannot read properties of undefined (reading 'add')`：
+
+1. **测试根包 `<HelmetProvider context={helmetData}>`**，`helmetData` 用 `new HelmetData({})` 创建：
+   ```jsx
+   import { HelmetProvider, HelmetData } from 'react-helmet-async';
+
+   const helmetData = new HelmetData({});
+   render(
+     <HelmetProvider context={helmetData}>
+       <MemoryRouter initialEntries={['/p/sample']}>
+         <Routes><Route path="/p/:slug" element={<EntryDetail />} /></Routes>
+       </MemoryRouter>
+     </HelmetProvider>
+   );
+   ```
+2. **断言 meta 用 `helmetData.context.helmet`**，**不要** 用 `document.head.querySelector('meta[property=…]')`：
+   - jsdom + Helmet 异步注入，DOM 查询在 `render()` 同步返回后未必可见；
+   - 用 `helmetData.context.helmet.meta` 是 React 状态层的访问，确定性高；
+   - 如果必须查 DOM，用 `waitFor(() => expect(document.head.querySelector(...)).toBe(...))`。
+
+示例断言：
+```js
+const meta = helmetData.context.helmet.meta;
+const ogTitle = meta.find((m) => m.name === 'og:title');
+expect(ogTitle?.content).toBe('示例内容');
+```
+
+测试间要清掉残留 meta，避免跨测试污染：
+```js
+afterEach(() => {
+  cleanup();
+  document.head.querySelectorAll('meta[data-rh]').forEach((n) => n.remove());
+  document.head.querySelectorAll('title[data-rh]').forEach((n) => n.remove());
+});
+```
+
+参考实现：`tests/entry-detail.test.jsx` 的"注入 OG / Twitter Card meta（Helmet）"用例。
+
 ## 改动到验证范围的映射
 
 | 改动 | 最低验证 |
