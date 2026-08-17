@@ -343,3 +343,25 @@ Created project-local blog-content-publisher skill (SKILL.md + brand markdown→
 - 手动浏览器目视:首页 Hero tagline 渲染、/p/claude-code-taming-guide 冷色调、/p/不存在slug 标题栏不闪
 - 另起任务修 tests/html.test.jsx 第 13 行 srcDoc 断言(JSDOM 注入 <base>,改用 toContain 或剥离 base)
 - 3 个 commit 尚未 push(e8c56fd / cf65622 / b3d24a6),需要时 git push
+
+
+## Session 9: 博客 UX 改进 + publisher 模板同步
+
+**Date**: 2026-08-17
+**Task**: 博客 UX 改进 + publisher 模板同步
+**Branch**: `main`
+
+### Summary
+
+UX 全套 6 项（详情页 prev/next、OG meta、瀑布流搜索、iframe shimmer、键盘快捷键、移动端 hover 守卫） + blog-content-publisher 模板与品牌色板同步。tests 54/55（pre-existing baseline drift 不变），bundle JS +18KB/CSS +5KB raw；push 完成并归档 8 个 task。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `acf3380` | (see git log) |
+| `8421fc7` | (see git log) |
+
+### Status
+
+[OK] **Completed**

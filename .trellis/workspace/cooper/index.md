@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 8
-- **Last Active**: 2026-08-16
+- **Total Sessions**: 9
+- **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~345 | Active |
+| `journal-1.md` | ~367 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 9 | 2026-08-17 | 博客 UX 改进 + publisher 模板同步 | `acf3380`, `8421fc7` | `main` |
 | 8 | 2026-08-16 | 统一处理代码审查发现的问题 | `e8c56fd`, `cf65622` | `main` |
 | 7 | 2026-07-19 | Publish 'Claude Code 调教指南' + remove orphan 亲密关系曲线.html | `c7d2d07`, `1cdf113` | `main` |
 | 6 | 2026-07-19 | trellis-spec-bootstrap: 刷新 content 规范漂移 | `285ca67` | `main` |
