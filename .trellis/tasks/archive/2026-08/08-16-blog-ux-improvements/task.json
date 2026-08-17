@@ -1,0 +1,33 @@
+{
+  "id": "blog-ux-improvements",
+  "name": "blog-ux-improvements",
+  "title": "博客 UX 优化",
+  "description": "瀑布流首页 / 详情页 / 卡片交互 / 性能 / a11y 多维度 UX 改进集合（6 项独立可交付子任务）",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "cooper",
+  "assignee": "cooper",
+  "createdAt": "2026-08-16",
+  "completedAt": "2026-08-17",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-16-detail-prev-next-nav",
+    "08-16-og-meta-tags",
+    "08-16-waterfall-search-filter",
+    "08-16-iframe-shimmer-a11y",
+    "08-16-keyboard-shortcuts",
+    "08-16-mobile-hover-guard"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
