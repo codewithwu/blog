@@ -65,6 +65,14 @@ description: "将本地 Markdown 或 HTML 文件整理后发布到本博客网�
 | `links` | 仅项目：`{ github, demo }`，无则对应字段填 `null` |
 | `cover` | 封面相对路径，无则 `null` |
 
+#### 字段的多重作用（影响确认环节的判断）
+
+`title` 和 `excerpt` 不只是瀑布流卡片用，详情页运行时还会再消费一次：
+
+- **`entry.title`** 同时是：(a) 卡片标题 / (b) `<iframe title={entry.title}>`（屏幕阅读器朗读 iframe 内容用）/ (c) `og:title` / `twitter:title`（分享卡标题）。截断 / 纯表情符号 / 仅"未命名"会影响这三处，建议保持简短描述性（中文 30 字内最佳）。
+- **`entry.excerpt`** 同时是：(a) 卡片摘要 / (b) `og:description` / `twitter:description`（分享卡描述）。HTML 内作者自带的 `<meta name="description">` 会被运行时 Helmet 覆盖（见 `.trellis/spec/frontend/data-and-rendering.md` §OG / Twitter Card meta 注入）。
+- 当前所有 entry `cover: null` → OG 图统一走单品牌图 `public/og-default.png`；未来某 entry 有 `cover` 时再考虑 per-entry OG 图。
+
 #### 必须先做的一致性检查
 
 在展示确认表之前必须先做：
