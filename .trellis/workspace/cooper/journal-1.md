@@ -365,3 +365,24 @@ UX 全套 6 项（详情页 prev/next、OG meta、瀑布流搜索、iframe shimm
 ### Status
 
 [OK] **Completed**
+
+
+## Session 10: 修复 /code-review 8 项 findings + 推送 + 归档
+
+**Date**: 2026-08-17
+**Task**: 修复 /code-review 8 项 findings + 推送 + 归档
+**Branch**: `main`
+
+### Summary
+
+修复 /code-review @src/ 暴露的 8 项：4 个 functional bugs (F1 og:url 在 HashRouter 下丢 hash / F2 iframe 缺 key 导致 slug 切换 shimmer 不重触发 / F3 SearchBar X 按钮丢失焦点 / F4 过滤 0→N 不自动恢复卡片焦点) + 4 个维护性问题 (M1 'all' 字面量硬编码 3 处 / M2 useEffect deps 含新建数组 / M3 useMergedRefs 误用 useCallback 假稳定 / M4 玻璃态 utility 三处重复)。新增 4 个 测试断言 og:url hash / iframe 重建 / X 后 input 焦点 / 过滤 0→N 焦点恢复。实施中发现 F3 与 F4 争夺焦点，加 activeElement===inputRef 时跳过 F4 守卫解决。最终 9 文件 (7 src + 2 test), 200 insertions / 66 deletions, 58/59 测试通过 (1 个已知 baseline drift 未变), 构建无回归, commit af005c1 已推 origin/main, task 已归档。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `af005c1` | (see git log) |
+
+### Status
+
+[OK] **Completed**

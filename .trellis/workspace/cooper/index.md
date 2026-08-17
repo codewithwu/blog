@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
+- **Total Sessions**: 10
 - **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~367 | Active |
+| `journal-1.md` | ~388 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-08-17 | 修复 /code-review 8 项 findings + 推送 + 归档 | `af005c1` | `main` |
 | 9 | 2026-08-17 | 博客 UX 改进 + publisher 模板同步 | `acf3380`, `8421fc7` | `main` |
 | 8 | 2026-08-16 | 统一处理代码审查发现的问题 | `e8c56fd`, `cf65622` | `main` |
 | 7 | 2026-07-19 | Publish 'Claude Code 调教指南' + remove orphan 亲密关系曲线.html | `c7d2d07`, `1cdf113` | `main` |
