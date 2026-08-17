@@ -12,7 +12,8 @@
 //     如果 state 在组件内，外部无法触发聚焦/清空（除非把 ref 转 imperative）
 //   - inputRef 由 Home 持有并向下传；P2-1 只需 `searchInputRef.current.focus()`
 //   - Esc 清空 query：仅当 input 自身聚焦时（避免误清空用户在其他地方的输入）
-//   - X 清除按钮：query.length > 0 时出现；点击 setQuery('') + 让 input 保留焦点
+//   - X 清除按钮：query.length > 0 时出现；点击 setQuery('') + inputRef.focus()
+//     主动恢复焦点，让用户清空后无需再次点击输入框可继续输入（08-17 F3）
 //
 // 响应式（CLAUDE.md 规则 1 → 移动端不爆框）：
 //   - 桌面（≥ sm）：input 左侧 + segmented control 右侧（flex flex-row）
@@ -83,11 +84,20 @@ export default function SearchBar({ query, setQuery, type, setType, inputRef }) 
                      focus:ring-2 focus:ring-brand-glow/40
                      transition-colors"
         />
-        {/* X 清除按钮：query 非空时渲染（点击不抢 input 焦点，type=button 防止表单提交） */}
+        {/* X 清除按钮：query 非空时渲染
+            - type=button 防表单提交
+            - onClick 内 setQuery('') + inputRef.current.focus()：
+              X 因 query 变空被 unmount 后浏览器会把焦点丢回 body；
+              这里主动 focus() 让 input 继续持焦，可连续输入（08-17 code-review #3）
+            - input DOM 节点不被 X 卸载（X 是 input 的 sibling，不是 child），
+              所以 inputRef.current 在 unmount 期间仍有效 */}
         {query.length > 0 && (
           <button
             type="button"
-            onClick={() => setQuery('')}
+            onClick={() => {
+              setQuery('');
+              inputRef.current?.focus();
+            }}
             aria-label="清除搜索"
             className="absolute right-2 top-1/2 -translate-y-1/2
                        inline-flex items-center justify-center

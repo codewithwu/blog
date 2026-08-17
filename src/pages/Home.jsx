@@ -14,7 +14,7 @@
 //   - query / type state 由本组件 useState 持有（不持久化：刷新后重置为 'all' + ''）
 //   - 派生 filteredEntries 在 render 前计算；n ≤ 50 时无 memo 必要
 //   - 过滤匹配：title + excerpt + tags 拼成 lowercase haystack，substring 包含 query
-//   - type 匹配：'all' 永真，否则严格相等 e.type
+//   - type 匹配：DEFAULT_TYPE 永真，否则严格相等 e.type
 //   - 与分类筛选正交（CLAUDE.md 规则 4）：不读 categories 字段
 //   - searchInputRef 暴露给 P2-1 键盘快捷键任务，外部可触发聚焦
 //
@@ -32,11 +32,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import Hero from '../components/Hero.jsx';
-import SearchBar from '../components/SearchBar.jsx';
+import SearchBar, { TYPE_OPTIONS } from '../components/SearchBar.jsx';
 import EntryCard from '../components/EntryCard.jsx';
 import { listEntries } from '../lib/entries.js';
 import usePageTitle from '../hooks/usePageTitle.js';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts.js';
+
+// type 默认值：直接从 SearchBar 的 TYPE_OPTIONS 拿第一项的 value
+// 单一来源 = TYPE_OPTIONS；改 TYPE_OPTIONS 第一项不需要改这里（08-17 M1）
+const DEFAULT_TYPE = TYPE_OPTIONS[0].value;
 
 export default function Home() {
   usePageTitle(''); // 首页只用站名，不加前缀
@@ -44,10 +48,10 @@ export default function Home() {
 
   // 搜索 / 过滤 state（不持久化：路由切换回 / 时自然重置）
   //   - query: 原始输入字符串（搜索框受控）
-  //   - type:   'all' | 'article' | 'project'
+  //   - type:   DEFAULT_TYPE | 'article' | 'project'
   //   - searchInputRef: 绑定到搜索框 input，给 / 快捷键聚焦用
   const [query, setQuery] = useState('');
-  const [type, setType] = useState('all');
+  const [type, setType] = useState(DEFAULT_TYPE);
   const searchInputRef = useRef(null);
 
   // 键盘快捷键聚焦态
@@ -57,13 +61,21 @@ export default function Home() {
   //     * focusedIndex 变化时调用 cardRefs.current[i]?.focus({ preventScroll: true })
   //       把浏览器默认的"聚焦即滚动"关掉，避免瀑布流错位
   //   - lastFocusedRef: 跟踪上一次"实际应用过 DOM focus"的 focusedIndex
-  //     * 防止输入框输入时（filteredEntries 数组引用每次 render 都重建）误触发 .focus()
-  //       抢走用户当前正在用的焦点（典型场景：用户在搜索框打字，焦点被劫到卡片）
+  //     * 防止输入框输入时误触发 .focus() 抢走用户当前正在用的焦点
+  //       （典型场景：用户在搜索框打字，焦点被劫到卡片）
   //     * 只在 focusedIndex 真正变化时才同步 DOM 焦点
+  //   - prevLengthRef: 跟踪上一帧 filteredEntries.length
+  //     * 用于「length 由 0 转正」时强制恢复焦点（08-17 code-review #4）
+  //     * 复现：focusedIndex=2 → 输入字符过滤到 0（effect 早返，lastFocusedRef 不变）
+  //       → 清字符恢复 N（clamped===focusedIndex 不 setState；旧实现 lastFocusedRef 守卫
+  //         跳过 focus，焦点丢失）→ 必须按 j 才能恢复
+  //     * 新增「prevLength===0 && currentLength>0」分支作为额外触发条件，
+  //       自动把焦点拉回到原 focusedIndex 对应的卡片
   //   - 注意：聚焦对象永远是 filteredEntries（不是 entries），保证 j/k 与用户可见的卡片一致
   const [focusedIndex, setFocusedIndex] = useState(0);
   const cardRefs = useRef([]);
   const lastFocusedRef = useRef(0);
+  const prevLengthRef = useRef(0);
 
   // 派生 filteredEntries
   //   - entries 是 listEntries() 的副本（每次 render 都新建数组，规模 < 50 无 memo 必要）
@@ -75,33 +87,53 @@ export default function Home() {
   const entries = listEntries();
   const q = query.trim().toLowerCase();
   const filteredEntries = entries.filter((e) => {
-    if (type !== 'all' && e.type !== type) return false;
+    if (type !== DEFAULT_TYPE && e.type !== type) return false;
     if (!q) return true;
     const haystack = `${e.title} ${e.excerpt ?? ''} ${(e.tags ?? []).join(' ')}`.toLowerCase();
     return haystack.includes(q);
   });
 
   // 焦点越界保护：搜索后 filteredEntries 可能缩短，旧的 focusedIndex 需 clamp
-  //   - 每次 filteredEntries / focusedIndex 变化时执行
+  //   - 每次 filteredEntries.length / focusedIndex 变化时执行
   //   - 若 focusedIndex 越界，回落到 0，避免数组越界与导航指向已隐藏卡片
-  //   - DOM 焦点同步：只在 focusedIndex 实际变化（与 lastFocusedRef 比对）时调用 .focus()
-  //     filteredEntries 数组引用每次 render 都重建，不能仅凭 deps 变化就触发 focus
-  //     —— 否则用户在搜索框输入时会丢焦点（focus-steal bug 的修复关键）
+  //   - DOM 焦点同步：触发条件 OR（focusedIndex 真变化 || 上一帧 length===0 转正）
+  //     deps 用 filteredEntries.length 而非 filteredEntries 本身，避免数组引用每次 render
+  //     重建都重跑 effect（08-17 code-review #6）
+  //   - 焦点恢复（08-17 F4）：prevLength===0 && currentLength>0 时即使 lastFocusedRef 没变
+  //     也要强制 .focus()，恢复因过滤 0 张丢掉的卡片焦点流
   //   - focus({ preventScroll: true }) 关闭浏览器默认的"聚焦即滚动"行为
+  //   - 注意：聚焦下标永远是 filteredEntries（不是 entries），保证 j/k 与用户可见卡片一致
   useEffect(() => {
-    if (filteredEntries.length === 0) return;
-    const clamped = Math.min(focusedIndex, filteredEntries.length - 1);
+    const prevLength = prevLengthRef.current;
+    const currentLength = filteredEntries.length;
+    prevLengthRef.current = currentLength;
+
+    if (currentLength === 0) return;
+
+    const clamped = Math.min(focusedIndex, currentLength - 1);
     if (clamped !== focusedIndex) {
       setFocusedIndex(clamped);
       return; // 下一次 render 再执行 focus()，避免 stale ref
     }
-    // 关键守卫：focusedIndex 没变就不抢焦点
-    // （filteredEntries 数组每次 render 都新建，deps 含它会让 effect 每次都跑）
-    if (lastFocusedRef.current !== focusedIndex) {
+    // 关键守卫：focusedIndex 没变且非「过滤 0→N 恢复」就不抢焦点
+    // （deps 含 filteredEntries.length 后，length 不变则 effect 不跑）
+    const isFirstRestoreAfterEmpty =
+      prevLength === 0 && lastFocusedRef.current === focusedIndex;
+    if (lastFocusedRef.current !== focusedIndex || isFirstRestoreAfterEmpty) {
+      // F3+F4 协调：若用户当前焦点在搜索框（说明正在输入或刚刚主动聚焦），
+      // 不抢焦点回卡片，让用户继续在搜索框操作（08-17 F3 + F4 协调）
+      // 例外：仅在 focusedIndex 真变化（j/k 路径）时不检查 activeElement，
+      // 因为 j/k 显式切焦点是要把焦点从 input 拉回卡片
+      if (
+        isFirstRestoreAfterEmpty &&
+        document.activeElement === searchInputRef.current
+      ) {
+        return;
+      }
       lastFocusedRef.current = focusedIndex;
       cardRefs.current[focusedIndex]?.focus({ preventScroll: true });
     }
-  }, [focusedIndex, filteredEntries]);
+  }, [focusedIndex, filteredEntries.length]);
 
   // 快捷键绑定（见 .trellis/tasks/08-16-keyboard-shortcuts/prd.md）
   //   - 走 ref-based 模式，handler 闭包总是读到最新 focusedIndex / filteredEntries
@@ -127,7 +159,7 @@ export default function Home() {
   });
 
   // 空态条件：必须真有过滤条件（防御：全空 + 全空 不应显示"无匹配"）
-  const isFiltered = query.trim().length > 0 || type !== 'all';
+  const isFiltered = query.trim().length > 0 || type !== DEFAULT_TYPE;
   const isEmpty = filteredEntries.length === 0 && isFiltered;
 
   return (

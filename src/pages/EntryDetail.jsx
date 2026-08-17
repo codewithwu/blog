@@ -67,10 +67,15 @@ export default function EntryDetail() {
   const { prev, next } = findNeighbors(entry.slug);
 
   // OG / Twitter Card meta 数据
-  //   - ogUrl: 当前页绝对 URL（自动含 GitHub Pages base /blog/）
+  //   - ogUrl: 当前页绝对 URL
+  //     * pathname 自动含 GitHub Pages base（/blog/）
+  //     * 必须拼 hash：HashRouter 下 pathname 永远是 /blog/，真实 entry URL 是 #/p/<slug>
+  //       旧实现 ${origin}${pathname} 丢 hash，og:url 永远指向站点根，
+  //       社交分享卡点击跳首页（08-17 code-review #1）
+  //     * window.location.hash 自带前导 #，无需手动加
   //   - ogImage: 单品牌图绝对 URL；import.meta.env.BASE_URL 末尾带 /，直接拼文件名
   //   - description: 优先 excerpt，缺失兜底用 title
-  const ogUrl = `${window.location.origin}${window.location.pathname}`;
+  const ogUrl = `${window.location.origin}${window.location.pathname}${window.location.hash}`;
   const ogImage = `${window.location.origin}${import.meta.env.BASE_URL}og-default.png`;
   const description = entry.excerpt ?? entry.title;
 
@@ -100,21 +105,18 @@ export default function EntryDetail() {
         type="button"
         aria-label="返回首页"
         onClick={() => navigate('/')}
-        // 玻璃态胶囊 + 紫蓝边 + 微光 + JetBrains Mono；hover 边框变 glow + 紫光增强
-        className="fixed top-4 left-4 z-50 inline-flex items-center
-                   px-3 py-1.5 rounded-md text-sm font-mono
-                   bg-brand-surface/60 text-brand-light
-                   border border-brand-primary/40
-                   backdrop-blur-md
-                   shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
-                   [@media(hover:hover)]:hover:bg-brand-surface-2/70
-                   [@media(hover:hover)]:hover:border-brand-glow/70
-                   [@media(hover:hover)]:hover:shadow-[0_0_18px_-2px_rgba(76,201,240,0.55)]
-                   transition-all duration-200"
+        // glass-pill: 玻璃态胶囊 + 紫蓝边 + 微光 + hover 紫光增强（src/index.css @layer components）
+        className="glass-pill fixed top-4 left-4 z-50 inline-flex items-center
+                   px-3 py-1.5 rounded-md text-sm font-mono"
       >
         ← 返回
       </button>
-      <Html html={entry.content} title={entry.title} />
+      {/* key={entry.slug}：路由切换 /p/A → /p/B 时强制 Html 子组件重建
+           - React 按 key 变化识别为不同 element 实例 → unmount 旧 + mount 新
+           - Html 内 useState(true) 让 loading 重置 true → shimmer 重新出现
+           - 不加 key 时 EntryDetail 组件复用，iframe DOM 节点复用，
+             loading 保持 false，shimmer 不再触发（08-17 code-review #2） */}
+      <Html key={entry.slug} html={entry.content} title={entry.title} />
       {/* 底部「上一篇 / 下一篇」浮条 —— 与返回按钮同款玻璃态胶囊
           fixed 定位不进入 iframe 流，iframe 滚动与浮条互不影响 */}
       <PrevNextNav prev={prev} next={next} />

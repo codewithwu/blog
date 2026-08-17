@@ -43,21 +43,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 //   - title:    string|null   邻居标题（null 时显示「无」类占位；实际由调用方保证非 null）
 //   - position: 'left'|'right' 决定图标在左还是右
 //
-// hover 行为：边框变 glow/70 + 紫光增强（与返回按钮 hover 同款）
+// hover 行为：边框变 glow/70 + 紫光增强 + 文字变 glow（与返回按钮 hover 同款）
 function NavButton({ to, title, position }) {
   const isLeft = position === 'left';
-  // 通用样式：玻璃态胶囊 + 紫蓝边 + 微光 + hover 紫光
-  // 复用 EntryDetail 返回按钮的 className 字符串，保持视觉一致；
-  // 比返回按钮额外加 hover:text-brand-glow，因为 prev/next 标题是
-  // 用户需要主动选择的入口（不像「← 返回」是单一固定动作），
-  // hover 文字变色让用户清楚"这个是会被点击的"
+  // 通用样式：复用 .glass-pill（src/index.css @layer components 定义）；
+  // 额外追加 hover:text-brand-glow，因为 prev/next 标题是用户需要主动选择的入口
+  // （不像「← 返回」是单一固定动作），hover 文字变色让用户清楚"这个是会被点击的"
   const baseClass =
-    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono ' +
-    'bg-brand-surface/40 text-brand-light ' +
-    'border border-brand-primary/40 ' +
-    '[@media(hover:hover)]:hover:bg-brand-surface-2/70 [@media(hover:hover)]:hover:border-brand-glow/70 [@media(hover:hover)]:hover:text-brand-glow ' +
-    '[@media(hover:hover)]:hover:shadow-[0_0_18px_-2px_rgba(76,201,240,0.55)] ' +
-    'transition-all duration-200';
+    'glass-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono ' +
+    '[@media(hover:hover)]:hover:text-brand-glow';
 
   // 标题截断：max-w 控制单按钮宽度，避免「上一篇很长的标题」撑爆整个浮条
   // truncate = overflow-hidden + text-ellipsis + whitespace-nowrap

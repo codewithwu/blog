@@ -43,7 +43,7 @@ export default function NotFound() {
         {/* 次文案：dim 色更弱化 */}
         <p className="mt-2 text-sm text-brand-dim">这里什么都没有...</p>
 
-        {/* 玻璃态返回按钮（与 EntryDetail 同款） */}
+        {/* 玻璃态返回按钮（与 EntryDetail 同款，glass-pill 共用样式） */}
         {/* aria-label="返回首页" 与 EntryDetail 返回按钮保持一致：Link 元素文本
             本身是「返回首页」已是可读 label，但显式 aria-label 让屏幕阅读器在
             按钮上下文（focus / accessibility tree 列表）里朗读更稳定，也避免
@@ -51,15 +51,7 @@ export default function NotFound() {
         <Link
           to="/"
           aria-label="返回首页"
-          className="inline-block mt-10 px-6 py-2 rounded-md text-sm font-mono
-                     bg-brand-surface/60 text-brand-light
-                     border border-brand-primary/40
-                     backdrop-blur-md
-                     shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
-                     [@media(hover:hover)]:hover:bg-brand-surface-2/70
-                     [@media(hover:hover)]:hover:border-brand-glow/70
-                     [@media(hover:hover)]:hover:shadow-[0_0_18px_-2px_rgba(76,201,240,0.55)]
-                     transition-all duration-200"
+          className="glass-pill inline-block mt-10 px-6 py-2 rounded-md text-sm font-mono"
         >
           返回首页
         </Link>

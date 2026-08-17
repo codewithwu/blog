@@ -24,6 +24,18 @@ vi.mock('../src/data/articles.js', () => ({
       content: '<!doctype html><html><body><p>正文</p></body></html>',
       category: 'notes',
     },
+    {
+      slug: 'sample-entry-2',
+      title: '第二篇示例',
+      excerpt: '第二篇摘要',
+      date: '2026-05-01',
+      type: 'article',
+      tags: ['示例'],
+      cover: null,
+      links: null,
+      content: '<!doctype html><html><body><p>正文2</p></body></html>',
+      category: 'notes',
+    },
   ],
 }));
 
@@ -86,8 +98,10 @@ describe('EntryDetail', () => {
   });
 
   it('渲染固定左上角「← 返回」按钮', async () => {
-    const { container, getByRole } = await renderAt('/p/sample-entry');
-    const btn = getByRole('button');
+    const { container } = await renderAt('/p/sample-entry');
+    // 用 aria-label 精确定位返回按钮；否则 PrevNextNav 的 disabled 按钮也会命中
+    const btn = container.querySelector('button[aria-label="返回首页"]');
+    expect(btn).not.toBeNull();
     expect(btn.textContent).toContain('返回');
     expect(btn.className).toMatch(/fixed/);
     expect(btn.className).toMatch(/top-4/);
@@ -114,5 +128,37 @@ describe('EntryDetail', () => {
     const twitterCard = document.head.querySelector('meta[name="twitter:card"]');
     expect(ogImage?.getAttribute('content')).toMatch(/\/og-default\.png$/);
     expect(twitterCard?.getAttribute('content')).toBe('summary_large_image');
+  });
+
+  it('og:url 含当前 entry 的 hash 路径（08-17 F1：HashRouter 不丢 #/p/<slug>）', async () => {
+    // jsdom 默认 window.location.hash 是 ''；手动模拟 HashRouter 下的 URL
+    window.history.replaceState(null, '', '/#/p/sample-entry');
+    await renderAt('/p/sample-entry');
+    await waitFor(() => {
+      const ogUrl = document.head.querySelector('meta[property="og:url"]');
+      expect(ogUrl?.getAttribute('content')).toMatch(/#\/p\/sample-entry$/);
+    });
+    // 还原避免污染后续测试
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('切换 slug 时 iframe 被强制重建（08-17 F2：<Html key={slug}>）', async () => {
+    // 第一次渲染 sample-entry，记录 DOM 节点
+    const { container, unmount } = await renderAt('/p/sample-entry');
+    const iframeA = container.querySelector('iframe');
+    expect(iframeA).not.toBeNull();
+    // 卸载前保存引用
+    const nodeA = iframeA;
+    unmount();
+
+    // 重新渲染 sample-entry-2
+    const result2 = await renderAt('/p/sample-entry-2');
+    const iframeB = result2.container.querySelector('iframe');
+    expect(iframeB).not.toBeNull();
+    // React 用 key 变化识别为不同 element 实例 → unmount 旧 + mount 新
+    // iframeB 是新节点，DOM 引用与 iframeA 不同
+    expect(iframeB).not.toBe(nodeA);
+    // 内容也对应换了 entry
+    expect(iframeB.getAttribute('srcDoc')).toContain('正文2');
   });
 });

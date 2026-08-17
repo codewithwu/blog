@@ -4,7 +4,7 @@
 // 用 vi.mock 提供稳定 fixture registry；EntryCard 用 useNavigate，需 Router 包裹。
 // jsdom 无 IntersectionObserver，useReveal 会降级为立即可见，卡片正常出现在 DOM。
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../src/data/articles.js', () => ({
@@ -196,5 +196,35 @@ describe('Home 搜索过滤（与分类正交）', () => {
     expect(getByText('首页文章')).not.toBeNull();
     expect(getByText('首页项目')).not.toBeNull();
     expect(getByText('亲密关系曲线')).not.toBeNull();
+  });
+
+  it('点击 X 清除按钮后 input 仍持有焦点（08-17 F3）', () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    // 先让 input 获得焦点并输入触发 X 出现
+    input.focus();
+    fireEvent.change(input, { target: { value: 'xyz' } });
+    const clearBtn = container.querySelector('button[aria-label="清除搜索"]');
+    expect(clearBtn).not.toBeNull();
+    fireEvent.click(clearBtn);
+    // X unmount 后 input 仍应是 activeElement（而非 body）
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe('');
+  });
+
+  it('过滤到 0 → 清空 → 焦点自动回到第一张卡片（08-17 F4）', async () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    // 过滤到 0：focusedIndex=0，但 length===0 时 effect 早返
+    fireEvent.change(input, { target: { value: 'xyz不存在' } });
+    expect(container.querySelector('.columns-1')).toBeNull(); // 空态
+    // 清空 → length 恢复 → prevLength===0 && currentLength>0 触发自动 focus
+    fireEvent.change(input, { target: { value: '' } });
+    // flush effect（useEffect 是异步的，jsdom 里需 act flush）
+    await act(async () => {});
+    // 第一张卡片应自动获得焦点
+    const firstCard = container.querySelector('[role="link"]');
+    expect(firstCard).not.toBeNull();
+    expect(document.activeElement).toBe(firstCard);
   });
 });

@@ -31,7 +31,7 @@
 //     * 键盘 focus 态不受影响：focus-visible:ring-* 仍按原语义工作，
 //       触屏用户看不到 hover 抬升，但键盘 / 鼠标用户仍能正常享受 hover 反馈
 //     * 不引入新依赖；纯 Tailwind 3.1+ arbitrary variants 语法
-import { forwardRef, useCallback, useRef } from 'react';
+import { forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Wrench, Github, ExternalLink } from 'lucide-react';
 import { categories } from '../data/categories.js';
@@ -40,17 +40,21 @@ import useReveal from '../hooks/useReveal.js';
 // 合并多个 ref 到同一个 DOM 节点：
 //   - 内层 ref（useReveal）：用于 IntersectionObserver
 //   - 外层 ref（Home）：用于键盘快捷键 focus({ preventScroll: true })
-// 实现：把所有 ref 收集到数组，对每次渲染的节点都调用一遍。
-// callback ref 与 object ref 都兼容；callback ref 卸载时 el=null 也透传过去。
+// 不做稳定化：refs 是 rest spread 每次 render 都是新数组，
+// useCallback(fn, refs) 实际不会复用 callback。这里也无需稳定——
+//   - Home 用 ref={(el) => cardRefs.current[i] = el} 是 callback ref，每次 render
+//     也是新函数，React 本来就处理 callback ref 替换（旧(null) → 新(el)）。
+//   - useReveal 内部 callback ref 同理，每次 render 也是新函数。
+// 因此每次 render 让 React 重新 attach 一次 ref callback 是预期行为，
+// 与 React ref 语义一致，且不引入虚假稳定化的代码气味（08-17 code-review #7）。
 function useMergedRefs(...refs) {
-  // 用 useCallback 稳定 ref callback 引用，避免 React 把它当新 ref 反复 attach
-  return useCallback((el) => {
+  return (el) => {
     refs.forEach((ref) => {
       if (!ref) return;
       if (typeof ref === 'function') ref(el);
       else ref.current = el;
     });
-  }, refs); // refs 是数组，依赖列表中展开即可保证任一变化时 callback 也更新
+  };
 }
 
 const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false }, externalRef) {

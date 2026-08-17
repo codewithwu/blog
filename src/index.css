@@ -50,6 +50,30 @@
   animation: aurora-drift 60s ease-in-out infinite alternate;
 }
 
+/* 玻璃态胶囊：详情页返回按钮 / 404 返回链接 / 详情页底部浮条
+   共用的样式 + hover 反馈（与品牌色一致）。
+   三处组件 className 用 `glass-pill` 简写，去重 hover utility（08-17 code-review #8）。
+
+   实现细节：
+   - 基础部分用 @apply（与 Tailwind 编译产物一致，复用 brand-* token）
+   - hover 部分用原生 CSS 而非 @apply arbitrary variant：
+     Tailwind 3.4 的 @apply 在嵌套 @media (hover: hover) 内对 arbitrary variant
+     编译不可靠，避开该陷阱；rgb() 用 token 直接色值，改 brand.* 时同步更新此处 */
+@layer components {
+  .glass-pill {
+    @apply bg-brand-surface/60 text-brand-light border border-brand-primary/40
+           backdrop-blur-md shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
+           transition-all duration-200;
+  }
+  @media (hover: hover) {
+    .glass-pill:hover {
+      background-color: rgb(30 35 72 / 0.7);   /* brand.surface-2 / 70 */
+      border-color: rgb(76 201 240 / 0.7);     /* brand.glow / 70 */
+      box-shadow: 0 0 18px -2px rgb(76 201 240 / 0.55);
+    }
+  }
+}
+
 /* 整站噪点：SVG turbulence，opacity 4%，fixed 让它不随滚动重绘。
    mix-blend-mode: overlay 让深色底上呈弱亮噪点；pointer-events: none 不阻塞交互。
    选择 data URL 形式而非外部资源，避免增加 HTTP 请求与依赖。 */
