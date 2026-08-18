@@ -9,10 +9,9 @@
 //   - 不 sticky：用户自然往下滚就进入瀑布流。
 //   - tagline 切换靠 key={count} 重挂载触发 heroFade（粗暴但足够，避免引入动画库）。
 import AuroraBackdrop from './AuroraBackdrop.jsx';
-import { entryCount } from '../lib/entries.js';
+import { entryCount, mostRecentDate } from '../lib/entries.js';
 
 const SITE_NAME = 'Cool Panda';
-const LAST_UPDATED = '2026-07-19'; // 静态时间戳：避免 hydration mismatch 与时区问题
 
 // tagline 候选：按 entry 数量档位切换，制造"随站点成长"的趣味点。
 // 历史上有 `count <= 3` 返回空串的分支，但 entryCount=2（刚发新文章）时会
@@ -27,6 +26,12 @@ function pickTagline(count) {
 export default function Hero() {
   const count = entryCount();
   const tagline = pickTagline(count);
+
+  // P1-4 改造（父任务 08-18-ux-optimization-suite）：LAST_UPDATED 从硬编码改为派生
+  //   - 数据源：lib/entries.js 的 mostRecentDate() 返回最大 date
+  //   - 空库时显示「—」，避免误导
+  //   - ISO date 字符串（YYYY-MM-DD）字典序与日期序一致，无需 Date 对象参与
+  const lastUpdated = mostRecentDate() ?? '—';
 
   return (
     <header className="relative pt-20 pb-12 md:pt-28 md:pb-16 text-center overflow-hidden">
@@ -58,7 +63,7 @@ export default function Hero() {
 
       {/* 时间戳：呼应"夜空下的实时钟"，JetBrains Mono + dim 色（更弱化） */}
       <p className="mt-2 text-xs font-mono text-brand-dim">
-        最后更新 · {LAST_UPDATED}
+        最后更新 · {lastUpdated}
       </p>
     </header>
   );

@@ -236,4 +236,11 @@ describe('Home 搜索过滤（与分类正交）', () => {
     // entryCount fixture = 3（< 20）→ showSearchSpinner 应为 false → 无 Loader2
     expect(container.querySelector('.animate-spin')).toBeNull();
   });
+
+  // 父任务 08-18-ux-optimization-suite P1-17：Hero LAST_UPDATED 从 entries 派生
+  it('Hero LAST_UPDATED 派生自最新 entry date（2026-06-15 是 fixture 中最大）', () => {
+    const { getByText } = renderHome();
+    // fixture: 2 篇文章 date 分别为 2026-06-15 和 2025-12-01 → 取最大 2026-06-15
+    expect(getByText(/最后更新 · 2026-06-15/)).not.toBeNull();
+  });
 });

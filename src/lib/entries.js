@@ -93,3 +93,17 @@ export function findNeighbors(slug) {
 export function entryCount() {
   return allEntries.length;
 }
+
+// mostRecentDate：返回所有 entry 中最大的 date（YYYY-MM-DD 字符串字典序 = 日期序）。
+// 父任务 08-18-ux-optimization-suite P1-4：Hero LAST_UPDATED 从硬编码改为派生。
+// 找不到任何 entry 时返回 null（Hero 显示「—」）。
+//
+// 实现：
+//   - reduce 一次遍历，O(n)；n < 100 时无需 memoize
+//   - 直接比较 ISO date 字符串（YYYY-MM-DD 字典序与日期序一致，无需 new Date）
+//   - 项目 date 默认回退 '1970-01-01'，所以全空 articles 时项目会"赢"；
+//     这是合理的：项目至少被更新过
+export function mostRecentDate() {
+  if (allEntries.length === 0) return null;
+  return allEntries.reduce((max, e) => (e.date > max ? e.date : max), allEntries[0].date);
+}
