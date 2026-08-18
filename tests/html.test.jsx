@@ -33,14 +33,17 @@ describe('Html component', () => {
     // 父任务 08-18-ux-optimization-suite 顺手修复：原版对「无 <head> 的完整文档」
     // 走 prepend <base> 兜底，产生 <base><!doctype html>... 畸形 HTML。
     // 新版在 <html> 后插入 <head><base></head>，输出格式合法。
+    // P1-8/15/16 进一步注入同站链接桥接脚本（BRIDGE_SCRIPT）在 <base> 之后
     const doc = '<!doctype html><html><body><p>hello</p></body></html>';
     const { container } = await renderHtml(<Html html={doc} />);
     const iframe = container.querySelector('iframe');
     expect(iframe).not.toBeNull();
-    // 期望：<head> 被自动注入，<base> 落在 head 内（修复 anchor-redirect bug）
-    expect(iframe.getAttribute('srcDoc')).toBe(
-      '<!doctype html><html><head><base href="about:srcdoc"></head><body><p>hello</p></body></html>'
-    );
+    // 期望：<head> 被自动注入，<base> 落在 head 内；BRIDGE_SCRIPT 紧随其后
+    const srcDoc = iframe.getAttribute('srcDoc');
+    expect(srcDoc).toMatch(/^<!doctype html><html><head><base href="about:srcdoc">/);
+    expect(srcDoc).toContain('<body><p>hello</p></body></html>');
+    // bridge 脚本应该被注入（核心函数 isRouterHref 必须存在）
+    expect(srcDoc).toContain('isRouterHref');
   });
 
   it('wraps an HTML fragment in a minimal document for srcDoc', async () => {
@@ -55,10 +58,15 @@ describe('Html component', () => {
   });
 
   it('applies fullscreen classes to the iframe', async () => {
+    // P1-7 改造（父任务 08-18-ux-optimization-suite）：移动端 h-[calc(100vh-120px)]；
+    // 桌面 sm 断点起 h-screen=100vh。原文只测 h-screen，现在两套 class 都应存在
     const { container } = await renderHtml(<Html html="<p>x</p>" />);
     const iframe = container.querySelector('iframe');
     expect(iframe.className).toMatch(/w-full/);
-    expect(iframe.className).toMatch(/h-screen/);
+    // 移动端（默认）走 h-[calc(100vh-120px)]
+    expect(iframe.className).toMatch(/h-\[calc\(100vh-120px\)\]/);
+    // 桌面（sm 断点）走 h-screen
+    expect(iframe.className).toMatch(/sm:h-screen/);
     expect(iframe.className).toMatch(/border-0/);
   });
 
@@ -92,13 +100,16 @@ describe('Html component', () => {
 
   it('加载期渲染玻璃态 shimmer 占位（aria-hidden + 必要类名）', async () => {
     const { container } = await renderHtml(<Html html="<p>x</p>" />);
-    // shimmer 占位：absolute + bg-brand-surface/40 + animate-pulse + 过渡
+    // P1-6 改造（父任务 08-18-ux-optimization-suite）：shimmer 透明度从 /40 → /85
+    //   - 原 /40（60% 透明）对大文档（47KB intimate-relationship-curve.html）首帧
+    //     前 body 紫蓝黑透过 shimmer 渗出 → 视觉闪烁
+    //   - /85（仅 15% 透明）让玻璃态真正"挡住" iframe 加载前的 body 背景
     // 因为 useState(true) 初始 loading=true；rAF 兜底在 act 同步执行后会把 loading
     // 切到 false，所以 shimmer 的 opacity 已经是 0。这里只断言「占位 DOM 在」+
     // 「必要类名在」，不依赖 opacity 数值。
     const shimmer = container.querySelector('div.absolute.inset-0');
     expect(shimmer).not.toBeNull();
-    expect(shimmer.className).toMatch(/bg-brand-surface\/40/);
+    expect(shimmer.className).toMatch(/bg-brand-surface\/85/);
     expect(shimmer.className).toMatch(/backdrop-blur-sm/);
     expect(shimmer.className).toMatch(/animate-pulse/);
     expect(shimmer.className).toMatch(/transition-opacity/);

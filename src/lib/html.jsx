@@ -33,6 +33,7 @@
 //   - title 属性：iframe 的 title 给屏幕阅读器朗读，让用户知道这块 iframe 内容是什么
 //     （EntryDetail 传入 entry.title）；不支持 i18n，本期都是中文站名。
 import { useState, useEffect } from 'react';
+import { BRIDGE_SCRIPT } from './iframe-link-bridge.js';
 
 export default function Html({ html, title = 'Project detail' }) {
   const raw = html || '';
@@ -67,6 +68,19 @@ export default function Html({ html, title = 'Project detail' }) {
     }
   }
 
+  // 注入同站链接桥接脚本（父任务 08-18-ux-optimization-suite P1-8/15/16）
+  //   - 位置：<base> 之后（完整文档 <head> 末尾；片段同理）
+  //   - 跳过条件：作者已写自定义同名 <script> 拦截同站链接（避免冲突）
+  //   - 用 IIFE 包成单个 <script> 注入，避免与作者 inline script 串扰
+  //   - 实现细节见 src/lib/iframe-link-bridge.js
+  if (!/<script[^>]*>\s*\(function\(\)\{[\s\S]*?isRouterHref/.test(srcDoc)) {
+    srcDoc = srcDoc.replace(
+      /<base\b([^>]*)>/i,
+      `<base$1><script>${BRIDGE_SCRIPT}</script>`
+    );
+    // 兜底：如果 <base> 注入失败（极端情况），bridge 也加不进；用户接受限制
+  }
+
   // iframe 加载期 shimmer 占位：useState(true) → setLoading(false) 后淡出
   const [loading, setLoading] = useState(true);
 
@@ -90,20 +104,28 @@ export default function Html({ html, title = 'Project detail' }) {
           - 永远挂在 DOM 里（用 opacity 切换可见性），让 transition-opacity 真正生效
             （unmount 会跳过 transition）；同时不影响 iframe 交互（pointer-events-none）
           - absolute inset-0 铺满父容器
-          - bg-brand-surface/40 + backdrop-blur-sm：半透明玻璃态，呼应整站氛围
+          - bg-brand-surface/85 + backdrop-blur-sm：85% 透明（仅 15% 透），
+            让大文档首帧前 body 紫蓝黑不再透过 shimmer 渗出 → 视觉闪烁
+            （08-18 P1-6 改造；原 bg-brand-surface/40 = 60% 透明对 47KB 文档太透）
           - animate-pulse：Tailwind 内建脉冲动画，呼吸感
           - transition-opacity duration-300：opacity-100 → opacity-0 淡出 300ms
           - aria-hidden：占位对屏幕阅读器隐藏，避免把「loading shimmer」读给用户 */}
       <div
         aria-hidden="true"
-        className={`absolute inset-0 bg-brand-surface/40 backdrop-blur-sm animate-pulse pointer-events-none
+        className={`absolute inset-0 bg-brand-surface/85 backdrop-blur-sm animate-pulse pointer-events-none
                     transition-opacity duration-300
                     ${loading ? 'opacity-100' : 'opacity-0'}`}
       />
       <iframe
         srcDoc={srcDoc}
         title={title}
-        className="w-full h-screen border-0"
+        // P1-7 改造（父任务 08-18-ux-optimization-suite）：移动端减高让 PrevNextNav 不遮挡
+        //   - 桌面（>= sm）：h-screen = 100vh，保留原行为
+        //   - 移动端（< sm）：h-[calc(100vh-120px)] = 100vh - 120px
+        //     让出 PrevNextNav（bottom-6 = 24px + 浮动按钮堆叠约 90px + 安全裕度 ≈ 120px）的视口空间
+        //   - 注：shimmer 占位父容器仍是 h-screen，所以 loading 期玻璃态仍铺满视口，
+        //     iframe 加载后下方留出 120px 透明间隙，由 body brand-dark 背景填充
+        className="w-full h-[calc(100vh-120px)] sm:h-screen border-0"
         sandbox="allow-scripts allow-popups allow-forms"
         onLoad={() => setLoading(false)}
       />
