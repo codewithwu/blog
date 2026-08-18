@@ -28,7 +28,7 @@
 //   - input: type="search" + aria-label="搜索内容"
 //   - X 按钮: aria-label="清除搜索"
 //   - segmented control: 每个 button aria-pressed 表达当前激活项
-import { Search, X } from 'lucide-react';
+import { Search, X, Loader2 } from 'lucide-react';
 
 // type 可选值（语义清晰导出，Home 也可复用避免魔法字符串）
 export const TYPE_OPTIONS = [
@@ -37,7 +37,7 @@ export const TYPE_OPTIONS = [
   { value: 'project',  label: '项目' },
 ];
 
-export default function SearchBar({ query, setQuery, type, setType, inputRef }) {
+export default function SearchBar({ query, setQuery, type, setType, inputRef, isPending = false }) {
   return (
     // sticky 容器：top-0 + z-30
     //   - sticky 让用户在瀑布流滚动时仍能操作搜索框（不必滚回顶部）
@@ -76,7 +76,7 @@ export default function SearchBar({ query, setQuery, type, setType, inputRef }) 
           }}
           placeholder="搜索标题 / 摘要 / 标签"
           aria-label="搜索内容"
-          className="w-full pl-9 pr-9 py-1.5
+          className="w-full pl-9 pr-12 py-1.5
                      bg-brand-surface/40 text-brand-light placeholder:text-brand-dim
                      border border-brand-border/60 rounded-md
                      text-sm font-mono
@@ -90,7 +90,9 @@ export default function SearchBar({ query, setQuery, type, setType, inputRef }) 
               X 因 query 变空被 unmount 后浏览器会把焦点丢回 body；
               这里主动 focus() 让 input 继续持焦，可连续输入（08-17 code-review #3）
             - input DOM 节点不被 X 卸载（X 是 input 的 sibling，不是 child），
-              所以 inputRef.current 在 unmount 期间仍有效 */}
+              所以 inputRef.current 在 unmount 期间仍有效
+            - 移动端（< 640px）触控目标 ≥ 44pt（min-h/min-w）：视觉 w-6 h-6 不变，
+              触控框扩大到 44x44，避免误触 */}
         {query.length > 0 && (
           <button
             type="button"
@@ -103,10 +105,27 @@ export default function SearchBar({ query, setQuery, type, setType, inputRef }) 
                        inline-flex items-center justify-center
                        w-6 h-6 rounded
                        text-brand-mid [@media(hover:hover)]:hover:text-brand-light [@media(hover:hover)]:hover:bg-brand-surface-2/60
+                       [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]
                        transition-colors"
           >
             <X size={14} aria-hidden />
           </button>
+        )}
+
+        {/* P0 改造（父任务 08-18-ux-optimization-suite P0-6）：搜索进行中 spinner
+            - 父任务 08-18-ux-optimization-suite 派生：Home 在 entryCount > 20 &&
+              isPending && query.length > 0 时传 isPending={true} 进来
+            - 视觉：极小 Loader2（12px）+ 中性 mid 色 + animate-spin，不抢眼
+            - 位置：X 按钮左侧（query 非空时）或 X 位置（query 空时）
+            - aria-hidden：装饰元素，不让屏幕阅读器朗读「loading spinner」
+            - 输入框 padding-right 也相应留出位置（避免重叠） */}
+        {isPending && (
+          <Loader2
+            size={12}
+            aria-hidden="true"
+            className={`absolute top-1/2 -translate-y-1/2 animate-spin text-brand-mid
+                        ${query.length > 0 ? 'right-9' : 'right-3'}`}
+          />
         )}
       </div>
 
@@ -131,6 +150,7 @@ export default function SearchBar({ query, setQuery, type, setType, inputRef }) 
               // 桌面：text-sm；移动（< sm）：text-xs + flex-1 横向均分
               className={`flex-1 sm:flex-none px-3 py-1 rounded
                           text-xs sm:text-sm font-mono
+                          [@media(max-width:640px)]:min-h-[44px]
                           transition-colors
                           ${active
                             ? 'bg-brand-primary/20 text-brand-glow'

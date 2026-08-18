@@ -227,4 +227,13 @@ describe('Home 搜索过滤（与分类正交）', () => {
     expect(firstCard).not.toBeNull();
     expect(document.activeElement).toBe(firstCard);
   });
+
+  // 父任务 08-18-ux-optimization-suite P0-5/P0-6：useDeferredValue + spinner
+  it('搜索走 deferred value（entryCount <= 20 时不显示 spinner）', () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    fireEvent.change(input, { target: { value: '首页' } });
+    // entryCount fixture = 3（< 20）→ showSearchSpinner 应为 false → 无 Loader2
+    expect(container.querySelector('.animate-spin')).toBeNull();
+  });
 });
