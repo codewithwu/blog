@@ -6,7 +6,7 @@
 // 也已包裹）；测试里也必须包，否则 <Helmet> 会 throw「Cannot read properties of
 // undefined (reading 'add')」。
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, cleanup, waitFor, act } from '@testing-library/react';
+import { render, cleanup, waitFor, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider, HelmetData } from 'react-helmet-async';
 
@@ -99,22 +99,39 @@ describe('EntryDetail', () => {
 
   it('渲染固定左上角「← 返回」按钮', async () => {
     const { container } = await renderAt('/p/sample-entry');
-    // 用 aria-label 精确定位返回按钮；否则 PrevNextNav 的 disabled 按钮也会命中
-    const btn = container.querySelector('button[aria-label="返回首页"]');
+    // 父任务 08-18-ux-optimization-suite P0-1：BackButton 抽出来共享组件，
+    // 实现是 react-router <Link>（保留 SPA 路由 + prefetch）；不再是 <button>
+    // 用 aria-label + id 精确定位返回按钮；否则 PrevNextNav 的 disabled 按钮也会命中
+    const btn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
     expect(btn).not.toBeNull();
+    expect(btn.tagName.toLowerCase()).toBe('a'); // react-router Link 渲染为 <a>
     expect(btn.textContent).toContain('返回');
-    expect(btn.className).toMatch(/fixed/);
-    expect(btn.className).toMatch(/top-4/);
-    expect(btn.className).toMatch(/left-4/);
-    // 返回按钮应是 <button>，不是旧的 <a href="/articles">
-    expect(container.querySelector('a[href="/articles"]')).toBeNull();
+    // 旧实现是 fixed top-4 left-4 玻璃态胶囊；BackButton 共享组件不带 fixed 定位
+    // （EntryDetail 自己在 BackButton 外层加 fixed className，但当前实现把 fixed 职责
+    // 也下沉到 BackButton，所以这里改检查玻璃态基类 glass-pill 与 min-h-[44px] 移动端触控）
+    expect(btn.className).toMatch(/glass-pill/);
+    expect(btn.className).toMatch(/min-h-\[44px\]/);
     // a11y：按钮应带 aria-label="返回首页"，让屏幕阅读器朗读更明确
     expect(btn.getAttribute('aria-label')).toBe('返回首页');
+    // skip-link 应存在（08-18 P0-3），首个 Tab 焦点元素
+    const skipLink = container.querySelector('a[href="#back-button"]');
+    expect(skipLink).not.toBeNull();
+    expect(skipLink.textContent).toContain('跳到主站导航');
   });
 
-  it('找不到 slug 时 Navigate 回首页', async () => {
+  it('找不到 slug 时显示内嵌 404 卡片（不 Navigate 跳首页）', async () => {
+    // 父任务 08-18-ux-optimization-suite P1 顺手实现：原来 <Navigate to="/" replace />
+    // 直接跳回首页，改为在 /p/:slug 路由显示内嵌「文章不存在」+ BackButton，
+    // 保持 history 栈干净
     const { container } = await renderAt('/p/non-existent');
-    expect(container.querySelector('[data-testid="home"]')).not.toBeNull();
+    // 不应跳回首页（[data-testid="home"] 不存在）
+    expect(container.querySelector('[data-testid="home"]')).toBeNull();
+    // 应显示内嵌 404 文案
+    expect(container.textContent).toContain('文章不存在或已被移除');
+    expect(container.textContent).toContain('/p/non-existent');
+    // BackButton 仍存在且 aria-label 正确
+    const btn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
+    expect(btn).not.toBeNull();
   });
 
   it('注入 OG / Twitter Card meta（Helmet）', async () => {
@@ -160,5 +177,50 @@ describe('EntryDetail', () => {
     expect(iframeB).not.toBe(nodeA);
     // 内容也对应换了 entry
     expect(iframeB.getAttribute('srcDoc')).toContain('正文2');
+  });
+
+  // 父任务 08-18-ux-optimization-suite P0-1 + P0-2：mount 后下一帧自动 focus BackButton
+  it('mount 后 BackButton 自动获得焦点（a11y：避免焦点落到 iframe）', async () => {
+    const { container } = await renderAt('/p/sample-entry');
+    // rAF 在 beforeEach 已同步化，render 完成后 BackButton 应已 focused
+    const backBtn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
+    expect(backBtn).not.toBeNull();
+    expect(document.activeElement).toBe(backBtn);
+  });
+
+  // 父任务 08-18-ux-optimization-suite P0-1：Esc 跳出 iframe 焦点陷阱
+  it('按 Esc 把焦点送回 BackButton', async () => {
+    const { container } = await renderAt('/p/sample-entry');
+    const backBtn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
+    // 模拟焦点离开：blur BackButton，让 focus 不在它上面
+    backBtn.blur();
+    expect(document.activeElement).not.toBe(backBtn);
+    // 派发 Esc 键 → 应把焦点拉回 BackButton
+    await act(async () => {
+      fireEvent.keyDown(document, { key: 'Escape' });
+    });
+    expect(document.activeElement).toBe(backBtn);
+  });
+
+  it('输入框聚焦时按 Esc 不抢焦点（守卫 input）', async () => {
+    const { container } = await renderAt('/p/sample-entry');
+    const backBtn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
+    backBtn.blur();
+    // 模拟文档中存在 input 且聚焦 → Esc 不应抢焦点
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    expect(document.activeElement).toBe(input);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(document.activeElement).toBe(input);
+    document.body.removeChild(input);
+  });
+
+  it('带 Ctrl 修饰键的 Esc 不抢焦点（守卫修饰键）', async () => {
+    const { container } = await renderAt('/p/sample-entry');
+    const backBtn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
+    backBtn.blur();
+    fireEvent.keyDown(document, { key: 'Escape', ctrlKey: true });
+    expect(document.activeElement).not.toBe(backBtn);
   });
 });
