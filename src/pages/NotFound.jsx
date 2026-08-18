@@ -11,9 +11,9 @@
 //   返回首页链接的 hover 态（背景 / 边框 / shadow）与 EntryDetail 返回按钮同款，
 //   触屏 tap 后也会残留视觉态。用 `[@media(hover:hover)]:` 包住 hover utility，
 //   触屏用户看到的是默认态，避免 hover 残留。键盘 focus 仍按浏览器默认 outline。
-import { Link } from 'react-router-dom';
 import AuroraBackdrop from '../components/AuroraBackdrop.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
+import BackButton from '../components/BackButton.jsx';
 
 export default function NotFound() {
   usePageTitle('404');
@@ -43,18 +43,13 @@ export default function NotFound() {
         {/* 次文案：dim 色更弱化 */}
         <p className="mt-2 text-sm text-brand-dim">这里什么都没有...</p>
 
-        {/* 玻璃态返回按钮（与 EntryDetail 同款，glass-pill 共用样式） */}
-        {/* aria-label="返回首页" 与 EntryDetail 返回按钮保持一致：Link 元素文本
-            本身是「返回首页」已是可读 label，但显式 aria-label 让屏幕阅读器在
-            按钮上下文（focus / accessibility tree 列表）里朗读更稳定，也避免
-            在视觉改文案时忘记同步 a11y。 */}
-        <Link
-          to="/"
-          aria-label="返回首页"
-          className="glass-pill inline-block mt-10 px-6 py-2 rounded-md text-sm font-mono"
-        >
+        {/* 玻璃态返回按钮：BackButton 共享组件（与 EntryDetail 同款）
+            - 父任务 08-18-ux-optimization-suite P0-1 抽出，单一来源管理返回按钮
+            - 默认 aria-label="返回首页"、移动端触控目标 ≥ 44pt 由 BackButton 内部处理
+            - className 保留 mt-10 px-6 py-2（NotFound 视觉居中按钮 vs 详情页左上角悬浮） */}
+        <BackButton to="/" className="mt-10 px-6 py-2">
           返回首页
-        </Link>
+        </BackButton>
       </div>
     </div>
   );
