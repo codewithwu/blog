@@ -6,14 +6,23 @@
 //     形成"深海中的光"质感；不阻塞鼠标交互（pointer-events: none）。
 //   - 两个 intensity 决定尺寸 / 漂移节奏：'hero' 限 Hero 容器 + 30s 漂移，
 //     'fullscreen' 覆盖视口 + 60s 漂移（更慢，404 戏剧化）。
+//
+// P0 改造（父任务 08-18-ux-optimization-suite P0-8）：
+//   - 'hero' intensity 下给外层容器加 mask-image：底部 30% 渐隐到透明
+//     让极光在 Hero 底部淡出，平滑过渡到下方 SearchBar 玻璃态
+//     （不再「极光全亮 → SearchBar 玻璃态」突变）
+//   - 'fullscreen' 不加 mask：404 页极光戏剧化保留到底
 export default function AuroraBackdrop({ intensity = 'hero' }) {
   const isFull = intensity === 'fullscreen';
 
   // 外层容器：'fullscreen' 走 fixed inset-0，'hero' 走 absolute inset-0 让父容器定位。
   // 装饰层永远在内容之下、噪点之上；aria-hidden 防止被 AT 朗读。
+  // hero 模式额外加 mask-image：底部 30% 渐隐（08-18 P0-8 视觉粘合）
   const outer = isFull
     ? 'aurora-bg pointer-events-none fixed inset-0 -z-10'
-    : 'aurora-bg pointer-events-none absolute inset-0 -z-10';
+    : `aurora-bg pointer-events-none absolute inset-0 -z-10
+       [mask-image:linear-gradient(to_bottom,black_75%,transparent)]
+       [-webkit-mask-image:linear-gradient(to_bottom,black_75%,transparent)]`;
 
   // 漂移节奏：fullscreen 更慢（60s），hero 30s；两种都用 ease-in-out alternate 形成呼吸。
   const driftClass = isFull ? 'animate-aurora-drift-slow' : 'animate-aurora-drift';

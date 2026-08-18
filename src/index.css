@@ -1,6 +1,12 @@
 /* 全局样式：Tailwind 指令 + 深海夜空字体与装饰层 */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
+/*
+ * P0 改造（父任务 08-18-ux-optimization-suite P0-7）：
+ *   - 移除原 @import Google Fonts 声明
+ *   - 字体加载迁到 index.html 的 <link rel="preconnect"> + <link rel="stylesheet">
+ *   - 原因：CSS @import 是「同步串行」加载：浏览器必须先解析 CSS → 才发起字体请求；
+ *     同步 <link> 让浏览器在解析 HTML 时就开始建立连接与请求，FOIT 缩短 200-400ms
+ *   - 不引入新字体 @import：保持品牌字体不变（CLAUDE.md 规则 6）
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- P0 改造（父任务 08-18-ux-optimization-suite P0-7）：Google Fonts 预连接 + 同步加载
+         - preconnect 让浏览器提前建立到 fonts.googleapis.com / fonts.gstatic.com 的 TCP + TLS 连接
+         - rel=stylesheet 同步加载字体 CSS，避开原 @import「等 CSS 解析后才发起请求」的延迟
+         - 配合 src/index.css 移除的 @import，避免重复加载
+         - gstatic.com 必须加 crossorigin（字体文件跨源 fetch 需要 CORS） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
     <title>个人主页</title>
   </head>
   <body>
