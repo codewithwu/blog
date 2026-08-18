@@ -34,6 +34,8 @@ import { Search } from 'lucide-react';
 import Hero from '../components/Hero.jsx';
 import SearchBar, { TYPE_OPTIONS } from '../components/SearchBar.jsx';
 import EntryCard from '../components/EntryCard.jsx';
+import KeyboardHint from '../components/KeyboardHint.jsx';
+import ScrollToTop from '../components/ScrollToTop.jsx';
 import { entryCount, listEntries } from '../lib/entries.js';
 import usePageTitle from '../hooks/usePageTitle.js';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts.js';
@@ -42,9 +44,50 @@ import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts.js';
 // 单一来源 = TYPE_OPTIONS；改 TYPE_OPTIONS 第一项不需要改这里（08-17 M1）
 const DEFAULT_TYPE = TYPE_OPTIONS[0].value;
 
+// P1-13 改造（父任务 08-18-ux-optimization-suite）：瀑布流入场 stagger
+//   - CSS columns 列数随断点变化：columns-1 sm:columns-2 lg:columns-3 2xl:columns-4
+//   - stagger 延迟按 columnIndex 计算：columnIndex * 30ms
+//   - 首屏 N 张卡片（i < firstScreenCount）无延迟，同步入场
+//     firstScreenCount = columnCount * 2（top 2 行立即可见，避免用户感知延迟）
+//   - 移动端单列 → columnCount=1 → columnIndex 永远 0 → 所有卡片无延迟（自然连续）
+//
+// 用 matchMedia 监听断点变化（与 Tailwind breakpoints 对齐）：
+//   sm: 640px, lg: 1024px, 2xl: 1536px
+// 守卫：jsdom 无 window.matchMedia（tests），降级为只读一次 innerWidth
+function useResponsiveColumnCount() {
+  const [count, setCount] = useState(() => computeColumnCount());
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      // jsdom / 老浏览器：跳过动态监听；columnCount 用初始值即可（测试环境）
+      return;
+    }
+    const mqls = [
+      window.matchMedia('(min-width: 1536px)'), // 2xl
+      window.matchMedia('(min-width: 1024px)'), // lg
+      window.matchMedia('(min-width: 640px)'), // sm
+    ];
+    const update = () => setCount(computeColumnCount());
+    mqls.forEach((mql) => mql.addEventListener('change', update));
+    return () => mqls.forEach((mql) => mql.removeEventListener('change', update));
+  }, []);
+  return count;
+}
+
+function computeColumnCount() {
+  if (typeof window === 'undefined') return 1;
+  const w = window.innerWidth;
+  if (w >= 1536) return 4;
+  if (w >= 1024) return 3;
+  if (w >= 640) return 2;
+  return 1;
+}
+
 export default function Home() {
   usePageTitle(''); // 首页只用站名，不加前缀
   const navigate = useNavigate();
+
+  // P1-13：响应式列数（用于 stagger 计算 columnIndex）
+  const columnCount = useResponsiveColumnCount();
 
   // 搜索 / 过滤 state（不持久化：路由切换回 / 时自然重置）
   //   - query: 原始输入字符串（搜索框受控）
@@ -205,21 +248,36 @@ export default function Home() {
         </div>
       ) : (
         <div className="columns-1 sm:columns-2 lg:columns-3 2xl:columns-4 gap-6">
-          {filteredEntries.map((entry, i) => (
-            <div key={entry.slug} className="mb-6 break-inside-avoid">
-              <EntryCard
-                entry={entry}
-                isFocused={i === focusedIndex}
-                ref={(el) => {
-                  // ref callback 模式：把每个卡片的 DOM 引用存到 cardRefs.current[i]
-                  // 这样 useEffect 里可以 .focus({ preventScroll: true })
-                  cardRefs.current[i] = el;
-                }}
-              />
-            </div>
-          ))}
+          {filteredEntries.map((entry, i) => {
+            // P1-13：stagger 入场延迟
+            //   - 首屏 N 张卡片（i < columnCount * 2）：无延迟
+            //     假设至少 2 行可见，让用户立即看到内容
+            //   - 后续卡片按 columnIndex 偏移：columnIndex * 30ms
+            //   - 移动端单列 → columnCount=1 → 所有卡片首屏内（columnCount*2=2）
+            const columnIndex = i % columnCount;
+            const isFirstScreen = i < columnCount * 2;
+            const revealDelay = isFirstScreen ? 0 : columnIndex * 30;
+            return (
+              <div key={entry.slug} className="mb-6 break-inside-avoid">
+                <EntryCard
+                  entry={entry}
+                  isFocused={i === focusedIndex}
+                  revealDelay={revealDelay}
+                  ref={(el) => {
+                    // ref callback 模式：把每个卡片的 DOM 引用存到 cardRefs.current[i]
+                    // 这样 useEffect 里可以 .focus({ preventScroll: true })
+                    cardRefs.current[i] = el;
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
+      {/* P1-10：滚回顶部按钮（右下角，玻璃态胶囊） */}
+      <ScrollToTop />
+      {/* P1-11/12：键盘快捷键浮层 + cheat sheet */}
+      <KeyboardHint />
     </div>
   );
 }

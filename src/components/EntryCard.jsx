@@ -57,7 +57,7 @@ function useMergedRefs(...refs) {
   };
 }
 
-const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false }, externalRef) {
+const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, revealDelay = 0 }, externalRef) {
   const navigate = useNavigate();
   const [revealRef, visible] = useReveal();
   // 合并 useReveal 的 ref 与外部传入的 ref，两者必须挂在同一 div 上
@@ -96,7 +96,11 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false }, ex
                   ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       // 入场过渡（400ms ease-out）与 hover 过渡（250ms）分工不同，
       // 这里显式覆写为入场时长，hover 由上面的 duration-[250ms] 负责
-      style={{ transitionDuration: visible ? undefined : '400ms' }}
+      // P1-13 改造（父任务 08-18-ux-optimization-suite）：revealDelay 控制 stagger 延迟
+      //   - 首屏卡片 revealDelay=0：与现有 transitionDelay 默认 0ms 等价，无副作用
+      //   - 后续卡片 revealDelay>0：transitionDelay 让 opacity/translate 入场延迟触发，
+      //     形成"按 column 渐次浮入"的视觉
+      style={{ transitionDuration: visible ? undefined : '400ms', transitionDelay: `${revealDelay}ms` }}
     >
       {/* 封面区：有 cover 渲染图，无 cover 用紫蓝青渐变 + 标题首字母兜底 */}
       {entry.cover ? (
