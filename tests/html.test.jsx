@@ -30,11 +30,17 @@ async function renderHtml(ui) {
 
 describe('Html component', () => {
   it('renders an iframe for a full HTML document', async () => {
+    // 父任务 08-18-ux-optimization-suite 顺手修复：原版对「无 <head> 的完整文档」
+    // 走 prepend <base> 兜底，产生 <base><!doctype html>... 畸形 HTML。
+    // 新版在 <html> 后插入 <head><base></head>，输出格式合法。
     const doc = '<!doctype html><html><body><p>hello</p></body></html>';
     const { container } = await renderHtml(<Html html={doc} />);
     const iframe = container.querySelector('iframe');
     expect(iframe).not.toBeNull();
-    expect(iframe.getAttribute('srcDoc')).toBe(doc);
+    // 期望：<head> 被自动注入，<base> 落在 head 内（修复 anchor-redirect bug）
+    expect(iframe.getAttribute('srcDoc')).toBe(
+      '<!doctype html><html><head><base href="about:srcdoc"></head><body><p>hello</p></body></html>'
+    );
   });
 
   it('wraps an HTML fragment in a minimal document for srcDoc', async () => {

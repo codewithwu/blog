@@ -46,12 +46,22 @@ export default function Html({ html, title = 'Project detail' }) {
 
   // 注入 <base href="about:srcdoc">，让锚点链接走 iframe 自己的文档，
   // 而不是被父页面的 baseURI 拽走。已存在 <base> 的文档保持原样不动。
+  // 三档兜底（父任务 08-18-ux-optimization-suite 顺手修复 pre-existing bug）：
+  //   1. <head> 在 → 直接插到 <head> 内（最常见）
+  //   2. <html> 在但无 <head> → 在 <html> 后插入 <head><base></head>
+  //      （修复完整文档但缺少 <head> 的边角情况，原版直接 prepend <base> 产生畸形 HTML）
+  //   3. 连 <html> 都没有 → prepend <base> 兜底（理论不应发生）
   if (!/<base\b/i.test(srcDoc)) {
     srcDoc = srcDoc.replace(
       /<head(\s*[^>]*)>/i,
       '<head$1><base href="about:srcdoc">'
     );
-    // 兜底：没 <head> 的极简文档，插到文档开头
+    if (!/<base\b/i.test(srcDoc)) {
+      srcDoc = srcDoc.replace(
+        /<html(\s*[^>]*)>/i,
+        '<html$1><head><base href="about:srcdoc"></head>'
+      );
+    }
     if (!/<base\b/i.test(srcDoc)) {
       srcDoc = `<base href="about:srcdoc">` + srcDoc;
     }
