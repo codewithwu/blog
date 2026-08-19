@@ -236,3 +236,69 @@ useEffect(() => {
 - 用 `MemoryRouter` 包裹依赖 Router 的组件。
 - 视觉改动至少运行 `npm run build`，并在真实响应式视口检查 mobile/tablet/desktop。
 - 交互改动覆盖鼠标与键盘路径。
+
+## 共享组件契约（2026-08-18 UX 优化沉淀）
+
+UX 全面优化（任务 `08-18-ux-optimization-suite`，三波 P0/P1/P2）引入了若干跨页面复用的模式。这些模式不属于"提前抽象"，而是从至少两个调用点（EntryDetail + NotFound / Home + 浮条等）抽取：
+
+### BackButton（`src/components/BackButton.jsx`）
+
+- **何时复用**：详情页左上角悬浮「← 返回」、NotFound 居中「返回首页」、内嵌 404 卡片等所有"返回首页"动作
+- **API**：`to`、`ariaLabel`（默认「返回首页」）、`children`（默认「← 返回」）、`className`（追加外边距 / 定位 / padding）
+- **forwardRef**：暴露 DOM 引用供 `useFocusBackOnMount` 做 mount 自动 focus（a11y：避免焦点落到 iframe 或 body）
+- **glass-pill + 移动端 `min-h/min-w-[44px]`**：所有触控目标 ≥ 44pt 写在 BackButton 内部，调用方不用关心
+- **id="back-button"**：供 skip-link 锚定（首个 Tab 焦点元素 `href="#back-button"`）
+
+新增"返回"场景时**不要**再写内联 Link / button，直接用 BackButton。
+
+### useFocusBackOnMount（`src/hooks/useFocusBackOnMount.js`）
+
+- **何时复用**：详情页 / Modal / 全屏 overlay 等需要在 mount 时把焦点送到指定元素（避免被 iframe 或 body 抢占）
+- **API**：`(ref, deps)`，deps 变化时下一帧 `ref.current?.focus({ preventScroll: true })`
+- **守卫**：`hasFocusedRef` 跟踪"本组件是否曾主动 focus 过"，仅在首次 mount 与 deps 真变化时 focus，用户主动操作后不抢回
+- **rAF 时机**：等 React commit + ref attach 完成再调 `.focus()`，避免 stale ref
+
+### 浮条 / 浮按钮定位约定
+
+浮在视口边缘的 UI 元素用 `fixed` 定位 + z-index 层级：
+
+| 元素 | 位置 | z-index |
+|---|---|---|
+| BackButton（详情页） | top-4 left-4 | 50 |
+| PrevNextNav（详情页底部） | bottom-6 left-1/2 | 50 |
+| ScrollToTop（Home 右下） | bottom-6 right-6 | 40 |
+| KeyboardHint 浮层（Home 底部） | bottom-4 left-1/2 | 30 |
+| KeyboardHint CheatSheet | inset-0（全屏） | 100 |
+| Skip-link | top-2 left-1/2 | 60 |
+
+新增浮元素时 z-index 必须 ≥ 40 但 ≤ 50，避免盖过 PrevNextNav / BackButton 的 `z-50` 层级。CheatSheet / Modal 等全屏覆盖层用 `z-[100]` 起步。
+
+### 渐进式信息披露（localStorage 持久化）
+
+模式：`useXxxDismissed` hook + 一次性浮层 + localStorage 持久化。
+
+- key 命名：`coolpanda_<feature>_dismissed`，值 `'1'` 表示已 dismiss
+- 读取失败（隐私模式 / quota）降级为 `false`（每次显示，但不致命）
+- 写入失败 catch 静默（不抛到 UI）
+- 多 Tab 同步：监听同源 `storage` 事件
+
+参考实现：`useKbdHintDismissed.js` 是这个模式的标准模板，新增类似 UX 提示时复用此模式。
+
+### 响应式 columns 与 stagger 入场
+
+`Home.jsx` 用 `useResponsiveColumnCount()` hook 监听 Tailwind 断点（`md` 768 / `lg` 1024 / `2xl` 1536）：
+
+- `computeColumnCount(w)` 单一来源；JSX 容器用对应 `md:columns-2 lg:columns-3 2xl:columns-4` class
+- 瀑布流卡片 stagger：`revealDelay = (i % columnCount) * 30ms`；首屏 N 张（`i < columnCount * 2`）无延迟
+- 移动端单列 → columnCount=1 → 所有卡片无延迟（自然连续不卡顿）
+
+`jsdom` 无 `window.matchMedia`，hook 内 `typeof window.matchMedia !== 'function'` 守卫降级。
+
+### iframe 注入脚本模式
+
+`src/lib/html.jsx` 注入两类 srcDoc 内容：
+
+1. **`<base href="about:srcdoc">`**：修复锚点跨页跳转。3 档 fallback：`<head>` 内 → 在 `<html>` 后插入 `<head>` → prepend 兜底（畸形 HTML 修复）
+2. **桥接脚本**（`src/lib/iframe-link-bridge.js`）：捕获 capture phase click，把同站路由 href（`#/x` / `/x` / `/blog/x`）改写为 `window.parent.location.hash`，让父 HashRouter 接管；纯锚点 `#section` 与外链 `https://` 不拦截
+
+新增 iframe 注入功能时：在 `<base>` 之后追加，幂等检查（避免重复注入），用 IIFE 包成单个 `<script>` 不污染作者 inline script。
