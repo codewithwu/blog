@@ -28,7 +28,7 @@
 // 空状态：
 //   - filteredEntries.length === 0 且（query 非空 或 type !== 'all'）时显示居中提示
 //   - 注意：纯"全部 + 无 query"时不显示空态（防御性，正常不会发生）
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import Hero from '../components/Hero.jsx';
@@ -64,7 +64,7 @@ function useResponsiveColumnCount() {
     const mqls = [
       window.matchMedia('(min-width: 1536px)'), // 2xl
       window.matchMedia('(min-width: 1024px)'), // lg
-      window.matchMedia('(min-width: 640px)'), // sm
+      window.matchMedia('(min-width: 768px)'), // md（P2-26 断点从 sm 提到 md）
     ];
     const update = () => setCount(computeColumnCount());
     mqls.forEach((mql) => mql.addEventListener('change', update));
@@ -78,7 +78,9 @@ function computeColumnCount() {
   const w = window.innerWidth;
   if (w >= 1536) return 4;
   if (w >= 1024) return 3;
-  if (w >= 640) return 2;
+  // P2-26 改造（父任务 08-18-ux-optimization-suite）：断点从 sm (640px) 提到 md (768px)
+  //   - 640-768px 单列太宽（每张卡 ~600px），768-1024px 双列更舒展
+  if (w >= 768) return 2;
   return 1;
 }
 
@@ -228,6 +230,16 @@ export default function Home() {
   const isFiltered = query.trim().length > 0 || type !== DEFAULT_TYPE;
   const isEmpty = filteredEntries.length === 0 && isFiltered;
 
+  // P2-20 改造（父任务 08-18-ux-optimization-suite）：tag chip 点击 → 触发搜索
+  //   - useCallback + 空 deps：保证 EntryCard 不必要的 re-render
+  //   - setQuery(tag) + searchInputRef.focus：与 X 清除按钮后行为一致
+  //     （用户清空后无需再次点击输入框可继续输入）
+  //   - preventScroll: true：避免 focus 触发滚动
+  const handleTagClick = useCallback((tag) => {
+    setQuery(tag);
+    searchInputRef.current?.focus({ preventScroll: true });
+  }, []);
+
   return (
     <div className="max-w-6xl mx-auto px-6 pb-20">
       <Hero />
@@ -247,7 +259,7 @@ export default function Home() {
           <p>没有匹配的内容</p>
         </div>
       ) : (
-        <div className="columns-1 sm:columns-2 lg:columns-3 2xl:columns-4 gap-6">
+        <div className="columns-1 md:columns-2 lg:columns-3 2xl:columns-4 gap-6">
           {filteredEntries.map((entry, i) => {
             // P1-13：stagger 入场延迟
             //   - 首屏 N 张卡片（i < columnCount * 2）：无延迟
@@ -263,6 +275,7 @@ export default function Home() {
                   entry={entry}
                   isFocused={i === focusedIndex}
                   revealDelay={revealDelay}
+                  onTagClick={handleTagClick}
                   ref={(el) => {
                     // ref callback 模式：把每个卡片的 DOM 引用存到 cardRefs.current[i]
                     // 这样 useEffect 里可以 .focus({ preventScroll: true })
