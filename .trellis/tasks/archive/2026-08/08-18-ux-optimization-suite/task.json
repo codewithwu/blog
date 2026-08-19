@@ -1,0 +1,30 @@
+{
+  "id": "ux-optimization-suite",
+  "name": "ux-optimization-suite",
+  "title": "UX 全面优化",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "cooper",
+  "assignee": "cooper",
+  "createdAt": "2026-08-18",
+  "completedAt": "2026-08-19",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-18-a11y-focus-and-perf",
+    "08-18-experience-polish",
+    "08-18-nice-to-haves"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
