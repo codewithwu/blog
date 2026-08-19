@@ -27,6 +27,11 @@ function normalize(list) {
     cover: e.cover ?? null,
     links: e.links ?? null,
     content: e.content,
+    // P2-22 改造（父任务 08-18-ux-optimization-suite）：readingTime 可选字段
+    //   - 缺省回退 null（UI 不显示「X 分钟阅读」）
+    //   - 数字（分钟）或 null
+    //   - 未来作者可在 articles.js / projects.js metadata 加 readingTime: 5
+    readingTime: e.readingTime ?? null,
   }));
 }
 

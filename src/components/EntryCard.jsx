@@ -36,6 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Wrench, Github, ExternalLink } from 'lucide-react';
 import { categories } from '../data/categories.js';
 import useReveal from '../hooks/useReveal.js';
+import { gradientForSlug } from '../lib/gradient-presets.js';
 
 // 合并多个 ref 到同一个 DOM 节点：
 //   - 内层 ref（useReveal）：用于 IntersectionObserver
@@ -57,7 +58,23 @@ function useMergedRefs(...refs) {
   };
 }
 
-const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, revealDelay = 0 }, externalRef) {
+// monogramForTitle：根据标题首字符决定 monogram 显示
+//   - 首字符是 ASCII 字母（A-Z / a-z）：返回首字母大写（English monogram 效果）
+//   - 首字符是中文 / 其它 CJK / 数字 / 符号：返回空串（仅保留渐变 + 类型标签）
+// 父任务 08-18-ux-optimization-suite P2-23
+// 为什么不直接 slice(0, 2).toUpperCase()：对中文标题取前 2 字看起来像文案不像 monogram
+function monogramForTitle(title) {
+  if (!title) return '';
+  const first = title.charAt(0);
+  // ASCII 字母：A-Z (0x41-0x5A) / a-z (0x61-0x7A)
+  const code = first.charCodeAt(0);
+  if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
+    return first.toUpperCase();
+  }
+  return '';
+}
+
+const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, revealDelay = 0, onTagClick }, externalRef) {
   const navigate = useNavigate();
   const [revealRef, visible] = useReveal();
   // 合并 useReveal 的 ref 与外部传入的 ref，两者必须挂在同一 div 上
@@ -102,7 +119,12 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
       //     形成"按 column 渐次浮入"的视觉
       style={{ transitionDuration: visible ? undefined : '400ms', transitionDelay: `${revealDelay}ms` }}
     >
-      {/* 封面区：有 cover 渲染图，无 cover 用紫蓝青渐变 + 标题首字母兜底 */}
+      {/* 封面区：有 cover 渲染图，无 cover 用渐变 + 标题首字母兜底
+           P2-21 改造（父任务 08-18-ux-optimization-suite）：渐变按 slug hash 去重
+             gradientForSlug(slug) 选 4 套预设之一，相同 slug 永远同色
+           P2-23 改造：首字符国际化
+             - ASCII 字母开头：取首字母大写（English monogram 效果）
+             - 中文 / 其它：返回空串（不显示字符，只保留渐变背景） */}
       {entry.cover ? (
         <img
           src={entry.cover}
@@ -111,15 +133,17 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
           loading="lazy"
         />
       ) : (
-        <div className="w-full aspect-video
-                        bg-gradient-to-br from-brand-accent/25 via-brand-primary/20 to-brand-glow/25
-                        flex items-center justify-center text-3xl font-bold text-brand-light/70">
-          {entry.title.slice(0, 2).toUpperCase()}
+        <div className={`w-full aspect-video bg-gradient-to-br ${gradientForSlug(entry.slug)}
+                        flex items-center justify-center text-3xl font-bold text-brand-light/70`}>
+          {monogramForTitle(entry.title)}
         </div>
       )}
 
       <div className="p-5">
-        {/* type 徽章 + date（项目隐藏 date） */}
+        {/* type 徽章 + date（项目隐藏 date）
+            P2-22 改造（父任务 08-18-ux-optimization-suite）：readingTime 可选字段
+              - 字段缺省（entry.readingTime 为 null）不显示
+              - 字段存在时显示「X 分钟阅读」，加 · 分隔符保持视觉一致 */}
         <div className="flex items-center gap-2 text-xs text-brand-mid">
           <span className="inline-flex items-center gap-1">
             {isArticle ? <FileText size={13} /> : <Wrench size={13} />}
@@ -129,6 +153,12 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
             <>
               <span aria-hidden>·</span>
               <time>{entry.date}</time>
+              {entry.readingTime != null && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>{entry.readingTime} 分钟阅读</span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -144,18 +174,53 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
         {/* excerpt：最多 3 行截断 */}
         <p className="mt-2 text-sm text-brand-mid line-clamp-3">{entry.excerpt}</p>
 
-        {/* 底部条：category chip（仅文章） + tags */}
+        {/* 底部条：category chip（仅文章） + tags
+            P2-20 改造（父任务 08-18-ux-optimization-suite）：tag chip 可点击 → 触发搜索
+              - chip onClick + stopPropagation：避免连带触发整卡 navigate
+              - onTagClick 回调：Home 的 setQuery(tag) + 搜索框 focus
+              - category chip 同款行为：点击 = 触发 category 中文名搜索
+                （category 是 metadata，不做筛选；与搜索正交）
+            P2-24 改造：tag chip 数量上限 + 「+N」合并
+              - 显示前 3 个；超过则追加「+N」徽章（与现有 chip 同款样式）
+              - 避免 5+ tag 卡片拉高高度破坏瀑布流列对齐 */}
         <ul className="mt-4 flex flex-wrap gap-2 items-center text-xs">
           {categoryName && (
-            <li className="px-2 py-0.5 rounded bg-brand-accent/15 text-brand-accent">
-              {categoryName}
+            <li>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(categoryName);
+                }}
+                className="px-2 py-0.5 rounded bg-brand-accent/15 text-brand-accent
+                           [@media(hover:hover)]:hover:bg-brand-accent/25 transition-colors
+                           cursor-pointer"
+              >
+                {categoryName}
+              </button>
             </li>
           )}
-          {entry.tags.map((t) => (
-            <li key={t} className="px-2 py-0.5 rounded bg-brand-primary/15 text-brand-primary">
-              {t}
+          {entry.tags.slice(0, 3).map((t) => (
+            <li key={t}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(t);
+                }}
+                className="px-2 py-0.5 rounded bg-brand-primary/15 text-brand-primary
+                           [@media(hover:hover)]:hover:bg-brand-primary/25 transition-colors
+                           cursor-pointer"
+              >
+                {t}
+              </button>
             </li>
           ))}
+          {entry.tags.length > 3 && (
+            <li className="px-2 py-0.5 rounded bg-brand-surface-2/50 text-brand-mid">
+              +{entry.tags.length - 3}
+            </li>
+          )}
         </ul>
 
         {/* 项目外链：GitHub / Demo（仅项目且 links 存在时渲染） */}
