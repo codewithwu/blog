@@ -452,3 +452,47 @@ UX 全套 6 项（详情页 prev/next、OG meta、瀑布流搜索、iframe shimm
 ### 下一步
 - 父任务归档（archive + finish）
 - 用户决定是否 push
+
+
+## Session 11: UX 全面优化（P0/P1/P2 三波完成）
+
+**Date**: 2026-08-19
+**Task**: UX 全面优化（P0/P1/P2 三波完成）
+**Branch**: `main`
+
+### Summary
+
+用户要求从 UX 角度全面优化纯前端博客。三波交付：
+
+P0 a11y + 性能（5 commits）：BackButton 抽出共享组件 + EntryDetail mount focus + Esc 跳出 iframe + skip-link + 内嵌 404；Home useDeferredValue 搜索 + spinner；Google Fonts preconnect + Aurora 底部渐隐；移动端触控目标 ≥ 44pt；顺手修复 main 遗留的 html.jsx <base> 注入畸形 HTML bug（3 档 fallback）。
+
+P1 体验加分（6 commits）：ScrollToTop（rAF 节流）+ 键盘快捷键浮层与 cheat sheet（localStorage 持久化）+ masonry stagger 入场（matchMedia 响应式）+ Hero LAST_UPDATED 派生 + iframe shimmer 85% 透明 + 移动端让位 PrevNextNav + 同站链接桥接脚本（capture phase click → parent.location.hash）。
+
+P2 锦上添花（4 commits）：fallback 渐变按 slug hash 去重（4 套预设）+ 中文 monogram 国际化 + readingTime 可选字段 + 可点击 tag chip 触发搜索 + 3-tag 上限 +N 合并 + 404 列最近 3 条 entry + md 断点细化。
+
+验收：18 项 AC 全部通过；测试 59 → 101（+42）；gzip JS bundle 84.14 → 87.08 KB（+2.94 KB 远低于 8 KB 上限）；spec/frontend/component-and-style-guidelines.md 追加「共享组件契约」节沉淀模式；最终 0 active tasks。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8295a71` | (see git log) |
+| `89e64af` | (see git log) |
+| `a50fb81` | (see git log) |
+| `873938c` | (see git log) |
+| `08767f0` | (see git log) |
+| `f603011` | (see git log) |
+| `866ebe7` | (see git log) |
+| `27d742a` | (see git log) |
+| `53a85d7` | (see git log) |
+| `135d971` | (see git log) |
+| `365e045` | (see git log) |
+| `9156fce` | (see git log) |
+| `4dc49c4` | (see git log) |
+| `7717bde` | (see git log) |
+| `e9cb474` | (see git log) |
+| `d66e22a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
