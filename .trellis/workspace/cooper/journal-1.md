@@ -386,3 +386,69 @@ UX 全套 6 项（详情页 prev/next、OG meta、瀑布流搜索、iframe shimm
 ### Status
 
 [OK] **Completed**
+
+## 2026-08-18 — UX 全面优化启动 + P0 完成
+
+### 任务结构
+- 父任务：`.trellis/tasks/08-18-ux-optimization-suite/`（prd/design/implement 三件套齐全）
+- 子任务 P0：`.trellis/tasks/08-18-a11y-focus-and-perf/`（✅ 完成）
+- 子任务 P1：`.trellis/tasks/08-18-experience-polish/`（待启动）
+- 子任务 P2：`.trellis/tasks/08-18-nice-to-haves/`（待启动）
+
+### P0 实施总结
+父任务涵盖 18 项 AC，本波完成 P0 子集（AC-1 ~ AC-9）：
+- 抽出 BackButton 共享组件（src/components/BackButton.jsx）
+- 新增 useFocusBackOnMount hook（src/hooks/useFocusBackOnMount.js）
+- EntryDetail：BackButton + useFocusBackOnMount + skip-link + Esc 跳出 + 内嵌 404
+- Home：useDeferredValue + useMemo filteredEntries + showSearchSpinner 派生
+- SearchBar：isPending prop + Loader2 spinner + 移动端 min-h-[44px]
+- AuroraBackdrop：mask-image 底部 25% 渐隐（视觉粘合 Hero → SearchBar）
+- index.html：preconnect + rel=stylesheet（Fonts 首屏加速）
+- index.css：移除 @import（避免重复加载）
+- 移动端触控目标 ≥ 44pt：BackButton、X 清除按钮、segmented control 全部覆盖
+- 顺手修复 main 遗留 html.jsx `<base>` 注入畸形 HTML bug（3 档 fallback）
+
+### 验证
+- `npm run test`：77/77 全绿（baseline 59 + 新增 18）
+- `npm run build`：gzip JS 84.16 KB（baseline 84.14 KB，+0.02 KB）
+- 未 commit（按用户策略：commit 需要明确指令）
+
+### 下一步
+- 等用户决定是否 commit P0 + 启动 P1
+- P1 子任务 PRD 待写（PRD-only 即可）
+
+## 2026-08-18 — UX 全面优化 P1 + P2 完成 + 归档
+
+### P1 实施总结（6 commits）
+- feat(hero): LAST_UPDATED 派生自最新 entry date（mostRecentDate helper）
+- fix(detail): iframe shimmer 85% 透明 + 移动端让位 PrevNextNav
+- feat(home): scroll-to-top 按钮 + useScrollToTopVisible（rAF 节流）
+- feat(home): 键盘快捷键浮层 + cheat sheet（useKbdHintDismissed + Portal）
+- feat(iframe): 同站链接桥接脚本（capture phase click → parent.location.hash）
+- feat(home): masonry stagger 入场（matchMedia 响应式 + revealDelay 按 column）
+
+新增组件/hooks：ScrollToTop、useScrollToTopVisible、KeyboardHint、useKbdHintDismissed、iframe-link-bridge
+新增测试：scroll-to-top、kbd-hint-dismissed、iframe-link-bridge（3 个新文件）
+
+### P2 实施总结（4 commits）
+- feat(card): fallback 渐变去重（gradientForSlug + 4 套预设）+ 中文标题 monogram
+- feat(card): 可点击 tag chip（onTagClick）+ 3-tag 上限 + 「+N」合并
+- feat(home): md 断点（sm → md）+ tag click 回调接线
+- feat(404): 最近 3 条 entry 列表（listEntries.slice(0, 3) + react-router Link）
+
+新增：gradient-presets.js
+
+### 总验证
+- `npm run test`: 101/101 全绿（baseline 59 + P0 18 + P1 14 + P2 10）
+- `npm run build`: gzip JS 87.08 KB（baseline 84.14 KB → +2.94 KB total）
+- 父任务 18 项 AC 全部完成（含 P1-14 内嵌 404 在 P0 顺手实现）
+
+### 改动汇总
+- 新增 11 个文件（6 组件 + 3 hooks + 1 lib + 7 测试文件）
+- 修改 14 个文件
+- 共 17 commits（5 P0 + 6 P1 + 4 P2 + 1 spec + 1 archive）
+- spec/frontend/component-and-style-guidelines.md 末尾追加「共享组件契约」节（66 行）
+
+### 下一步
+- 父任务归档（archive + finish）
+- 用户决定是否 push
