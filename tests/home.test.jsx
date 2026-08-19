@@ -86,11 +86,15 @@ describe('Home 瀑布流首页', () => {
   });
 
   it('瀑布流容器使用 CSS columns', () => {
+    // P2-26 改造（父任务 08-18-ux-optimization-suite）：断点 sm → md
+    //   - 原文期望 sm:columns-2（640px）；新版期望 md:columns-2（768px）
+    //   - 640-768px 单列 → 768-1024px 双列，避免单列过宽
     const { container } = renderHome();
     const cols = container.querySelector('.columns-1');
     expect(cols).not.toBeNull();
-    expect(cols.className).toMatch(/sm:columns-2/);
+    expect(cols.className).toMatch(/md:columns-2/);
     expect(cols.className).toMatch(/lg:columns-3/);
+    expect(cols.className).toMatch(/2xl:columns-4/);
   });
 
   it('渲染 SearchBar：搜索框 + 三段 type 切换', () => {
@@ -242,5 +246,19 @@ describe('Home 搜索过滤（与分类正交）', () => {
     const { getByText } = renderHome();
     // fixture: 2 篇文章 date 分别为 2026-06-15 和 2025-12-01 → 取最大 2026-06-15
     expect(getByText(/最后更新 · 2026-06-15/)).not.toBeNull();
+  });
+
+  // 父任务 08-18-ux-optimization-suite P2-20：tag chip 点击 → 触发搜索
+  it('tag chip 点击 → setQuery + 搜索框自动 focus（不触发整卡 navigate）', () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    // 找到第一张卡片的第一个 tag chip（fixture 中首页文章 tag=RAG）
+    const tagBtn = container.querySelector('button.text-brand-primary');
+    expect(tagBtn).not.toBeNull();
+    fireEvent.click(tagBtn);
+    // input value 应被填充为 tag 文本
+    expect(input.value).toBe('RAG');
+    // input 应自动 focus（allow user to continue typing）
+    expect(document.activeElement).toBe(input);
   });
 });
