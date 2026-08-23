@@ -517,3 +517,24 @@ P0-1 改造的副作用修复。EntryCard 整卡从裸 <a href={'/p/'+slug}> 改
 ### Status
 
 [OK] **Completed**
+
+
+## Session 13: 技能与规范同步：UX 优化套件漂移修复
+
+**Date**: 2026-08-23
+**Task**: 技能与规范同步：UX 优化套件漂移修复
+**Branch**: `main`
+
+### Summary
+
+UX 优化套件 v2（2026-08-23）落地后，blog-content-publisher / blog-content-deleter 两个技能及其引用的规范文档有 5 处漂移，本次一次性修复：(1) markdown-template.html 的 mid/dim hex + 表格行 rgba + 头部注释同步 P2-5 颜色对比度提升；(2) ai-upload-flow.md L56 删除旧暖色板（warm earth palette）+ Poppins/Lora 引用，改为指向 markdown-template.html 单一入口；(3) testing-and-quality.md 把过期的「1 失败」基线（2026-07-19）刷成 127/127（2026-08-23 UX 优化套件后）；(4) publisher SKILL.md Step 6 加内嵌 404 自检（同步点坏掉时 EntryDetail 会显示「文章不存在或已被移除 + /p/<slug>」）；(5) deleter SKILL.md Step 5 加残留校验信号（同样视图作为「删除不干净」的反向信号）。127/127 测试通过，5 个文件改动。commit e857dc3。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e857dc3` | (see git log) |
+
+### Status
+
+[OK] **Completed**
