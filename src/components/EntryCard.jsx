@@ -8,10 +8,15 @@
 //   - category chip 紫，tag chip 蓝，项目外链 hover 转 glow。
 //
 // 交互（P0-1 父任务 08-23-ux-optimization-suite）：
-//   - 整卡改 <a href={`/p/${slug}`}>：根除 div role="link" 反模式（ui-ux-pro-max
+//   - 整卡改 <Link to={`/p/${slug}`}>：根除 div role="link" 反模式（ui-ux-pro-max
 //     诊断 A1 / Compact Control Semantics Severity: Critical）。
-//     原生 <a href> 自动获得：Enter 跳转 / 中键打开新标签 / 复制链接 / 屏幕阅读器朗读。
-//   - 内部 button（tag/category chip）：preventDefault + stopPropagation 阻止外层 <a> 跳转。
+//     Link 底层渲染为原生 <a>，自动获得：Enter 跳转 / 中键打开新标签 / 复制链接 /
+//     屏幕阅读器朗读。**关键：用 Link 而非裸 <a href>，因为项目是 HashRouter + 部署在
+//     /blog/ 子路径**——裸 <a href="/p/foo"> 会跳到 origin/p/foo（丢 base 路径触发
+//     「public base URL」错误），Link 会渲染为 <a href="#/p/foo"> 并拦截点击走 SPA。
+//   - 内部 button（tag/category chip）：preventDefault + stopPropagation 阻止外层
+//     <a> 跳转（Link 的 click handler 检查 defaultPrevented，子按钮 preventDefault
+//     后 Link 不接管导航）。
 //   - 项目 GitHub / Demo：HTML 规范禁止 <a> 嵌套 <a>，改为 <button> + window.open。
 //   - tag/category chip 移动端触控目标 ≥ 44pt（跨任务共性问题 A6）。
 //   - 入场动效用 useReveal：进入视口时 opacity/translate 过渡一次。
@@ -36,6 +41,7 @@
 //       触屏用户看不到 hover 抬升，但键盘 / 鼠标用户仍能正常享受 hover 反馈
 //     * 不引入新依赖；纯 Tailwind 3.1+ arbitrary variants 语法
 import { forwardRef } from 'react';
+import { Link } from 'react-router-dom';
 import { FileText, Wrench, Github, ExternalLink } from 'lucide-react';
 import { categories } from '../data/categories.js';
 import useReveal from '../hooks/useReveal.js';
@@ -94,9 +100,9 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
   const cardAriaLabel = `${isArticle ? '阅读文章' : '查看项目'}：${entry.title}`;
 
   return (
-    <a
+    <Link
       ref={mergedRef}
-      href={`/p/${entry.slug}`}
+      to={`/p/${entry.slug}`}
       aria-label={cardAriaLabel}
       className={`group block overflow-hidden rounded-xl
                   bg-brand-surface/85 backdrop-blur-sm
@@ -267,7 +273,7 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
           </div>
         )}
       </div>
-    </a>
+    </Link>
   );
 });
 

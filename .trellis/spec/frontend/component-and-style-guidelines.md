@@ -122,7 +122,8 @@ export default function EntryCard({ entry }) {
 - 导航和内部跳转用 `Link`/`NavLink`，active 状态使用 `aria-current`。
 - 外部链接使用 `target="_blank" rel="noreferrer"`。
 - iframe 必须有由 metadata 提供的可读 `title`。
-- **原生 `<a>`/`<button>` 能表达语义时优先使用原生元素**。这是 a11y 强约束（ui-ux-pro-max「Compact Control Semantics / Severity: Critical」）：clickable div / div role="link" 是反模式，屏幕阅读器对 URL 朗读 / 中键打开 / 复制链接的支持不一致。EntryCard 已从 `<div role="link">` 升级为 `<a href={'/p/'+slug}>`（2026-08-23）。
+- **原生 `<a>`/`<button>` 能表达语义时优先使用原生元素**。这是 a11y 强约束（ui-ux-pro-max「Compact Control Semantics / Severity: Critical」）：clickable div / div role="link" 是反模式，屏幕阅读器对 URL 朗读 / 中键打开 / 复制链接的支持不一致。EntryCard 已从 `<div role="link">` 升级为 `<Link to={'/p/'+slug}>`（2026-08-23）。
+- **内部跳转用 `<Link to>` 而非裸 `<a href>`**：项目是 `HashRouter` + 部署在 `/blog/` 子路径。裸 `<a href="/p/foo">` 是绝对路径，浏览器会跳到 `origin/p/foo`（丢 base 路径触发 React Router "public base URL" 报错 + 整页 reload），而 `<Link>` 会渲染成 `<a href="#/p/foo">` 并拦截点击走 SPA。所有原生能力（Enter 跳转 / 中键新标签 / 复制链接 / 屏幕阅读器）依然保留。`PrevNextNav` 已用此约定。
 - 卡片内若还需要嵌套交互按钮（如 tag/category chip、GitHub/Demo），按钮 `onClick` 必须 `e.preventDefault()` 阻止外层 `<a>` 跳转。`stopPropagation` 不必要（外层 `<a>` 没有 React handler），但保留作为防御。
 - HTML 规范禁止 `<a>` 嵌套 `<a>`，所以卡片内 GitHub/Demo 链接是 `<button onClick={() => window.open(...)}>`，不是嵌套 `<a target="_blank">`。
 - 修改 EntryCard 已有 `<a href>` 结构时必须保持 `aria-label` 显式语义（"阅读文章：<title>" / "查看项目：<title>"），让屏幕阅读器朗读明确目的。
@@ -294,12 +295,12 @@ UX 全面优化（任务 `08-18-ux-optimization-suite` + `08-23-ux-optimization-
 
 ### EntryCard（`src/components/EntryCard.jsx`）—— 2026-08-23 a11y 升级
 
-- **a11y Critical 改造**：整卡从 `<div role="link" tabIndex={0} onClick={onKeyDown}>` 升级为 `<a href={'/p/'+slug}>`。理由：ui-ux-pro-max「Compact Control Semantics / Severity: Critical」——clickable div 是反模式。
-- **原生能力**：`<a href>` 自动获得 Enter 跳转 / 中键打开新标签 / 复制链接 / 屏幕阅读器朗读 URL。
+- **a11y Critical 改造**：整卡从 `<div role="link" tabIndex={0} onClick={onKeyDown}>` 升级为 `<Link to={'/p/'+slug}>`。理由：ui-ux-pro-max「Compact Control Semantics / Severity: Critical」——clickable div 是反模式。
+- **用 `<Link>` 而非裸 `<a href>`**：项目是 `HashRouter` + 部署在 `/blog/` 子路径。`<Link>` 底层仍是原生 `<a>`（保留 Enter / 中键 / 复制链接 / 屏幕阅读器），但它会把 `to` 解析为 `#/p/<slug>` 走 hash 路由；裸 `<a href="/p/<slug>">` 会触发整页 reload + "public base URL" 报错。
 - **aria-label**：显式 "阅读文章：<title>" / "查看项目：<title>"，让屏幕阅读器朗读明确目的（避免朗读全文 excerpt 摘要）。
-- **嵌套交互**：卡片内 `tag/category chip` 是 `<button onClick={e => { e.preventDefault(); onTagClick?.(t); }}>`；GitHub/Demo 改 `<button onClick={() => window.open(...)}>`（HTML 禁止 `<a>` 嵌套 `<a>`）。
+- **嵌套交互**：卡片内 `tag/category chip` 是 `<button onClick={e => { e.preventDefault(); onTagClick?.(t); }}>`；GitHub/Demo 改 `<button onClick={() => window.open(...)}>`（HTML 禁止 `<a>` 嵌套 `<a>`）。`<Link>` 的 click handler 检查 `e.defaultPrevented`，子按钮 `preventDefault` 后 Link 不接管导航。
 - **触控目标**：tag/category chip + GitHub/Demo 全部加 `[@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]` 守卫。
-- **forwardRef 保持**：Home 的 j/k 键盘焦点管理仍依赖 `cardRefs.current[i]` 引用，`<a>` 与 `<div>` 同样 focusable，ref 引用不变。
+- **forwardRef 保持**：Home 的 j/k 键盘焦点管理仍依赖 `cardRefs.current[i]` 引用，`<Link>`（forwardRef 组件）的 ref 会转发到底层 `<a>`，行为不变。
 
 ### 浮条 / 浮按钮定位约定
 
@@ -315,6 +316,15 @@ UX 全面优化（任务 `08-18-ux-optimization-suite` + `08-23-ux-optimization-
 | Skip-link | top-2 left-1/2 | 60 |
 
 新增浮元素时 z-index 必须 ≥ 40 但 ≤ 50，避免盖过 PrevNextNav / BackButton 的 `z-50` 层级。CheatSheet / Modal 等全屏覆盖层用 `z-[100]` 起步。2026-08-23 引入 `tailwind.config.js` 的 `zIndex.tooltip=60` / `zIndex.modal=100` token（z-50 仍是 BackButton / PrevNextNav 层级，保留数字档）。
+
+### React Router 路由约定（HashRouter + future flags）
+
+项目用 `HashRouter`（GitHub Pages `/blog/` 子路径部署，无法做服务端重定向；HashRouter 把路由写到 URL hash 里，刷新 / 直链都走同一份 `index.html`）。
+
+- **future flags 必须开启**：`<HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>`（集中常量 `ROUTER_FUTURE` 在 `src/App.jsx`）。不开会触发 v6 → v7 迁移警告刷控制台。后续升级 react-router v7 时这套 opt-in 就是默认行为，无需再改。
+- **内部跳转一律 `<Link to>`**：禁止裸 `<a href>`，因为 HashRouter 下 `<a href="/p/foo">` 是 origin 绝对路径（丢 `/blog/` 前缀），会触发 React Router「The server is configured with a public base URL of /blog/ - did you mean to visit /blog/p/...」错误并整页 reload。`<Link>` 渲染为 `<a href="#/p/foo">`，原生 anchor 能力（Enter / 中键 / 复制链接 / 屏幕阅读器）全部保留。
+- **旧路由 302 走 `<Navigate replace />`**：`<Route path="/articles/:slug" element={<RedirectToEntry />} />`，避免外链失效污染历史栈。
+- **测试用 MemoryRouter**：不会触发 `base URL` 错误（因为 MemoryRouter 没有 basename/hash 概念），但会刷 future flag 警告。改测试包裹时给 MemoryRouter 也加 `future={...}`，或忽略 stderr 噪音。
 
 ### 渐进式信息披露（localStorage 持久化）
 
