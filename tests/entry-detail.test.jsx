@@ -50,6 +50,7 @@ const EntryDetail = (await import('../src/pages/EntryDetail.jsx')).default;
 async function renderAt(initialPath) {
   const helmetData = new HelmetData({});
   let result;
+  let history;
   await act(async () => {
     result = render(
       <HelmetProvider context={helmetData}>
@@ -61,8 +62,9 @@ async function renderAt(initialPath) {
         </MemoryRouter>
       </HelmetProvider>
     );
+    history = result.history; // MemoryRouter v6 exposes history on result
   });
-  return { ...result, helmetData };
+  return { ...result, helmetData, history };
 }
 
 afterEach(() => {
@@ -132,6 +134,46 @@ describe('EntryDetail', () => {
     // BackButton 仍存在且 aria-label 正确
     const btn = container.querySelector('[aria-label="返回首页"][id="back-button"]');
     expect(btn).not.toBeNull();
+  });
+
+  // P1-3 改造（父任务 08-23-ux-optimization-suite）：内嵌 404 复用 NotFound 视觉
+  it('AC-1/P1-3：内嵌 404 包含 AuroraBackdrop + 巨大渐变 404 数字（与 NotFound 对齐）', async () => {
+    const { container } = await renderAt('/p/non-existent');
+    // AuroraBackdrop 渲染标记：含 aurora-bg class + -z-10 装饰层
+    expect(container.querySelector('.aurora-bg')).not.toBeNull();
+    // 巨大渐变 404 数字：bg-clip-text utility + opsz:144
+    const h1 = container.querySelector('h1');
+    expect(h1).not.toBeNull();
+    expect(h1.textContent).toBe('404');
+    expect(h1.className).toMatch(/bg-clip-text/);
+    expect(h1.className).toMatch(/from-brand-accent/);
+    expect(h1.className).toMatch(/via-brand-primary/);
+    expect(h1.className).toMatch(/to-brand-glow/);
+    expect(h1.className).toMatch(/text-\[12rem\]/);
+    // opsz:144 inline style（巨字戏剧化）
+    expect(h1.getAttribute('style')).toMatch(/opsz.*144/);
+  });
+
+  // P1-3：内嵌 404 仍保留 /p/:slug 路由
+  it('AC-2/P1-3：内嵌 404 保留 /p/:slug 路由（不 navigate 到 /）', async () => {
+    const { container } = await renderAt('/p/non-existent');
+    // 渲染内容是内嵌 404 而非 Home（[data-testid="home"] 不存在）证明没有 navigate 到 /
+    expect(container.querySelector('[data-testid="home"]')).toBeNull();
+    // 内嵌 404 显示 + 包含当前 slug
+    expect(container.textContent).toContain('文章不存在或已被移除');
+    expect(container.textContent).toContain('/p/non-existent');
+    // BackButton href="/"：点击会跳回首页（这是预期行为），但当前 URL 不变
+    const backBtn = container.querySelector('a[aria-label="返回首页"]');
+    expect(backBtn?.getAttribute('href')).toBe('/');
+  });
+
+  // P1-3：内嵌 404 mount 后 BackButton 获得焦点（ref 复用 useFocusBackOnMount）
+  it('AC-3/P1-3：内嵌 404 mount 后 BackButton 获得焦点', async () => {
+    await renderAt('/p/non-existent');
+    // rAF 已 mock 同步化（beforeEach），focus 立即生效
+    const backBtn = document.querySelector('a[id="back-button"]');
+    expect(backBtn).not.toBeNull();
+    expect(document.activeElement).toBe(backBtn);
   });
 
   it('注入 OG / Twitter Card meta（Helmet）', async () => {

@@ -41,6 +41,7 @@ import { findEntryBySlug, findNeighbors } from '../lib/entries.js';
 import Html from '../lib/html.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 import useFocusBackOnMount from '../hooks/useFocusBackOnMount.js';
+import AuroraBackdrop from '../components/AuroraBackdrop.jsx';
 import BackButton from '../components/BackButton.jsx';
 import PrevNextNav from '../components/PrevNextNav.jsx';
 
@@ -49,22 +50,46 @@ export default function EntryDetail() {
   const entry = findEntryBySlug(slug);
   const backButtonRef = useRef(null);
 
+  // P1-3 修复（父任务 08-23-ux-optimization-suite）：
+  //   - 把 useFocusBackOnMount 移到 early return 之前
+  //     内嵌 404 路径同样需要 mount 焦点（BackButton 在 inline 404 也渲染）
+  //   - deps 用 [slug] 而不是 [entry.slug]：slug 变化（包括不存在 → 存在 / 反之）
+  //     都触发焦点；与原 [entry.slug] 在 entry 存在时等价
+  //   - hook order 稳定：始终在 early return 前调用（React hooks 规则）
+  useFocusBackOnMount(backButtonRef, [slug]);
+
   // 早返回必须在 usePageTitle 之前：否则无效 slug 会先把 document.title 改成
   // 「未找到内容 · Cool Panda」，再被 Home 的 usePageTitle 覆盖 — 标签栏闪烁。
   // entry 已确定存在，下方 hook 直接用 entry.title（去掉 '|| 未找到内容' 兜底）。
   if (!entry) {
-    // 内嵌 404：保留 /p/:slug 路由；显示同款玻璃态胶囊 BackButton + 错误文案
-    // BackButton 同样进 ref 体系，让键盘焦点也落到这里（useFocusBackOnMount）
+    // P1-3 改造（父任务 08-23-ux-optimization-suite，ui-ux-pro-max 诊断 B4）：
+    //   - 内嵌 404 复用 NotFound 视觉（满极光 + 巨大渐变 404 数字 + 文案 + BackButton）
+    //   - 保留 /p/:slug 路由（URL 不变；不 navigate 到 /）
+    //   - 不抽 NotFound 组件（避免引入"最近发布"列表副作用 + listEntries 开销）
+    //   - BackButton 仍走 ref 体系，useFocusBackOnMount（slug 变化时也跑）
     return (
-      <div className="relative min-h-screen flex items-center justify-center px-6">
-        <BackButton ref={backButtonRef} to="/">
-          ← 返回
-        </BackButton>
-        <div className="relative z-10 text-center max-w-md">
-          <h1 className="font-serif italic text-[6rem] leading-none text-brand-accent/70">404</h1>
-          <p className="mt-4 text-lg text-brand-mid">文章不存在或已被移除</p>
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* 全屏极光：与 NotFound 同款 intensity="fullscreen" + 60s 漂移 */}
+        <AuroraBackdrop intensity="fullscreen" />
+        <div className="relative z-10 text-center px-6 max-w-md w-full">
+          {/* 巨大渐变 404：紫蓝青三色（bg-clip-text），与 NotFound 完全对齐 */}
+          <h1
+            className="font-serif italic text-[12rem] md:text-[16rem] leading-none tracking-tighter
+                       bg-gradient-to-br from-brand-accent via-brand-primary to-brand-glow
+                       bg-clip-text text-transparent
+                       drop-shadow-[0_0_32px_rgba(91,141,239,0.35)]"
+            style={{ fontVariationSettings: "'opsz' 144" }}
+          >
+            404
+          </h1>
+          {/* 主文案：与 NotFound 同款 accent 紫 + mono */}
+          <p className="mt-4 text-lg text-brand-accent font-mono">文章不存在或已被移除</p>
+          {/* 显示当前 slug 路径，便于调试与 SEO 反馈 */}
           <p className="mt-2 text-sm text-brand-dim font-mono">/p/{slug}</p>
-          <p className="mt-6 text-xs text-brand-dim">点击左上角「← 返回」回到首页</p>
+          {/* BackButton：与 NotFound 同款 mt-10 px-6 py-2（居中按钮 vs 详情页左上角悬浮） */}
+          <BackButton to="/" className="mt-10 px-6 py-2" ref={backButtonRef}>
+            返回首页
+          </BackButton>
         </div>
       </div>
     );
@@ -72,8 +97,8 @@ export default function EntryDetail() {
 
   usePageTitle(entry.title);
 
-  // Mount / slug 变化时把焦点送到 BackButton（a11y：避免焦点落到 iframe）
-  useFocusBackOnMount(backButtonRef, [entry.slug]);
+  // P1-3 修复：useFocusBackOnMount 已移到组件顶部（early return 之前）
+  //   原 entry 存在时的 deps [entry.slug] 在新位置改为 [slug]，行为等价
 
   // Esc 跳出 iframe 焦点陷阱：document-level keydown 监听
   // 守卫：
