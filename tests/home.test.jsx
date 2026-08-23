@@ -311,4 +311,60 @@ describe('Home 搜索过滤（与分类正交）', () => {
       window.matchMedia = origMatchMedia;
     }
   });
+
+  // P1-5 改造（父任务 08-23-ux-optimization-suite）：SearchBar X/Y 计数 + 空态建议
+  it('AC-10/P1-5：SearchBar 渲染 X/Y 计数 + aria-live=polite', () => {
+    const { container } = renderHome();
+    const count = container.querySelector('[data-testid="search-count"]');
+    expect(count).not.toBeNull();
+    expect(count.getAttribute('aria-live')).toBe('polite');
+    // fixture 3 条 entries（2 articles + 1 project）；全显示 → "3 / 3"
+    expect(count.textContent).toBe('3 / 3');
+  });
+
+  it('AC-10/P1-5：输入过滤后计数实时更新', () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    // 输入"首页"应过滤到 2 张卡（fixture 中含"首页"的两篇文章）
+    fireEvent.change(input, { target: { value: '首页' } });
+    const count = container.querySelector('[data-testid="search-count"]');
+    expect(count.textContent).toBe('2 / 3');
+  });
+
+  it('AC-11/P1-5：空态包含「清除筛选」按钮（点击 reset query + type）', () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    // 输入不存在关键词 → 触发空态
+    fireEvent.change(input, { target: { value: 'xyz不存在' } });
+    const clearBtn = container.querySelector('button');
+    // 找到「清除筛选」按钮（textContent）
+    const clearBtnEl = Array.from(container.querySelectorAll('button')).find(
+      (b) => b.textContent === '清除筛选'
+    );
+    expect(clearBtnEl).not.toBeNull();
+    fireEvent.click(clearBtnEl);
+    // query 与 type 重置
+    expect(input.value).toBe('');
+    // 瀑布流恢复显示
+    expect(container.querySelector('.columns-1')).not.toBeNull();
+  });
+
+  it('AC-11/P1-5：空态包含「试试搜这些」chip（点击触发 setQuery）', () => {
+    const { container } = renderHome();
+    const input = container.querySelector('input[type="search"]');
+    fireEvent.change(input, { target: { value: 'xyz不存在' } });
+    // 找到"试试搜这些"标签
+    const tryTheseLabel = Array.from(container.querySelectorAll('span')).find(
+      (s) => s.textContent === '试试搜这些：'
+    );
+    expect(tryTheseLabel).not.toBeNull();
+    // 至少 1 个 chip（同 span 的父级 div 内的 button）
+    const chipsContainer = tryTheseLabel.parentElement;
+    const chips = chipsContainer.querySelectorAll('button');
+    expect(chips.length).toBeGreaterThan(0);
+    // 点击第一个 chip → setQuery
+    const firstChipText = chips[0].textContent;
+    fireEvent.click(chips[0]);
+    expect(input.value).toBe(firstChipText);
+  });
 });

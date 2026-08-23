@@ -15,6 +15,11 @@
 //   - X 清除按钮：query.length > 0 时出现；点击 setQuery('') + inputRef.focus()
 //     主动恢复焦点，让用户清空后无需再次点击输入框可继续输入（08-17 F3）
 //
+// P1-5 改造（父任务 08-23-ux-optimization-suite，ui-ux-pro-max 诊断 A3）：
+//   - 加 X/Y 计数显示（filteredCount / totalCount），aria-live="polite"
+//   - 位置：容器底部右对齐（与 input 内 X/spinner 不冲突）
+//   - 不显示"已过滤 0/0"等"无意义"信息（始终显示当前比例）
+//
 // 响应式（CLAUDE.md 规则 1 → 移动端不爆框）：
 //   - 桌面（≥ sm）：input 左侧 + segmented control 右侧（flex flex-row）
 //   - 移动（< sm）：input 上 + segmented control 下（flex-col），按钮变小
@@ -28,6 +33,7 @@
 //   - input: type="search" + aria-label="搜索内容"
 //   - X 按钮: aria-label="清除搜索"
 //   - segmented control: 每个 button aria-pressed 表达当前激活项
+//   - X/Y 计数: aria-live="polite" 让屏幕阅读器在过滤数变化时朗读新比例
 import { Search, X, Loader2 } from 'lucide-react';
 
 // type 可选值（语义清晰导出，Home 也可复用避免魔法字符串）
@@ -37,7 +43,7 @@ export const TYPE_OPTIONS = [
   { value: 'project',  label: '项目' },
 ];
 
-export default function SearchBar({ query, setQuery, type, setType, inputRef, isPending = false }) {
+export default function SearchBar({ query, setQuery, type, setType, inputRef, isPending = false, totalCount, filteredCount }) {
   return (
     // sticky 容器：top-0 + z-30
     //   - sticky 让用户在瀑布流滚动时仍能操作搜索框（不必滚回顶部）
@@ -161,6 +167,19 @@ export default function SearchBar({ query, setQuery, type, setType, inputRef, is
           );
         })}
       </div>
+
+      {/* P1-5：X/Y 计数（容器底部右对齐，与 input 内 X/spinner 不冲突）
+         - aria-live="polite" 让屏幕阅读器在过滤数变化时朗读新比例
+         - 仅当 totalCount / filteredCount 都传入时显示（防御：Home 可能没传） */}
+      {totalCount !== undefined && filteredCount !== undefined && (
+        <div
+          className="text-xs text-brand-mid font-mono text-right"
+          aria-live="polite"
+          data-testid="search-count"
+        >
+          {filteredCount} / {totalCount}
+        </div>
+      )}
     </div>
   );
 }

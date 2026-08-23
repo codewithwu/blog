@@ -240,6 +240,25 @@ export default function Home() {
     searchInputRef.current?.focus({ preventScroll: true });
   }, []);
 
+  // P1-5 改造（父任务 08-23-ux-optimization-suite）：派生 suggestedTags（空态建议）
+  //   - 取所有 entries tags Top5 高频，给空态"试试搜这些"chip
+  //   - deps [entries]：entries 引用变化才重算（正常生产数据只跑一次）
+  //   - 兜底：tags 全空时回退 categories 列表（cn 中文名）
+  const suggestedTags = useMemo(() => {
+    const counts = new Map();
+    entries.forEach((e) => (e.tags ?? []).forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1)));
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t]) => t);
+    if (top.length > 0) return top;
+    // 兜底：tags 全空时用 categories 中文名
+    return []; // 实际场景下几乎不会触发；SearchBar/Home 都不依赖 categories.js（CLAUDE.md 规则 4）
+  }, [entries]);
+
+  // 清除筛选 + 重置 type 到 DEFAULT_TYPE
+  const handleClearFilters = useCallback(() => {
+    setQuery('');
+    setType(DEFAULT_TYPE);
+  }, []);
+
   return (
     <div className="max-w-6xl mx-auto px-6 pb-20">
       <Hero />
@@ -250,13 +269,44 @@ export default function Home() {
         setType={setType}
         inputRef={searchInputRef}
         isPending={showSearchSpinner}
+        // P1-5 改造：传 totalCount / filteredCount，SearchBar 渲染 X/Y 计数
+        totalCount={entryCount()}
+        filteredCount={filteredEntries.length}
       />
       {isEmpty ? (
-        // 空结果态：Search 灰图标（opacity-50） + dim 色文字 + 居中
-        // 与设计语言一致：复用 brand-dim / brand-mid / lucide Search
+        // P1-5 改造（父任务 08-23-ux-optimization-suite）：空态加可操作建议
+        //   - 原版只"没有匹配的内容"一句话（ui-ux-pro-max 诊断 A4 反模式）
+        //   - 加「清除筛选」按钮（玻璃态胶囊，与品牌一致）
+        //   - 加「试试搜这些」chip（取 suggestedTags Top5）
         <div className="text-center py-16 text-brand-dim">
           <Search size={32} className="mx-auto mb-3 opacity-50" aria-hidden />
-          <p>没有匹配的内容</p>
+          <p className="mb-4">没有匹配的内容</p>
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="glass-pill inline-flex items-center px-4 py-1.5 rounded-md text-sm font-mono
+                       [@media(hover:hover)]:hover:text-brand-glow transition-colors
+                       [@media(max-width:640px)]:min-h-[44px]"
+          >
+            清除筛选
+          </button>
+          {suggestedTags.length > 0 && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2 items-center">
+              <span className="text-xs text-brand-mid">试试搜这些：</span>
+              {suggestedTags.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleTagClick(t)}
+                  className="px-2 py-0.5 rounded bg-brand-primary/15 text-brand-primary
+                             [@media(hover:hover)]:hover:bg-brand-primary/25 transition-colors
+                             [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]"
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="columns-1 md:columns-2 lg:columns-3 2xl:columns-4 gap-6">
