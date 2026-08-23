@@ -51,8 +51,8 @@ export default function EntryCard({ entry }) {
 | `brand-accent` | `#a78bfa` | 极光紫，副强调（chip、tagline、404 装饰） |
 | `brand-glow` | `#4cc9f0` | 电光青蓝，hover 发光 / focus 发亮 |
 | `brand-light` | `#f8fafc` | 主文字 |
-| `brand-mid` | `#94a3b8` | 次级文字（excerpt、meta） |
-| `brand-dim` | `#64748b` | 三级文字、占位 |
+| `brand-mid` | `#cbd5e1` | 次级文字（excerpt、meta），2026-08-23 提亮（对比度 13:1，AAA） |
+| `brand-dim` | `#94a3b8` | 三级文字、占位，2026-08-23 提亮（对比度 5:1，AA 大字） |
 
 历史 token `brand-orange` / `brand-green` / `brand-gray` 已删除（本次升级）；不要在新代码里复活它们。
 
@@ -84,15 +84,29 @@ export default function EntryCard({ entry }) {
 现有组件重复使用：
 
 - `rounded-xl bg-brand-surface/85 backdrop-blur-sm border border-brand-border/60` 作为卡片基底（玻璃态）。
-- `hover:-translate-y-0.5 hover:border-brand-primary/50` + `hover:shadow-[0_0_0_1px_rgba(91,141,239,0.4),0_8px_32px_-8px_rgba(167,139,250,0.35)]` 作为可点击卡片反馈（双层紫青发光）。
-- `focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark focus-visible:shadow-[0_0_12px_rgba(76,201,240,0.45)]` 作为键盘 focus 蓝色发光环。
+- `[@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:border-brand-primary/50 [@media(hover:hover)]:hover:shadow-glow-lg` 作为可点击卡片反馈（双层紫青发光，**已 token 化**，2026-08-23）。
+- `focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark focus-visible:shadow-glow-md` 作为键盘 focus 蓝色发光环（**已 token 化**）。
 - `transition-all duration-[250ms] ease-out` 不添加夸张/长时动画。
-- 装饰背景层：`src/components/AuroraBackdrop.jsx` 提供 `intensity: 'hero' | 'fullscreen'`，Hero 内嵌 `'hero'`，NotFound 用 `'fullscreen'`；body::before 噪点（SVG turbulence, opacity 0.04, mix-blend-mode overlay）由 `src/index.css` 全局生效。
-- 装饰动画：`@keyframes aurora-drift`（30s / 60s 两个版本通过 `animate-aurora-drift` / `animate-aurora-drift-slow` 工具类启用）。`@media (prefers-reduced-motion: reduce)` 必须禁用这些 animation、`.group:hover` 的 transform 与 box-shadow。
+- 装饰背景层：`src/components/AuroraBackdrop.jsx` 提供 `intensity: 'hero' | 'fullscreen'`，Hero 内嵌 `'hero'`，NotFound 用 `'fullscreen'`，EntryDetail 内嵌 404 也用 `'fullscreen'`（2026-08-23 P1-3 统一）。
+- 装饰动画：`@keyframes aurora-drift`（30s / 60s 两个版本通过 `animate-aurora-drift` / `animate-aurora-drift-slow` 工具类启用）。`@media (prefers-reduced-motion: reduce)` 必须禁用这些 animation、`.group:hover` 的 transform 与 box-shadow、**以及所有 transition / transition-delay**（2026-08-23 universal selector 兜底）。
 - 页面 grid 从移动单列逐级到 `md`/`lg` 多列，例如项目 `md:grid-cols-2 lg:grid-cols-3`。
 - 标题层级保持 `h1` 页面标题、`h2` 分组、`h3` 卡片标题。
 
 改动时匹配邻近组件的 spacing 和 comment density，不创建另一套 design token。
+
+### Tailwind 视觉 token（P2-6，2026-08-23）
+
+主站品牌视觉除了 `colors.brand` 还扩展了 5 类 token（`tailwind.config.js theme.extend`）：
+
+| 扩展 | Token | 用途 |
+|---|---|---|
+| `boxShadow` | `glow-sm` / `glow-md` / `glow-lg` / `hover-glow` | 玻璃态 / hover / focus 紫光；替代散落 `shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]` |
+| `borderRadius` | `pill` | 玻璃态胶囊标准 0.5rem |
+| `transitionTimingFunction` | `smooth` | cubic-bezier(0.4, 0, 0.2, 1) |
+| `fontFamily` | `display` / `sans` / `mono` | Fraunces / IBM Plex Sans / JetBrains Mono（替代 `src/index.css` 硬编码 font-family） |
+| `zIndex` | `tooltip` (60) / `modal` (100) | skip-link 与 CheatSheet 分层 |
+
+新增视觉值时**必须**走 token，禁止在 JSX 里散落 `rgba(...)` / 数字 z-index / hex 颜色。`rgba` 仅在 box-shadow / text-shadow 内联允许（Tailwind 无法表达发光的复合效果），且**优先用 `shadow-glow-*` token**。
 
 ## 图标
 
@@ -108,9 +122,10 @@ export default function EntryCard({ entry }) {
 - 导航和内部跳转用 `Link`/`NavLink`，active 状态使用 `aria-current`。
 - 外部链接使用 `target="_blank" rel="noreferrer"`。
 - iframe 必须有由 metadata 提供的可读 `title`。
-- 自定义可点击容器必须同时支持键盘和焦点视觉。`EntryCard` 使用 `role="link"`、`tabIndex={0}`、Enter 处理和 `focus-visible` ring。
-- 原生 `<a>`/`<button>` 能表达语义时优先使用原生元素。若容器内还需要嵌套 Link（如 `EntryCard` 的 category chip 或 github/demo 按钮），才采用经过测试的自定义容器模式。
-- 点击嵌套外链时要阻止触发外层卡片导航；当前 `EntryCard` 的 github/demo 按钮使用 `stopPropagation`，修改其结构时要用交互测试验证。
+- **原生 `<a>`/`<button>` 能表达语义时优先使用原生元素**。这是 a11y 强约束（ui-ux-pro-max「Compact Control Semantics / Severity: Critical」）：clickable div / div role="link" 是反模式，屏幕阅读器对 URL 朗读 / 中键打开 / 复制链接的支持不一致。EntryCard 已从 `<div role="link">` 升级为 `<a href={'/p/'+slug}>`（2026-08-23）。
+- 卡片内若还需要嵌套交互按钮（如 tag/category chip、GitHub/Demo），按钮 `onClick` 必须 `e.preventDefault()` 阻止外层 `<a>` 跳转。`stopPropagation` 不必要（外层 `<a>` 没有 React handler），但保留作为防御。
+- HTML 规范禁止 `<a>` 嵌套 `<a>`，所以卡片内 GitHub/Demo 链接是 `<button onClick={() => window.open(...)}>`，不是嵌套 `<a target="_blank">`。
+- 修改 EntryCard 已有 `<a href>` 结构时必须保持 `aria-label` 显式语义（"阅读文章：<title>" / "查看项目：<title>"），让屏幕阅读器朗读明确目的。
 - 文字与背景使用现有高对比 token；次要文字 `brand-mid` 不用于关键操作。
 
 ### 触屏 hover 守卫（防止 hover 视觉残留）
@@ -195,6 +210,24 @@ useEffect(() => {
 
 新增动画 / transform / box-shadow 必须在 `@media (prefers-reduced-motion: reduce)` 下复位（已经在 `src/index.css` 全局生效），新增组件若引入新的关键帧或 transform 需要单独验证。
 
+**2026-08-23 P1-4 升级**：原媒体查询只关了 `animate-*` 关键帧 + `.group:hover` 的 transform/shadow，但**遗漏了 `transition-duration` 和 `transition-delay`**——瀑布流入场 stagger（`style.transitionDelay`）和 `useReveal` 的 transition-opacity 在 reduce-motion 用户上仍触发动画。修复后用 universal selector 暴力兜底：
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  /* 保留原有的 animate-* / .group:hover 显式 reset */
+}
+```
+
+**双保险策略**：CSS 兜底 + JS 计算（Home 的 `revealDelay` 在 `matchMedia('(prefers-reduced-motion: reduce)').matches === true` 时强制 0）。两条路径任一生效即可，对极端 CSS 引擎不识别 `!important` 的情况兜底。
+
+`universal selector *` 在 reduce-motion 媒体查询分支内，性能影响可接受（仅启用 reduce-motion 用户的特定分支）。如未来 Lighthouse 报性能警告可改用 `:not([data-no-reduced])` 限定，但本期优先选简单可靠。
+
 ## 数据容错显示
 
 组件仅在现有合同明确要求时 fallback：
@@ -237,9 +270,9 @@ useEffect(() => {
 - 视觉改动至少运行 `npm run build`，并在真实响应式视口检查 mobile/tablet/desktop。
 - 交互改动覆盖鼠标与键盘路径。
 
-## 共享组件契约（2026-08-18 UX 优化沉淀）
+## 共享组件契约（2026-08-18 / 08-23 UX 优化沉淀）
 
-UX 全面优化（任务 `08-18-ux-optimization-suite`，三波 P0/P1/P2）引入了若干跨页面复用的模式。这些模式不属于"提前抽象"，而是从至少两个调用点（EntryDetail + NotFound / Home + 浮条等）抽取：
+UX 全面优化（任务 `08-18-ux-optimization-suite` + `08-23-ux-optimization-suite-v2`，跨多波 P0/P1/P2）引入了若干跨页面复用的模式。这些模式不属于"提前抽象"，而是从至少两个调用点（EntryDetail + NotFound / Home + 浮条等）抽取：
 
 ### BackButton（`src/components/BackButton.jsx`）
 
@@ -257,6 +290,16 @@ UX 全面优化（任务 `08-18-ux-optimization-suite`，三波 P0/P1/P2）引�
 - **API**：`(ref, deps)`，deps 变化时下一帧 `ref.current?.focus({ preventScroll: true })`
 - **守卫**：`hasFocusedRef` 跟踪"本组件是否曾主动 focus 过"，仅在首次 mount 与 deps 真变化时 focus，用户主动操作后不抢回
 - **rAF 时机**：等 React commit + ref attach 完成再调 `.focus()`，避免 stale ref
+- **hook 必须在 early return 之前调用**（React hooks 规则）：EntryDetail 内嵌 404 路径（2026-08-23 P1-3）也需要 mount focus，原实现 `useFocusBackOnMount` 在 early return 之后导致内嵌 404 BackButton 没焦点，已修复到组件顶部
+
+### EntryCard（`src/components/EntryCard.jsx`）—— 2026-08-23 a11y 升级
+
+- **a11y Critical 改造**：整卡从 `<div role="link" tabIndex={0} onClick={onKeyDown}>` 升级为 `<a href={'/p/'+slug}>`。理由：ui-ux-pro-max「Compact Control Semantics / Severity: Critical」——clickable div 是反模式。
+- **原生能力**：`<a href>` 自动获得 Enter 跳转 / 中键打开新标签 / 复制链接 / 屏幕阅读器朗读 URL。
+- **aria-label**：显式 "阅读文章：<title>" / "查看项目：<title>"，让屏幕阅读器朗读明确目的（避免朗读全文 excerpt 摘要）。
+- **嵌套交互**：卡片内 `tag/category chip` 是 `<button onClick={e => { e.preventDefault(); onTagClick?.(t); }}>`；GitHub/Demo 改 `<button onClick={() => window.open(...)}>`（HTML 禁止 `<a>` 嵌套 `<a>`）。
+- **触控目标**：tag/category chip + GitHub/Demo 全部加 `[@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]` 守卫。
+- **forwardRef 保持**：Home 的 j/k 键盘焦点管理仍依赖 `cardRefs.current[i]` 引用，`<a>` 与 `<div>` 同样 focusable，ref 引用不变。
 
 ### 浮条 / 浮按钮定位约定
 
@@ -271,7 +314,7 @@ UX 全面优化（任务 `08-18-ux-optimization-suite`，三波 P0/P1/P2）引�
 | KeyboardHint CheatSheet | inset-0（全屏） | 100 |
 | Skip-link | top-2 left-1/2 | 60 |
 
-新增浮元素时 z-index 必须 ≥ 40 但 ≤ 50，避免盖过 PrevNextNav / BackButton 的 `z-50` 层级。CheatSheet / Modal 等全屏覆盖层用 `z-[100]` 起步。
+新增浮元素时 z-index 必须 ≥ 40 但 ≤ 50，避免盖过 PrevNextNav / BackButton 的 `z-50` 层级。CheatSheet / Modal 等全屏覆盖层用 `z-[100]` 起步。2026-08-23 引入 `tailwind.config.js` 的 `zIndex.tooltip=60` / `zIndex.modal=100` token（z-50 仍是 BackButton / PrevNextNav 层级，保留数字档）。
 
 ### 渐进式信息披露（localStorage 持久化）
 
@@ -291,8 +334,57 @@ UX 全面优化（任务 `08-18-ux-optimization-suite`，三波 P0/P1/P2）引�
 - `computeColumnCount(w)` 单一来源；JSX 容器用对应 `md:columns-2 lg:columns-3 2xl:columns-4` class
 - 瀑布流卡片 stagger：`revealDelay = (i % columnCount) * 30ms`；首屏 N 张（`i < columnCount * 2`）无延迟
 - 移动端单列 → columnCount=1 → 所有卡片无延迟（自然连续不卡顿）
+- **2026-08-23 P1-4**：reduce-motion 时 `revealDelay` 强制 0（与 CSS universal selector 兜底双保险）
 
 `jsdom` 无 `window.matchMedia`，hook 内 `typeof window.matchMedia !== 'function'` 守卫降级。
+
+### 空态设计模式（2026-08-23 P1-5）
+
+`Home` 搜索空态从"一句话"升级为"清除筛选 + 试试搜这些"可操作建议：
+
+- 「清除筛选」按钮（`glass-pill`）：点击 reset query + type
+- 「试试搜这些」chip：取所有 entries tags Top5 高频，点击触发 `setQuery(tag)`
+- aria-live="polite" 在 SearchBar 容器底部显示 X/Y 计数，让屏幕阅读器朗读新比例
+
+新增搜索 / 过滤 UI 时复用此模式：**空态必须给可操作建议**，否则违反 ui-ux-pro-max「Empty States / Show helpful message and action」。
+
+### Skip-link 模式（2026-08-23 P0-2）
+
+详情页 / NotFound / 全屏装饰页都需要 skip-link 让键盘 / 屏幕阅读器用户跳过装饰直接到主站导航：
+
+```jsx
+<a
+  href="#back-button"  // BackButton 共享组件已设 id="back-button"
+  className="sr-only focus:not-sr-only fixed top-2 left-1/2 -translate-x-1/2 z-[60]
+             glass-pill px-3 py-1.5 rounded-md text-sm font-mono"
+>
+  跳到主站导航
+</a>
+```
+
+与 BackButton（`id="back-button"`）配套使用。**不要**抽共享组件（就 2 处用，复制即可，避免新 hook/组件复杂度）。
+
+### Esc 监听模式（2026-08-23 P0-2）
+
+详情页 / NotFound 都加 document-level Esc keydown 监听，把焦点送 BackButton：
+
+```jsx
+useEffect(() => {
+  const onKeyDown = (e) => {
+    if (e.key !== 'Escape') return;
+    const tag = e.target?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.target?.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    e.preventDefault();
+    backButtonRef.current?.focus({ preventScroll: true });
+  };
+  document.addEventListener('keydown', onKeyDown);
+  return () => document.removeEventListener('keydown', onKeyDown);
+}, []);
+```
+
+守卫：INPUT/TEXTAREA/SELECT / contenteditable / Cmd-Ctrl-Alt 修饰键。**不要**抽 hook（2 处使用，复制即可，未来第 3 处再抽）。
 
 ### iframe 注入脚本模式
 
