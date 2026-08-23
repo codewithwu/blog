@@ -77,11 +77,13 @@ describe('Home 瀑布流首页', () => {
     expect(getByText('亲密关系曲线')).not.toBeNull();
   });
 
-  it('文章卡显示 category 中文名，项目卡显示 GitHub 外链', () => {
+  it('文章卡显示 category 中文名，项目卡显示 GitHub 外链（<button> + aria-label）', () => {
     const { getByText, container } = renderHome();
     expect(getByText('AI')).not.toBeNull(); // ai → 中文名 AI
     expect(getByText('随笔与思考')).not.toBeNull(); // notes → 中文名
-    const gh = container.querySelector('a[href="https://example.com"]');
+    // P0-1 改造：项目 GitHub 外链从 <a> 改 <button>（避免 <a> 嵌套 <a>），
+    // 改用 aria-label="GitHub：<title>" 表达语义
+    const gh = container.querySelector('button[aria-label^="GitHub："]');
     expect(gh).not.toBeNull();
   });
 
@@ -227,7 +229,7 @@ describe('Home 搜索过滤（与分类正交）', () => {
     // flush effect（useEffect 是异步的，jsdom 里需 act flush）
     await act(async () => {});
     // 第一张卡片应自动获得焦点
-    const firstCard = container.querySelector('[role="link"]');
+    const firstCard = container.querySelector('a[href^="/p/"]');
     expect(firstCard).not.toBeNull();
     expect(document.activeElement).toBe(firstCard);
   });

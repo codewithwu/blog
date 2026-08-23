@@ -112,7 +112,7 @@ function renderHomeWithProbe(initialPath = '/') {
 // 而默认版是 "focus-visible:ring-2 focus-visible:ring-brand-glow"。
 // 用 negative lookbehind `(?<!focus-visible:)` 排除被前缀污染的位置。
 function findFocusedCard(container) {
-  const cards = container.querySelectorAll('[role="link"]');
+  const cards = container.querySelectorAll('a[href^="/p/"]');
   return (
     Array.from(cards).find((el) =>
       /(?<!focus-visible:)\bring-brand-glow\b/.test(el.className)
@@ -262,7 +262,7 @@ describe('Home 键盘快捷键（j/k/Enter + /）', () => {
     const focused = findFocusedCard(container);
     expect(focused.textContent).toContain('键盘二');
     // 第二张卡的 DOM 节点应该是活动元素
-    const cards = container.querySelectorAll('[role="link"]');
+    const cards = container.querySelectorAll('a[href^="/p/"]');
     expect(document.activeElement).toBe(cards[1]);
   });
 });

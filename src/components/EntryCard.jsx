@@ -7,9 +7,13 @@
 //   - fallback 渐变替换为紫 / 蓝 / 青（呼应 D-2 色板），不含 orange / green。
 //   - category chip 紫，tag chip 蓝，项目外链 hover 转 glow。
 //
-// 交互：
-//   - 整卡 role="link" + tabIndex=0 + Enter/Space 键盘可达（CLAUDE.md 规则 a11y）。
-//   - 项目 GitHub / Demo 用 <a> 嵌套，stopPropagation 避免连带触发整卡跳转。
+// 交互（P0-1 父任务 08-23-ux-optimization-suite）：
+//   - 整卡改 <a href={`/p/${slug}`}>：根除 div role="link" 反模式（ui-ux-pro-max
+//     诊断 A1 / Compact Control Semantics Severity: Critical）。
+//     原生 <a href> 自动获得：Enter 跳转 / 中键打开新标签 / 复制链接 / 屏幕阅读器朗读。
+//   - 内部 button（tag/category chip）：preventDefault + stopPropagation 阻止外层 <a> 跳转。
+//   - 项目 GitHub / Demo：HTML 规范禁止 <a> 嵌套 <a>，改为 <button> + window.open。
+//   - tag/category chip 移动端触控目标 ≥ 44pt（跨任务共性问题 A6）。
 //   - 入场动效用 useReveal：进入视口时 opacity/translate 过渡一次。
 //   - P2-1 键盘快捷键子任务新增 `isFocused` prop：
 //     * 由 Home 路由根据 j/k 派发的 focusedIndex 计算并传入
@@ -31,8 +35,7 @@
 //     * 键盘 focus 态不受影响：focus-visible:ring-* 仍按原语义工作，
 //       触屏用户看不到 hover 抬升，但键盘 / 鼠标用户仍能正常享受 hover 反馈
 //     * 不引入新依赖；纯 Tailwind 3.1+ arbitrary variants 语法
-import { forwardRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { forwardRef } from 'react';
 import { FileText, Wrench, Github, ExternalLink } from 'lucide-react';
 import { categories } from '../data/categories.js';
 import useReveal from '../hooks/useReveal.js';
@@ -75,11 +78,10 @@ function monogramForTitle(title) {
 }
 
 const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, revealDelay = 0, onTagClick }, externalRef) {
-  const navigate = useNavigate();
   const [revealRef, visible] = useReveal();
-  // 合并 useReveal 的 ref 与外部传入的 ref，两者必须挂在同一 div 上
+  // 合并 useReveal 的 ref 与外部传入的 ref，两者必须挂在同一元素上（<a> 与 <div>
+  // 同样接受 ref / focus，Home 的 cardRefs.current[i] 与 j/k 快捷键行为不变）
   const mergedRef = useMergedRefs(revealRef, externalRef);
-  const go = useCallback(() => navigate(`/p/${entry.slug}`), [navigate, entry.slug]);
 
   const isArticle = entry.type === 'article';
   // 分类中文名唯一来源是 categories.js（CLAUDE.md 规则 5）
@@ -87,18 +89,15 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
     ? categories.find((c) => c.slug === entry.category)?.name ?? entry.category
     : null;
 
+  // 整卡的 a11y 标签：让屏幕阅读器朗读"阅读文章：<title>" / "查看项目：<title>"
+  // 比直接朗读全文 title + excerpt 摘要更明确（diag A1）。
+  const cardAriaLabel = `${isArticle ? '阅读文章' : '查看项目'}：${entry.title}`;
+
   return (
-    <div
+    <a
       ref={mergedRef}
-      role="link"
-      tabIndex={0}
-      onClick={go}
-      onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
-          e.preventDefault();
-          go();
-        }
-      }}
+      href={`/p/${entry.slug}`}
+      aria-label={cardAriaLabel}
       className={`group block overflow-hidden rounded-xl
                   bg-brand-surface/85 backdrop-blur-sm
                   border border-brand-border/60
@@ -108,7 +107,7 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow
                   focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark
                   focus-visible:shadow-[0_0_12px_rgba(76,201,240,0.45)]
-                  transition-all duration-[250ms] ease-out cursor-pointer
+                  transition-all duration-[250ms] ease-out
                   ${isFocused ? 'ring-2 ring-brand-glow ring-offset-2 ring-offset-brand-dark shadow-[0_0_12px_rgba(76,201,240,0.45)]' : ''}
                   ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       // 入场过渡（400ms ease-out）与 hover 过渡（250ms）分工不同，
@@ -189,12 +188,15 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
+                  // preventDefault 阻止外层 <a href> 跳转；stopPropagation 不必要
+                  // （<a> 没有 React 事件 handler 走 stopPropagation，但保留防御）
+                  e.preventDefault();
                   onTagClick?.(categoryName);
                 }}
                 className="px-2 py-0.5 rounded bg-brand-accent/15 text-brand-accent
                            [@media(hover:hover)]:hover:bg-brand-accent/25 transition-colors
-                           cursor-pointer"
+                           cursor-pointer
+                           [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]"
               >
                 {categoryName}
               </button>
@@ -205,12 +207,13 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
+                  e.preventDefault();
                   onTagClick?.(t);
                 }}
                 className="px-2 py-0.5 rounded bg-brand-primary/15 text-brand-primary
                            [@media(hover:hover)]:hover:bg-brand-primary/25 transition-colors
-                           cursor-pointer"
+                           cursor-pointer
+                           [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]"
               >
                 {t}
               </button>
@@ -223,37 +226,48 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
           )}
         </ul>
 
-        {/* 项目外链：GitHub / Demo（仅项目且 links 存在时渲染） */}
+        {/* 项目外链：GitHub / Demo（仅项目且 links 存在时渲染）
+            HTML 规范禁止 <a> 嵌套 <a>，外层卡片已改 <a>，这里改 <button> + window.open
+            保留 target=_blank 的语义（window.open 第二参数 "_blank"）
+            noopener + noreferrer 保护：window.open 第三个参数设置 */}
         {!isArticle && entry.links && (
           <div className="mt-4 flex gap-3 text-sm">
             {entry.links.github && (
-              <a
-                href={entry.links.github}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.open(entry.links.github, '_blank', 'noopener,noreferrer');
+                }}
+                aria-label={`GitHub：${entry.title}`}
                 className="inline-flex items-center gap-1 text-brand-primary
-                           [@media(hover:hover)]:hover:text-brand-glow transition-colors"
+                           [@media(hover:hover)]:hover:text-brand-glow transition-colors
+                           cursor-pointer
+                           [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]"
               >
-                <Github size={16} /> GitHub
-              </a>
+                <Github size={16} aria-hidden /> GitHub
+              </button>
             )}
             {entry.links.demo && (
-              <a
-                href={entry.links.demo}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.open(entry.links.demo, '_blank', 'noopener,noreferrer');
+                }}
+                aria-label={`Demo：${entry.title}`}
                 className="inline-flex items-center gap-1 text-brand-primary
-                           [@media(hover:hover)]:hover:text-brand-glow transition-colors"
+                           [@media(hover:hover)]:hover:text-brand-glow transition-colors
+                           cursor-pointer
+                           [@media(max-width:640px)]:min-h-[44px] [@media(max-width:640px)]:min-w-[44px]"
               >
-                <ExternalLink size={16} /> Demo
-              </a>
+                <ExternalLink size={16} aria-hidden /> Demo
+              </button>
             )}
           </div>
         )}
       </div>
-    </div>
+    </a>
   );
 });
 
