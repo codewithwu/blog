@@ -117,7 +117,7 @@ export default function PrevNextNav({ prev, next }) {
                  px-2 py-2 rounded-md
                  bg-brand-surface/60 backdrop-blur-md
                  border border-brand-primary/40
-                 shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
+                 shadow-glow-sm
                  max-w-[calc(100vw-2rem)]"
     >
       {/* 左按钮：prev（日期更早） */}

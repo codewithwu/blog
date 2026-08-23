@@ -103,12 +103,12 @@ const EntryCard = forwardRef(function EntryCard({ entry, isFocused = false, reve
                   border border-brand-border/60
                   [@media(hover:hover)]:-translate-y-0.5
                   [@media(hover:hover)]:border-brand-primary/50
-                  [@media(hover:hover)]:shadow-[0_0_0_1px_rgba(91,141,239,0.4),0_8px_32px_-8px_rgba(167,139,250,0.35)]
+                  [@media(hover:hover)]:shadow-glow-lg
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow
                   focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark
-                  focus-visible:shadow-[0_0_12px_rgba(76,201,240,0.45)]
+                  focus-visible:shadow-glow-md
                   transition-all duration-[250ms] ease-out
-                  ${isFocused ? 'ring-2 ring-brand-glow ring-offset-2 ring-offset-brand-dark shadow-[0_0_12px_rgba(76,201,240,0.45)]' : ''}
+                  ${isFocused ? 'ring-2 ring-brand-glow ring-offset-2 ring-offset-brand-dark shadow-glow-md' : ''}
                   ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       // 入场过渡（400ms ease-out）与 hover 过渡（250ms）分工不同，
       // 这里显式覆写为入场时长，hover 由上面的 duration-[250ms] 负责

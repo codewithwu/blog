@@ -12,24 +12,21 @@
 @tailwind utilities;
 
 @layer base {
-  /* 标题使用 Fraunces 展示衬线，正文使用 Plex Sans；fallback 走 Georgia / system-ui */
+  /* P2-6 改造（父任务 08-23-ux-optimization-suite）：字体走 token（tailwind.config.js fontFamily）
+     替代原硬编码 font-family；改字体只需改 tailwind.config.js 一处 */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', Georgia, serif;
+    @apply font-display;
   }
-  /* body 背景与文字色硬编码而非 @apply bg-brand-dark text-brand-light：
-     防止 Tailwind 编译前 body 无样式闪烁（FOUC）。值与 brand.dark/brand.light
-     一致，改色板需同步更新此处。CLAUDE.md 规则 6「单一来源 = tailwind.config.js」
+  /* body 背景色硬编码而非 @apply bg-brand-dark：
+     防止 Tailwind 编译前 body 无样式闪烁（FOUC）。值与 brand.dark 一致，
+     改色板需同步更新此处。CLAUDE.md 规则 6「单一来源 = tailwind.config.js」
      的例外仅此一处。 */
   body {
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    @apply font-sans text-brand-light;
     background-color: #0a0e1f;
-    color: #f8fafc;
     min-height: 100vh;
   }
-  /* JetBrains Mono 用作数字 / 标签 / 时间戳 */
-  .font-mono {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-  }
+  /* .font-mono 由 Tailwind 内建 utility 处理（fontFamily.mono），无需重复声明 */
 }
 
 /* Hero tagline 淡入：靠 Hero.jsx 里 key={count} 触发重挂载来重播 */
@@ -66,16 +63,20 @@
      Tailwind 3.4 的 @apply 在嵌套 @media (hover: hover) 内对 arbitrary variant
      编译不可靠，避开该陷阱；rgb() 用 token 直接色值，改 brand.* 时同步更新此处 */
 @layer components {
+  /* P2-6 改造（父任务 08-23-ux-optimization-suite）：shadow 走 token（boxShadow.glow-sm）
+     替代原 hardcoded shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)] */
   .glass-pill {
     @apply bg-brand-surface/60 text-brand-light border border-brand-primary/40
-           backdrop-blur-md shadow-[0_0_12px_-2px_rgba(91,141,239,0.45)]
+           backdrop-blur-md shadow-glow-sm
            transition-all duration-200;
   }
   @media (hover: hover) {
+    /* hover 发光也走 token（boxShadow.hover-glow），bg / border 仍写原 hex
+     （与 brand.surface-2 / 70、brand.glow / 70 等价；hex 仍因 P2-6 收口待续） */
     .glass-pill:hover {
       background-color: rgb(30 35 72 / 0.7);   /* brand.surface-2 / 70 */
       border-color: rgb(76 201 240 / 0.7);     /* brand.glow / 70 */
-      box-shadow: 0 0 18px -2px rgb(76 201 240 / 0.55);
+      @apply shadow-hover-glow;
     }
   }
 }
