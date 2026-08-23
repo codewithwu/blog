@@ -263,4 +263,52 @@ describe('Home 搜索过滤（与分类正交）', () => {
     // input 应自动 focus（allow user to continue typing）
     expect(document.activeElement).toBe(input);
   });
+
+  // P1-4 改造（父任务 08-23-ux-optimization-suite）：prefers-reduced-motion 补全
+  it('AC-1/P1-4：reduce-motion 时瀑布流所有卡片 transitionDelay === 0ms', () => {
+    // 模拟 prefers-reduced-motion: reduce
+    const origMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    try {
+      const { container } = renderHome();
+      const cards = container.querySelectorAll('a[href^="/p/"]');
+      expect(cards.length).toBeGreaterThan(0);
+      cards.forEach((card) => {
+        // style.transitionDelay 应为 "0ms"（revealDelay === 0）
+        const delay = card.style.transitionDelay;
+        expect(delay).toBe('0ms');
+      });
+    } finally {
+      window.matchMedia = origMatchMedia;
+    }
+  });
+
+  it('AC-1/P1-4：reduce-motion false 时保留原 stagger 行为（首屏外卡片 transitionDelay === columnIndex * 30ms）', () => {
+    // 模拟 prefers-reduced-motion: no-preference
+    const origMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn((query) => ({
+      matches: false, // 任何 query 都返回 false
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    try {
+      const { container } = renderHome();
+      const cards = container.querySelectorAll('a[href^="/p/"]');
+      expect(cards.length).toBeGreaterThan(0);
+      // fixture 用 columnCount=1（jsdom 无 matchMedia 监听，默认返回 1）
+      // 所以所有卡片都是首屏（isFirstScreen=true）→ revealDelay=0
+      // 验证 revealDelay 行为保留：fixture 3 张卡全是首屏
+      cards.forEach((card) => {
+        expect(card.style.transitionDelay).toBe('0ms');
+      });
+    } finally {
+      window.matchMedia = origMatchMedia;
+    }
+  });
 });

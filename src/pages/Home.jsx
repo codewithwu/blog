@@ -260,31 +260,39 @@ export default function Home() {
         </div>
       ) : (
         <div className="columns-1 md:columns-2 lg:columns-3 2xl:columns-4 gap-6">
-          {filteredEntries.map((entry, i) => {
-            // P1-13：stagger 入场延迟
-            //   - 首屏 N 张卡片（i < columnCount * 2）：无延迟
-            //     假设至少 2 行可见，让用户立即看到内容
-            //   - 后续卡片按 columnIndex 偏移：columnIndex * 30ms
-            //   - 移动端单列 → columnCount=1 → 所有卡片首屏内（columnCount*2=2）
-            const columnIndex = i % columnCount;
-            const isFirstScreen = i < columnCount * 2;
-            const revealDelay = isFirstScreen ? 0 : columnIndex * 30;
-            return (
-              <div key={entry.slug} className="mb-6 break-inside-avoid">
-                <EntryCard
-                  entry={entry}
-                  isFocused={i === focusedIndex}
-                  revealDelay={revealDelay}
-                  onTagClick={handleTagClick}
-                  ref={(el) => {
-                    // ref callback 模式：把每个卡片的 DOM 引用存到 cardRefs.current[i]
-                    // 这样 useEffect 里可以 .focus({ preventScroll: true })
-                    cardRefs.current[i] = el;
-                  }}
-                />
-              </div>
-            );
-          })}
+          {/* P1-4 改造（父任务 08-23-ux-optimization-suite）：reduce-motion 时 revealDelay 强制 0
+             - 与 index.css 的 universal selector 兜底双保险
+             - 即便某条路径 CSS !important 未生效（如第三方 utility 类），JS 也强制 0 */}
+          {(() => {
+            const reduceMotion = typeof window.matchMedia === 'function' &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            return filteredEntries.map((entry, i) => {
+              // P1-13：stagger 入场延迟
+              //   - 首屏 N 张卡片（i < columnCount * 2）：无延迟
+              //     假设至少 2 行可见，让用户立即看到内容
+              //   - 后续卡片按 columnIndex 偏移：columnIndex * 30ms
+              //   - 移动端单列 → columnCount=1 → 所有卡片首屏内（columnCount*2=2）
+              //   - reduce-motion → 全部 0
+              const columnIndex = i % columnCount;
+              const isFirstScreen = i < columnCount * 2;
+              const revealDelay = reduceMotion ? 0 : (isFirstScreen ? 0 : columnIndex * 30);
+              return (
+                <div key={entry.slug} className="mb-6 break-inside-avoid">
+                  <EntryCard
+                    entry={entry}
+                    isFocused={i === focusedIndex}
+                    revealDelay={revealDelay}
+                    onTagClick={handleTagClick}
+                    ref={(el) => {
+                      // ref callback 模式：把每个卡片的 DOM 引用存到 cardRefs.current[i]
+                      // 这样 useEffect 里可以 .focus({ preventScroll: true })
+                      cardRefs.current[i] = el;
+                    }}
+                  />
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
       {/* P1-10：滚回顶部按钮（右下角，玻璃态胶囊） */}
