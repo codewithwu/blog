@@ -121,14 +121,14 @@ afterEach(() => {
 | Tailwind/Vite/deploy | build；部署行为改变时审查 workflow 与 base |
 | `.trellis/spec/` | 文件/链接/占位扫描 + test/build 基线比较 |
 
-## 当前基线（2026-07-19）
+## 当前基线（2026-08-23 UX 优化套件 v2 后）
 
-瀑布流重构后的基线：
+UX 优化套件（任务 `08-23-ux-optimization-suite-v2`，含 2 P0 a11y + 3 P1 一致性 + 2 P2 系统收口）后的基线：
 
-- `npm run build` 成功；JS bundle 从重构前 1098 kB 降到 352 kB；Vite chunk-size warning 已消失。
-- `npm test` 有 1 个失败：`tests/html.test.jsx > renders an iframe for a full HTML document`，断言期望原始文档（不含 `<base>` 注入），与 `src/lib/html.jsx` 的实际行为（注入 `<base href=”about:srcdoc”>` 修复锚点）不符。这是基线漂移，**不是本任务新增**——它在 spec bootstrap 前的 11 个失败里就是其中之一，其他 10 个失败在重构中被随之删除的旧 test 文件承担。
+- `npm run build` 成功；JS bundle ~287 kB（gzip 87 kB），CSS ~28 kB（gzip 5.75 kB）。
+- `npm test` **127/127 全绿**（14 个 test 文件）。`tests/html.test.jsx` 已按本规范”fragment 已包装 + base 已注入”分别断言，2026-07-19 时期的”1 失败”基线已解决。
 
-因此后续任务的质量判断必须比较”是否新增失败”，不能把既有 1 个失败归因于本任务；同时也不能宣称测试全绿。修复这条测试时应更新断言或移除本节。
+新增 / 删除 / 修改内容的任务都跑 `npm test` + `npm run build`，按上述基线比较。如有新增失败必须先修；既有失败目前为 0，比较时直接看”是否 0 → >0”。
 
 ## Build 质量
 

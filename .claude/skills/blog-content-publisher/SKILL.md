@@ -132,6 +132,11 @@ npm run build   # 必须通过；raw import / metadata 成套才能过
 
 - `/`：新卡片出现；分类 / 日期 / 摘要 / 标签 / 排序正确。
 - `/p/<slug>`：全屏 iframe + 悬浮返回按钮；无可见 frontmatter；Markdown 结构完整。
+- **内嵌 404 自检**：如果 `/p/<slug>` 显示「文章不存在或已被移除」+ `/p/<slug>` 字样（`EntryDetail` 内嵌 404 视图，2026-08-23 P1-3 改造复用 NotFound 视觉），说明三处同步点坏了：
+  - registry 里的 `slug` 与 `content/<slug>.html` 文件名不一致；
+  - 或 `content/<slug>.html` 缺失（registry 有 metadata 但文件没落盘）；
+  - 或 metadata 的 `?raw` import 变量名打错。
+  修复路径：核对 articles.js / projects.js 的 `slug` ↔ `content/<slug>.html` ↔ import 变量三者一致后重跑 build。
 - HTML 直出版：作者原 CSS/SVG/脚本/动画保留；桌面 + 移动可读。
 
 ## 失败与回滚

@@ -92,6 +92,8 @@ description: "从本博客网站移除指定的文章或项目内容。当用户
 
 搜索范围：`src/`、`content/`、`tests/`、`App.jsx`、`vite.config.js`。发现残留按同样流程补删。
 
+**残留校验信号**：如果 `/p/<slug>` 仍能访问但显示「文章不存在或已被移除」+ `/p/<slug>`（`EntryDetail` 内嵌 404 视图，2026-08-23 P1-3 改造复用 NotFound 视觉），说明三处同步点没删干净——通常是只删了 metadata 但忘了删 import 行或 `content/<slug>.html`。按"定位三处同步点"流程重新核对并补删。
+
 ### 6. 自动验证
 
 ```bash

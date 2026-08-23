@@ -8,6 +8,12 @@
     - 所有 :hover 加 [@media(hover:hover)] 守卫，防 iOS Safari 触屏残留
     - prefers-reduced-motion 复位所有 transform / box-shadow / transition
 
+  2026-08-23 P2-5 颜色对比度提升（父任务 08-23-ux-optimization-suite）：
+    - brand.mid  #94a3b8 → #cbd5e1  (对比度 5:1 → 13:1 AAA)
+    - brand.dim  #64748b → #94a3b8  (对比度 → 5:1 AA 大字)
+    本模板已同步：下方 :root 变量 + 表格行底色 rgba 都已用新色值。
+    改 brand 色板必须同步更新 tailwind.config.js + 此处 + 任何写死 mid/dim 的地方。
+
   iframe 视口不继承主站 Tailwind 编译产物，必须自补这些样式。
   CLAUDE.md 规则 6 + .trellis/spec/frontend/component-and-style-guidelines.md §品牌色
   §字体 §触屏 hover 守卫三节是单一来源；修改此处必须同步检查那三节。
@@ -23,17 +29,17 @@
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
     /* 品牌色变量（与 tailwind.config.js 的 brand.* 对齐）：
-         --bg          brand.dark     #0a0e1f  紫蓝近黑
-         --surface     brand.surface  #14193a  卡片 / 按钮底色
-         --surface-2   brand.surface-2 #1e2348  hover 次级表面
-         --border      brand.border   #2a3158  边框
-         --primary     brand.primary  #5b8def  电光蓝（主强调 / focus ring）
-         --accent      brand.accent   #a78bfa  极光紫（副强调 / chip）
-         --glow        brand.glow     #4cc9f0  电光青蓝（hover 发光）
-         --fg          brand.light    #f8fafc  主文字
-         --mid         brand.mid      #94a3b8  次级文字（excerpt / meta）
-         --dim         brand.dim      #64748b  三级文字 / 占位
-       注释保留旧变量名（accent / accent-alt / accent-grn）以维持模板结构性可读性，
+         --bg          brand.dark       #0a0e1f  紫蓝近黑
+         --surface     brand.surface    #14193a  卡片 / 按钮底色
+         --surface-2   brand.surface-2  #1e2348  hover 次级表面
+         --border      brand.border     #2a3158  边框
+         --primary     brand.primary    #5b8def  电光蓝（主强调 / focus ring）
+         --accent      brand.accent     #a78bfa  极光紫（副强调 / chip）
+         --glow        brand.glow       #4cc9f0  电光青蓝（hover 发光）
+         --fg          brand.light      #f8fafc  主文字
+         --mid         brand.mid        #cbd5e1  次级文字（excerpt / meta）  [2026-08-23 P2-5 提升对比度至 13:1 AAA]
+         --dim         brand.dim        #94a3b8  三级文字 / 占位          [2026-08-23 P2-5 提升对比度至 5:1 AA 大字]
+       旧变量名（accent / accent-alt / accent-grn）保留以维持模板结构性可读性，
        色值已对齐新 token。修改品牌色板时同步更新 tailwind.config.js + 此处。 */
     :root {
       --bg:         #0a0e1f;
@@ -44,8 +50,8 @@
       --accent-alt: #5b8def; /* 电光蓝，brand.primary */
       --accent-grn: #4cc9f0; /* 电光青蓝，brand.glow */
       --fg:         #f8fafc;
-      --mid:        #94a3b8;
-      --dim:        #64748b;
+      --mid:        #cbd5e1;  /* 2026-08-23 P2-5 提升对比度至 13:1 AAA */
+      --dim:        #94a3b8;  /* 2026-08-23 P2-5 提升对比度至 5:1 AA 大字 */
     }
     * { box-sizing: border-box; }
 
@@ -151,7 +157,8 @@
       padding: 0.5em 0.7em;
     }
     tbody td {
-      border-bottom: 1px solid rgba(148,163,184,0.25);
+      /* 边框色 = brand.mid #cbd5e1 的 25% alpha（2026-08-23 P2-5 同步更新） */
+      border-bottom: 1px solid rgba(203,213,225,0.25);
       padding: 0.5em 0.7em;
     }
     /* 表格行 hover 同样走触屏守卫 */

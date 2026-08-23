@@ -53,7 +53,9 @@ Claude 收到后按下面 6 步执行。**不要**跳过第 2 步的一次确认
 详情页在**隔离 iframe** 中渲染（`src/lib/html.jsx`），iframe 内**不继承**主站 Tailwind 编译产物：
 
 - `brand-*` 类在 iframe 内**不生效**——必须用内联 `<style>` 或 `<link rel="stylesheet">` 自补样式。
-- 颜色 / 字体建议对齐 brand token 手写值：背景 `#141413`、正文 `#faf9f5`、辅助 `#b0aea5`、点缀橙 `#d97757` / 蓝 `#6a9bcc` / 绿 `#788c5d`；标题字体 Poppins、正文 Lora（可 `@import` Google Fonts）。
+- 颜色 / 字体必须对齐当前品牌 token（CLAUDE.md 规则 6：「深海 + 紫极光」2026-07-19 升级，2026-08-23 mid/dim 提升对比度）：
+  - 单一来源 = `.claude/skills/blog-content-publisher/references/markdown-template.html`（已 byte-for-byte 对齐 `tailwind.config.js` 的 brand token + 含响应式 + 触屏 hover 守卫 + prefers-reduced-motion）。**Markdown → HTML 必须以这份模板为骨架**——不要重新发明 CSS 变量名 / 色值 / 字体。
+  - 字体：标题 Fraunces（italic + opsz 戏剧化），正文 IBM Plex Sans，数字 / 标签 JetBrains Mono（与 `src/index.css` 顶部 `@import` 同款）。需要 Google Fonts 时复用主站 URL 模板。
 - 图片用相对路径（CLAUDE.md 规则 3）。
 - 外链 `target="_blank"` 需要 sandbox 的 `allow-popups`（`Html` 已开启）；锚点跳转依赖注入的 `<base href="about:srcdoc">`（`Html` 自动处理）。
 
