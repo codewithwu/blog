@@ -496,3 +496,24 @@ P2 锦上添花（4 commits）：fallback 渐变按 slug hash 去重（4 套预�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 12: 路由修复：EntryCard <Link> + HashRouter future flags
+
+**Date**: 2026-08-23
+**Task**: 路由修复：EntryCard <Link> + HashRouter future flags
+**Branch**: `main`
+
+### Summary
+
+P0-1 改造的副作用修复。EntryCard 整卡从裸 <a href={'/p/'+slug}> 改回 <Link to>：HashRouter + /blog/ 子路径下裸 <a> 是 origin 绝对路径，触发 React Router「public base URL」报错 + 整页 reload；<Link> 渲染为 <a href="#/p/foo"> 走 hash 路由，原生 anchor 能力（Enter / 中键新标签 / 复制链接 / 屏幕阅读器）全部保留。HashRouter 加 future flags（v7_startTransition / v7_relativeSplatPath）消除 v6→v7 控制台告警，集中常量 ROUTER_FUTURE 未来一处改。规范文档新增「React Router 路由约定」章节记录 HashRouter + future flags + <Link to> 强制约定。127/127 测试通过，MemoryRouter 渲染的 <Link> 仍是 <a href="/p/foo"> 现有选择器无需改。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c7ba9c0` | (see git log) |
+
+### Status
+
+[OK] **Completed**
